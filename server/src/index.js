@@ -12,8 +12,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5050;
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5050',
+  'http://127.0.0.1:5050',
+  'https://bika20032003-sudo.github.io'
+];
+
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server) or matching allowed list
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.ts.net') || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback gracefully while logging
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

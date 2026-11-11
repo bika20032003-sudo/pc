@@ -2,19 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getDb } from '../config/db.js';
 import { inMemoryUsers } from './userController.js';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'interior_ministry_secret_key_2026';
-
-const normArabic = (txt) => {
-  if (!txt) return '';
-  return String(txt)
-    .trim()
-    .replace(/[\u064B-\u065F\u0670]/g, '')
-    .replace(/[إأآاٱ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/[ىي]/g, 'ي')
-    .toLowerCase();
-};
 
 export async function login(req, res) {
   try {
@@ -30,7 +20,7 @@ export async function login(req, res) {
     const { pool, isMySqlConnected, memoryUsers } = getDb();
     let user = null;
     const cleanId = identifier.trim();
-    const normId = normArabic(cleanId);
+    const normId = normalizeArabicText(cleanId);
 
     // 1. Check MySQL if connected
     if (isMySqlConnected && pool) {
@@ -52,10 +42,10 @@ export async function login(req, res) {
       const allPool = [...(inMemoryUsers || []), ...(memoryUsers || [])];
       user = allPool.find((u) => {
         if (u.status && u.status !== 'active') return false;
-        const uUser = normArabic(u.username || '');
-        const uEmail = normArabic(u.email || '');
-        const uBadge = normArabic(u.badge_number || '');
-        const uName = normArabic(u.full_name || '');
+        const uUser = normalizeArabicText(u.username || '');
+        const uEmail = normalizeArabicText(u.email || '');
+        const uBadge = normalizeArabicText(u.badge_number || '');
+        const uName = normalizeArabicText(u.full_name || '');
 
         return (
           uUser === normId ||
@@ -68,38 +58,24 @@ export async function login(req, res) {
       });
     }
 
-    // Default emergency/quick pass for admin test
-    const isValidAdminFallback =
-      (normId === 'admin' || normId.includes('موسى') || normId.includes('البدين')) &&
-      (password === 'admin' || password === 'admin123' || password === '123456' || password === '12341234');
-
-    if (!user && !isValidAdminFallback) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم أو كلمة المرور'
       });
     }
 
-    // Verify password
+    // Verify password securely using bcrypt
     let passwordMatches = false;
-    if (user) {
-      if (user.password_hash) {
-        try {
-          passwordMatches = await bcrypt.compare(password, user.password_hash);
-        } catch (e) {}
+    if (user.password_hash) {
+      try {
+        passwordMatches = await bcrypt.compare(password, user.password_hash);
+      } catch (e) {
+        console.error('Password hash comparison error:', e);
       }
-      if (!passwordMatches && user.password && user.password === password) {
-        passwordMatches = true;
-      }
-      if (!passwordMatches && user.password_raw && user.password_raw === password) {
-        passwordMatches = true;
-      }
-      if (!passwordMatches && (password === 'admin' || password === 'admin123' || password === '123456' || password === '12341234')) {
-        passwordMatches = true;
-      }
-    } else if (isValidAdminFallback) {
-      passwordMatches = true;
-      user = (inMemoryUsers && inMemoryUsers[0]) || (memoryUsers && memoryUsers[0]);
+    } else if (user.password) {
+      // Legacy unhashed fallback only if hash not set yet
+      passwordMatches = (user.password === password);
     }
 
     if (!passwordMatches) {

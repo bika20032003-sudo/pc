@@ -1,12 +1,16 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from '../config/db.js';
 
+const defaultAdminHash = bcrypt.hashSync('admin123', 10);
+const defaultUserHash = bcrypt.hashSync('123456', 10);
+
 // Pre-configured official system users
 export let inMemoryUsers = [
   {
     id: 1,
     username: 'admin',
     email: 'mousa.albedin@moi.gov.ly',
+    password_hash: defaultAdminHash,
     full_name: 'سيادة اللواء / موسى سعد محمد البدين',
     badge_number: 'MOI-10492',
     rank_title: 'لواء شرطة / رئيس مركز العمليات والتحكم',
@@ -23,6 +27,7 @@ export let inMemoryUsers = [
     id: 2,
     username: 'ali.ahmed',
     email: 'ali.ahmed@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'عقيد شرطة / علي محمد أحمد',
     badge_number: 'MOI-10488',
     rank_title: 'عقيد شرطة / نائب مدير المديرية',
@@ -39,6 +44,7 @@ export let inMemoryUsers = [
     id: 3,
     username: 'omar.fassi',
     email: 'omar.fassi@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'رائد شرطة / عمر مصطفى الفاسي',
     badge_number: 'MOI-10502',
     rank_title: 'رائد شرطة / مدير شؤون القوة والذاتية',
@@ -55,6 +61,7 @@ export let inMemoryUsers = [
     id: 4,
     username: 'khalil.tareqi',
     email: 'khalil.tareqi@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'نقيب شرطة / خليل إبراهيم التارقي',
     badge_number: 'MOI-10515',
     rank_title: 'نقيب شرطة / رئيس قسم البلاغات والمناوبات',
@@ -71,6 +78,7 @@ export let inMemoryUsers = [
     id: 5,
     username: 'tareq.barasi',
     email: 'tareq.barasi@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'ملازم أول / طارق مفتاح البرعصي',
     badge_number: 'MOI-10530',
     rank_title: 'ملازم أول / مسؤول الشؤون المالية والمرتبات',
@@ -87,6 +95,7 @@ export let inMemoryUsers = [
     id: 6,
     username: 'fatima.warfalli',
     email: 'fatima.warfalli@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'مدني / فاطمة سالم الورفلي',
     badge_number: 'MOI-C402',
     rank_title: 'رئيس وحدة إدخال البيانات والأرشيف',
@@ -103,6 +112,7 @@ export let inMemoryUsers = [
     id: 7,
     username: 'abdulsamad',
     email: 'abdulsamad@ubari.moi.gov.ly',
+    password_hash: defaultUserHash,
     full_name: 'عبدالصمد موسى محمد الشيخ الانصارى',
     badge_number: 'MOI-3043754',
     rank_title: 'مدني',
