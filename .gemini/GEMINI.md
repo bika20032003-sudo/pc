@@ -6,3 +6,4 @@ All 35 skills in `skills/` are active:
 - Arabic text normalization (`arabicUtils.js`)
 - Security hardening (bcrypt, strict CORS, no bypasses)
 - Client build validation on every task
+
