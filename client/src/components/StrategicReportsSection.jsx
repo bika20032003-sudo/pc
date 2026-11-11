@@ -1,6 +1,7 @@
 import React from 'react';
 import { Award, BarChart3, Users, Car, Fuel, Shield, Lock, FileCheck, Package, Printer, CheckCircle2, AlertTriangle, ArrowUpRight, Share2, ClipboardList } from 'lucide-react';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 export default function StrategicReportsSection({ forceMembers = [], user = {} }) {
   const today = new Date().toLocaleDateString('ar-LY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -22,20 +23,38 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
   // 1. Print Comprehensive Security Situation A4
   const handlePrintSecurityReport = () => {
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 12px; color: #475569;">غرفة العمليات المركزية | تقرير الموقف الأمني اليومي</h4>
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 780px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">غرفة العمليات المركزية • تقرير الموقف الأمني اليومي</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #dc2626; font-weight: 800;">[ Confidential / Restricted ]</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            الموقف الأمني والعملياتي لقاطع أوباري
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">الموقف الأمني والعملياتي لقاطع أوباري</div>
-            <div style="font-size: 12px; font-weight: 700; color: #dc2626; margin-top: 2px;">[ سري وللاستخدام القيادي فقط ]</div>
-          </div>
-          <div style="text-align: left; font-size: 12px;">
-            <div><strong>تاريخ الموقف:</strong> ${today}</div>
-            <div><strong>الوقت:</strong> ${new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div style="font-size: 11.5px; color: #dc2626; margin-top: 4px; font-weight: 800;">
+            [ سري وللاستخدام القيادي فقط ] • تاريخ الموقف: ${today} • الساعة: ${new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
 
@@ -102,19 +121,38 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
   // 2. Print Logistics Report A4 (Fleet, Fuel, Inventory)
   const handlePrintLogisticsReport = () => {
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 12px; color: #475569;">قسم الخدمات والإمداد اللوجستي | تقرير الموقف اللوجستي</h4>
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 780px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم الخدمات والإمداد اللوجستي • تقرير الموقف الفني</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Logistics & Fleet Support</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            الموقف اللوجستي للآليات والمحروقات والمخازن
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">الموقف اللوجستي للآليات والمحروقات والمخازن</div>
-            <div style="font-size: 12px; font-weight: 700; color: #1e3a8a; margin-top: 2px;">تقرير الإمداد والدعم الفني الميداني</div>
-          </div>
-          <div style="text-align: left; font-size: 12px;">
-            <div><strong>تاريخ التقرير:</strong> ${today}</div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 800;">
+            تقرير الإمداد والدعم الفني الميداني • تاريخ التقرير: ${today}
           </div>
         </div>
 
@@ -177,19 +215,38 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
   // 3. Print Mail & Directives Report A4
   const handlePrintMailReport = () => {
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 12px; color: #475569;">مكتب المحفوظات والبريد المركزي</h4>
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 780px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">مكتب المحفوظات والبريد المركزي</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0f172a;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Central Correspondence Office</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            تقرير موقف المراسلات والتأشيرات القيادية
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">تقرير موقف المراسلات والتأشيرات القيادية</div>
-            <div style="font-size: 12px; font-weight: 700; color: #1e3a8a; margin-top: 2px;">بيان حركة الصادر والوارد وتأشيرات مدير الأمن</div>
-          </div>
-          <div style="text-align: left; font-size: 12px;">
-            <div><strong>تاريخ التقرير:</strong> ${today}</div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 800;">
+            بيان حركة الصادر والوارد وتأشيرات مدير الأمن • تاريخ التقرير: ${today}
           </div>
         </div>
 

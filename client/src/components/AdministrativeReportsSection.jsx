@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart3, Users, Award, Calendar, Search, Filter, Printer, CheckCircle2, AlertTriangle, ShieldCheck, UserX } from 'lucide-react';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 export default function AdministrativeReportsSection({ forceMembers = [], user = {} }) {
   const [activeTab, setActiveTab] = useState('promotions'); // 'promotions', 'absent', 'departments'
@@ -56,21 +57,39 @@ export default function AdministrativeReportsSection({ forceMembers = [], user =
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     const printRows = promotionCandidates.slice(0, 28);
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 780px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 12px; color: #475569;">قسم الشؤون الإدارية | لجنة الترقيات العسكرية</h4>
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم الشؤون الإدارية • لجنة الترقيات العسكرية</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Military Promotions Committee</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            كشف الضباط وضباط الصف المستحقين للترقية العسكرية
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف الضباط وضباط الصف المستحقين للترقية</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">دورة ترقيات: ${new Date().getFullYear()} م</div>
-          </div>
-          <div style="text-align: left; font-size: 12px;">
-            <div><strong>التاريخ:</strong> ${today}</div>
-            <div><strong>عدد المرشحين:</strong> ${promotionCandidates.length}</div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 800;">
+            دورة استحقاق: ${new Date().getFullYear()} م • تاريخ الاستخراج: ${today} • عدد المرشحين: ${promotionCandidates.length}
           </div>
         </div>
 

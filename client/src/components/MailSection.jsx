@@ -42,6 +42,8 @@ import {
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import initialReferredMail from '../data/referred_mail_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 
 // Default initial Outgoing Mail matching Image 1 & Image 3
 const INITIAL_OUTGOING_MAIL = [
@@ -243,6 +245,8 @@ export default function MailSection({ user, forceMembers = [] }) {
     show_qr: true
   });
   const [showLetterModal, setShowLetterModal] = useState(false);
+  const [previewIncomingItem, setPreviewIncomingItem] = useState(null);
+  const [showIncomingModal, setShowIncomingModal] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [notificationMsg, setNotificationMsg] = useState('');
 
@@ -406,6 +410,118 @@ export default function MailSection({ user, forceMembers = [] }) {
     localStorage.setItem('ubari_outgoing_mail', JSON.stringify(updatedList));
     setNotificationMsg(`تم حفظ وتحديث بيانات الرسالة الرسمية برقم (${previewLetter.reference || previewLetter.code_no}) بنجاح في السجل والذاكرة`);
     setTimeout(() => setNotificationMsg(''), 4500);
+  };
+
+  // معاينة قيد البريد الوارد الرسمي
+  const handlePreviewIncoming = (item) => {
+    setPreviewIncomingItem(item);
+    setShowIncomingModal(true);
+  };
+
+  // طباعة إفادة استلام وقيد بريد وارد رسمي معتمد
+  const handlePrintIncoming = (item) => {
+    const today = new Date().toLocaleDateString('ar-LY');
+    const html = `
+      <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px 26px; max-width: 740px; margin: 0 auto; color: #0f172a;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 40%;">
+              <div style="font-size: 14.5px; font-weight: 900; color: #1e3a8a;">دولة ليبيــــا • وزارة الداخليــــة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0f172a;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم الشؤون الإدارية • محفوظات وسجل البريد الوارد</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 20%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 72px; height: 72px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 40%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0f172a;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Incoming Mail Receipt Voucher</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 5px 22px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            إفادة قيد واستلام بريد وارد رسمي
+          </div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 800;">
+            رقم القيد المركزي: <span style="color: #1e3a8a; font-family: monospace;">INC-${item.id}-${new Date().getFullYear()}</span>
+            &nbsp;|&nbsp; تاريخ الاستخراج: ${today}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; font-size: 12.5px; margin-bottom: 18px;">
+          <tr style="background: #f8fafc;">
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; width: 24%; font-weight: 800;">الرقم الإشاري الوارد:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; font-family: monospace; color: #1e3a8a;">${item.incoming_reference || '---'}</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; width: 24%; font-weight: 800;">المراسلة المرتبطة:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800; font-family: monospace;">${item.linked_reference || 'غير مرتبطة'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">الجهة الوارد منها:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #0f172a;" colspan="3">${item.source_entity}</td>
+          </tr>
+          <tr style="background: #f8fafc;">
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">موضوع المراسلة:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #1e3a8a;" colspan="3">${item.subject}</td>
+          </tr>
+          <tr>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">تاريخ وساعة الورود:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800;">${item.date} ${item.time || ''}</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">طريقة الاستلام:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800; color: #0284c7;">${item.receive_method || 'يدوي'}</td>
+          </tr>
+          <tr style="background: #f8fafc;">
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">الموظف المستلم:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900;">${item.receiver_employee || user?.full_name || 'عبدالصمد'}</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">حالة المعاملة:</td>
+            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: ${item.status === 'replied' ? '#16a34a' : '#d97706'};">
+              ${item.status === 'replied' ? 'تم الرد والإجراء' : 'تحت الإجراء والمتابعة'}
+            </td>
+          </tr>
+        </table>
+
+        <!-- إحالة وتوجيه مدير الأمن -->
+        <div style="border: 1.5px dashed #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 22px; background: #f8fafc;">
+          <div style="font-weight: 900; color: #1e3a8a; font-size: 13px; margin-bottom: 6px;">
+            توجيه وتأشيرة السيد مدير أمن أوباري:
+          </div>
+          <div style="font-size: 12px; line-height: 1.8; color: #334155;">
+            تحال المراسلة أعلاه إلى: <strong>قسم الشؤون الإدارية / جهة الاختصاص</strong> للاطلاع واتخاذ ما يلزم من إجراءات وتدابير أمنية وفق صحيح القانون والتعليمات المنظمة.
+          </div>
+        </div>
+
+        <!-- التوقيعات والختم -->
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 30px;">
+          <tr>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12.5px; color: #1e3a8a; margin-bottom: 40px;">مسؤول البريد والمحفوظات</div>
+              <div style="font-weight: 800; font-size: 12px; border-top: 1px dashed #94a3b8; padding-top: 5px;">${item.receiver_employee || 'عبدالصمد'}</div>
+            </td>
+            <td style="width: 34%; vertical-align: middle;">
+              <div style="width: 70px; height: 70px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25;">
+                <span>وزارة الداخلية</span>
+                <span style="font-size: 8px; font-weight: 900;">مديرية أمن أوباري</span>
+                <span style="color: #b91c1c; font-size: 6.5px;">سجل الوارد</span>
+              </div>
+            </td>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12.5px; color: #1e3a8a; margin-bottom: 40px;">يعتمد مدير مديرية أمن أوباري</div>
+              <div style="font-weight: 800; font-size: 12px; border-top: 1px dashed #94a3b8; padding-top: 5px; color: #1e3a8a;">لواء / موسى سعد محمد</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+    printDocumentInIframe(html, `إفادة_بريد_وارد_${item.incoming_reference || item.id}`);
   };
 
   // Insert Quick Phrase into Letter Body
@@ -1244,6 +1360,24 @@ export default function MailSection({ user, forceMembers = [] }) {
                       </td>
                       <td>
                         <div className="table-action-buttons">
+                          <button
+                            type="button"
+                            className="btn-action-preview"
+                            title="معاينة تفاصيل البريد الوارد"
+                            onClick={() => handlePreviewIncoming(item)}
+                            style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #1e3a8a', background: '#eff6ff', color: '#1e3a8a', cursor: 'pointer' }}
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-action-print"
+                            title="طباعة إفادة قيد بريد وارد رسمي"
+                            onClick={() => handlePrintIncoming(item)}
+                            style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #16a34a', background: '#f0fdf4', color: '#16a34a', cursor: 'pointer' }}
+                          >
+                            <Printer size={13} />
+                          </button>
                           <button
                             type="button"
                             className="btn-action-delete"
@@ -2109,6 +2243,103 @@ export default function MailSection({ user, forceMembers = [] }) {
         </div>
       )}
 
+      {/* MODAL: PREVIEW INCOMING MAIL (معاينة البريد الوارد) */}
+      {showIncomingModal && previewIncomingItem && (
+        <div className="moi-modal-overlay" onClick={() => setShowIncomingModal(false)}>
+          <div className="moi-modal-box" style={{ maxWidth: '640px', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+            <div className="moi-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Inbox size={20} color="#1e3a8a" />
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                  معاينة قيد البريد الوارد الرسمي: {previewIncomingItem.incoming_reference}
+                </h3>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="moi-modal-action-btn primary"
+                  onClick={() => handlePrintIncoming(previewIncomingItem)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '7px', background: '#16a34a', color: '#ffffff', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  <Printer size={15} />
+                  <span>طباعة إفادة وارد 🖨️</span>
+                </button>
+                <button
+                  type="button"
+                  className="moi-modal-close-btn"
+                  onClick={() => setShowIncomingModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="moi-modal-body" style={{ padding: '20px' }}>
+              <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>الرقم الإشاري الوارد: </span>
+                    <strong style={{ color: '#1e3a8a', fontFamily: 'monospace' }}>{previewIncomingItem.incoming_reference}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>المراسلة المرتبطة: </span>
+                    <strong style={{ fontFamily: 'monospace' }}>{previewIncomingItem.linked_reference || 'غير مرتبطة'}</strong>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>الجهة الوارد منها: </span>
+                    <strong style={{ color: '#0f172a' }}>{previewIncomingItem.source_entity}</strong>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>الموضوع: </span>
+                    <strong style={{ color: '#1e3a8a' }}>{previewIncomingItem.subject}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>تاريخ وساعة الورود: </span>
+                    <span>{previewIncomingItem.date} {previewIncomingItem.time || ''}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>طريقة الاستلام: </span>
+                    <strong style={{ color: '#0284c7' }}>{previewIncomingItem.receive_method}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>الموظف المستلم: </span>
+                    <strong>{previewIncomingItem.receiver_employee || 'عبدالصمد'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', fontWeight: 700 }}>الحالة: </span>
+                    <span style={{ fontWeight: 800, color: previewIncomingItem.status === 'replied' ? '#16a34a' : '#d97706' }}>
+                      {previewIncomingItem.status === 'replied' ? 'تم الرد والإجراء' : 'تحت الإجراء والمتابعة'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ border: '1.5px dashed #1e3a8a', borderRadius: '10px', padding: '12px 14px', background: '#eff6ff', marginBottom: '16px', fontSize: '12px', color: '#1e3a8a', lineHeight: 1.6 }}>
+                <strong>تأشيرة الإحالة الإدارية:</strong> تحال أصول المراسلة إلى قسم الشؤون الإدارية والأمنية للأرشفة ومتابعة الردود الرسمية وفق الأصول.
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => handlePrintIncoming(previewIncomingItem)}
+                  style={{ padding: '9px 18px', borderRadius: '8px', background: '#16a34a', color: '#ffffff', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Printer size={15} />
+                  <span>طباعة رسمية A4</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowIncomingModal(false)}
+                  style={{ padding: '9px 18px', borderRadius: '8px', background: '#e2e8f0', color: '#334155', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* 5. MODAL: PRINT FULL REGISTER (طباعة كل السجل)                             */}
       {/* ========================================================================= */}
@@ -2156,7 +2387,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                   <p>مديرية أمن أوباري</p>
                 </div>
                 <div className="header-logo-center">
-                  <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = './moi-logo.png'; }} alt="شعار وزارة الداخلية" />
+                  <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
                 </div>
                 <div className="header-side-left">
                   <p>تاريخ الاستخراج: {new Date().toLocaleDateString('ar-LY')}</p>
@@ -2276,6 +2507,13 @@ function OfficialLetterSheet({ letter, qrUrl }) {
 
   return (
     <div className="official-a4-letter-sheet" id="official-letter-to-print">
+      {/* الشريط الوطني الليبي المعتمد (4 ألوان) */}
+      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
+        <div style={{ flex: 1, background: '#e11d48' }}></div>
+        <div style={{ flex: 2, background: '#000000' }}></div>
+        <div style={{ flex: 1, background: '#16a34a' }}></div>
+      </div>
+
       {/* Top Header Block matching Image 3 */}
       <header className="a4-letter-header">
         <div className="header-lang-right">
@@ -2284,7 +2522,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
         </div>
 
         <div className="header-emblem-center">
-          <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = './moi-logo.png'; }} alt="شعار مديرية أمن أوباري" className="emblem-img" />
+          <img src={MOI_LOGO_BASE64} alt="شعار مديرية أمن أوباري" className="emblem-img" style={{ width: '68px', height: '68px', objectFit: 'contain' }} />
         </div>
 
         <div className="header-lang-left">

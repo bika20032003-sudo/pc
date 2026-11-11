@@ -23,6 +23,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 // Libyan Police Ranks Hierarchy for ordering
@@ -460,7 +461,14 @@ export default function AttendanceSection({ forceMembers = [], user = {} }) {
   const handlePrintAttendanceSheet = () => {
     const printRows = filteredRoster.slice(0, 36);
     const html = `
-      <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
+      <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px; color: #0a192f; max-width: 800px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <!-- Header -->
         <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
           <tr>
@@ -470,7 +478,7 @@ export default function AttendanceSection({ forceMembers = [], user = {} }) {
               <div style="font-size: 11.5px; font-weight: 700; color: #64748b;">قسم الشؤون الإدارية والمالية • وحدة التمام والانضباط العام</div>
             </td>
             <td style="text-align: center; vertical-align: middle; width: 70px;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار الوزارة" style="width: 55px; height: 55px; object-fit: contain;" />
+              <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 60px; height: 60px; object-fit: contain; margin: 0 auto; display: block;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle;">
               <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior • Libya</div>

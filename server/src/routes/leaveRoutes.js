@@ -16,3 +16,4 @@ router.post('/:id/resume', resumeDuty);
 router.delete('/:id', deleteLeave);
 
 export default router;
+

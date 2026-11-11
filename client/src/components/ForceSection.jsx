@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 const EMPTY_FORCE_FORM = {
   type: 'شرطي', // شرطي أو مدني
@@ -348,42 +349,60 @@ export default function ForceSection({
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     const printRows = filteredMembers.slice(0, 32);
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 12px; color: #475569;">قسم شؤون الضباط والأفراد | السجل العام للقوة العمومية</h4>
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 18px 24px; color: #0a192f; max-width: 820px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم شؤون الضباط والأفراد • السجل العام للقوة العمومية</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 70px; height: 70px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Personnel & Force Department</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 14px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 4px 20px; border-radius: 6px; font-size: 15px; font-weight: 900;">
+            كشف سجل القوة العمومية المعتمد
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف القوة العمومية المعتمد</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">تاريخ الاستخراج: ${today}</div>
-          </div>
-          <div style="text-align: left; font-size: 12px;">
-            <div><strong>عدد السجلات:</strong> ${filteredMembers.length} عضو</div>
-            <div><strong>القسم:</strong> كافة الأقسام</div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 700;">
+            تاريخ الاستخراج: ${today} | إجمالي القوة المدرجة بالكشف: ${filteredMembers.length} عضواً
           </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 25px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 22px; border: 1.5px solid #cbd5e1;">
           <thead>
             <tr style="background: #1e3a8a; color: white;">
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 35px; text-align: center;">ت</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 90px;">الرقم المالي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px;">الرتبة</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1;">التبعية / جهة العمل</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 100px;">المصرف</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px; text-align: center;">الحالة</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 32px; text-align: center;">ت</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 90px;">الرقم المالي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 85px;">الرتبة</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1;">التبعية / جهة العمل</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 100px;">المصرف</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 85px; text-align: center;">الحالة</th>
             </tr>
           </thead>
           <tbody>
             ${printRows.map((m, idx) => `
               <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${idx + 1}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold;">${m.name}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.financial_number || m.job_number || '---'}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.job_title || m.rank || 'شرطي'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #0a192f;">${m.name}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1; font-family: monospace; color: #0284c7; font-weight: bold;">${m.financial_number || m.job_number || '---'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e3a8a;">${m.job_title || m.rank || 'شرطي'}</td>
                 <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.department || '---'}</td>
                 <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.bank_name || '---'}</td>
                 <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #15803d;">${m.job_status || m.status || 'على رأس العمل'}</td>
@@ -392,20 +411,26 @@ export default function ForceSection({
           </tbody>
         </table>
 
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 35px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مسؤول شؤون القوة</div>
-            <div style="margin-top: 35px; font-size: 12px;">نقيب / علي محمد البشير</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الشؤون الإدارية</div>
-            <div style="margin-top: 35px; font-size: 12px;">مقدم / سالم عبدالكريم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
+        <!-- مربعات التوقيعات والختم المعتمد -->
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
+          <tr>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a; margin-bottom: 35px;">مسؤول شؤون القوة</div>
+              <div style="font-weight: 800; font-size: 11.5px; border-top: 1px dashed #94a3b8; padding-top: 4px;">نقيب / علي محمد البشير</div>
+            </td>
+            <td style="width: 34%; vertical-align: middle;">
+              <div style="width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
+                <span>وزارة الداخلية</span>
+                <span style="font-size: 7.5px; color: #0f172a; font-weight: 900;">مديرية أمن أوباري</span>
+                <span style="color: #dc2626; font-size: 6.5px;">ختم رسمي</span>
+              </div>
+            </td>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير أمن أوباري</div>
+              <div style="font-weight: 800; font-size: 11.5px; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #1e3a8a;">لواء / موسى سعد البدين</div>
+            </td>
+          </tr>
+        </table>
       </div>
     `;
     printDocumentInIframe(html, 'كشف_القوة_العمومية_أوباري');
@@ -1100,7 +1125,7 @@ export default function ForceSection({
           <button
             type="button"
             className="btn-toolbar-print"
-            onClick={() => window.print()}
+            onClick={handlePrintForceRoster}
           >
             <Printer size={16} />
             <span>طباعة القوة العمومية</span>

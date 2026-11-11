@@ -3,6 +3,8 @@
 // Completely decouples print rendering from main app DOM (#root, tables, sidebars)
 // Prevents browser multi-page spill, ghost margins, or blank page bugs.
 
+import { MOI_LOGO_BASE64 } from './logoBase64.js';
+
 export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة رسمية') => {
   try {
     const existing = document.getElementById('moi-print-isolated-iframe');
@@ -12,7 +14,6 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
 
     const iframe = document.createElement('iframe');
     iframe.id = 'moi-print-isolated-iframe';
-    // Must NOT use visibility: hidden, display: none, or 0x0 size!
     // Off-screen layout allows the browser engine to fully layout vector graphics, fonts and CSS colors.
     iframe.style.position = 'fixed';
     iframe.style.left = '-10000px';
@@ -24,6 +25,22 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
     iframe.style.opacity = '1';
     iframe.style.pointerEvents = 'none';
     document.body.appendChild(iframe);
+
+    // Compute robust base href matching current path (handles /pc/ on GitHub Pages and / on localhost)
+    let baseHref = './';
+    if (typeof window !== 'undefined' && window.location) {
+      const urlWithoutQuery = window.location.href.split('#')[0].split('?')[0];
+      baseHref = urlWithoutQuery.endsWith('/')
+        ? urlWithoutQuery
+        : urlWithoutQuery.substring(0, urlWithoutQuery.lastIndexOf('/') + 1);
+    }
+
+    // Replace any relative or broken logo references with direct Base64 Data URI
+    // This guarantees 100% reliable logo display across localhost, GitHub Pages (/pc/), and offline printing
+    let sanitizedHtml = contentHtml;
+    if (sanitizedHtml.includes('moi-logo.png')) {
+      sanitizedHtml = sanitizedHtml.replace(/src=["'][^"']*moi-logo\.png[^"']*["']/gi, `src="${MOI_LOGO_BASE64}"`);
+    }
 
     // Collect all stylesheets and style tags from current document to preserve design fidelity
     const parentStyles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
@@ -37,11 +54,11 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="utf-8" />
-        <base href="${window.location.origin}/" />
+        <base href="${baseHref}" />
         <title>${documentTitle}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
         ${parentStyles}
         <style>
           * {
@@ -53,14 +70,14 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           }
           @page {
             size: A4 portrait;
-            margin: 6mm 8mm;
+            margin: 8mm 10mm;
           }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
-            color: #0f172a !important;
-            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            color: #000000 !important;
+            font-family: 'Cairo', 'Amiri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             direction: rtl !important;
             overflow: visible !important;
             height: auto !important;
@@ -78,11 +95,18 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             margin: 0 auto !important;
             width: 100% !important;
             max-width: 195mm !important;
+            min-height: 270mm !important;
+            padding: 10mm 12mm !important;
+          }
+          /* Ensure emblems and stamps render at top quality */
+          img {
+            max-width: 100%;
+            image-rendering: -webkit-optimize-contrast;
           }
         </style>
       </head>
       <body>
-        ${contentHtml}
+        ${sanitizedHtml}
       </body>
       </html>
     `);

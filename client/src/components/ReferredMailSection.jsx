@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Share2, Search, Plus, Calendar, Building2, CheckCircle2, Clock, Printer, Eye, FileText, ArrowRight } from 'lucide-react';
 import initialReferred from '../data/referred_mail_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 export default function ReferredMailSection({ user = {} }) {
   const [referredList, setReferredList] = useState(() => {
@@ -74,23 +75,32 @@ export default function ReferredMailSection({ user = {} }) {
   const handlePrintReferral = (item) => {
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 25px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 3px 0; font-size: 18px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 13px; color: #475569;">مكتب مدير الأمن | قسم الإحالات والمتابعة</h4>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 22px; font-weight: 900; color: #1e3a8a;">بطاقة إحالة بريد وتأشيرة قيادية</div>
-            <div style="font-size: 13px; color: #64748b; margin-top: 4px;">إحالة رسمية عاجلة للتنفيذ</div>
-          </div>
-          <div style="text-align: left; font-size: 13px;">
-            <div><strong>رقم الإحالة:</strong> REF-UBR-${item.ReferralID}</div>
-            <div><strong>تاريخ الطباعة:</strong> ${today}</div>
-          </div>
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 740px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
         </div>
+
+        <!-- Header -->
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">مكتب مدير الأمن • قسم الإحالات والمتابعة</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 65px; height: 65px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Director Endorsements Office</div>
+            </td>
+          </tr>
+        </table>
 
         <!-- Mail Details -->
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px; margin-bottom: 25px; font-size: 14px; line-height: 2;">

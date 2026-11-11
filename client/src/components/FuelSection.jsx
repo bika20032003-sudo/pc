@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Fuel, Plus, Search, Truck, CheckCircle2, AlertTriangle, Printer, QrCode } from 'lucide-react';
 import initialFuelData from '../data/fuel_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 export default function FuelSection() {
   const [fuelData, setFuelData] = useState(() => {
@@ -125,7 +126,14 @@ export default function FuelSection() {
   // Print Fuel Report
   const handlePrintFuelReport = () => {
     const printHtml = `
-      <div style="width: 100%; max-width: 700px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a;">
+      <div style="width: 100%; max-width: 740px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 12px;">
           <tr>
             <td style="text-align: right; vertical-align: middle;">
@@ -133,8 +141,8 @@ export default function FuelSection() {
               <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">مديرية أمن أوباري</div>
               <div style="font-size: 11px; font-weight: 700; color: #64748b;">لجنة إدارة ومتابعة المحروقات</div>
             </td>
-            <td style="text-align: center; vertical-align: middle; width: 60px;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار الوزارة" style="width: 50px; height: 50px; object-fit: contain;" />
+            <td style="text-align: center; vertical-align: middle; width: 70px;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 60px; height: 60px; object-fit: contain; margin: 0 auto; display: block;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle;">
               <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior</div>

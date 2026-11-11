@@ -7,6 +7,7 @@ import {
 import initialLeaves from '../data/leaves_data.json';
 import { normalizeArabicText } from '../utils/arabicUtils';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 // دالة احتساب الحالات الزمنية والتنبيهات بدقة عالية
 function calculateLeaveStatus(leave, baseDate = new Date()) {
@@ -481,7 +482,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
               <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم الشؤون الإدارية والمالية • وحدة الإجازات</div>
             </td>
             <td style="text-align: center; vertical-align: middle; width: 20%;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار الوزارة" style="width: 65px; height: 65px; object-fit: contain;" />
+              <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 70px; height: 70px; object-fit: contain; margin: 0 auto; display: block;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle; width: 40%;">
               <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>

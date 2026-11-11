@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Search, Plus, Shield, AlertTriangle, CheckCircle2, Printer, ArrowDownRight, RotateCcw, Box, Cpu } from 'lucide-react';
 import initialInventory from '../data/inventory_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 export default function InventorySection({ forceMembers = [], user = {} }) {
   const [activeTab, setActiveTab] = useState('stock'); // 'stock' or 'issued'
@@ -151,21 +152,39 @@ export default function InventorySection({ forceMembers = [], user = {} }) {
   const handlePrintCustodyVoucher = (item) => {
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px 26px; color: #0a192f; max-width: 740px; margin: 0 auto;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800;">دولة ليبيا</h3>
-            <h2 style="margin: 3px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">وزارة الداخلية</h2>
-            <h4 style="margin: 0; font-size: 14px; color: #475569;">مديرية أمن أوباري | إدارة الشؤون الفنية والمخازن</h4>
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle; width: 38%;">
+              <div style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569;">إدارة الشؤون الفنية والمخازن • قطاع التسليح والتجهيز</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 24%;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Technical Affairs & Armory</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 18px;">
+          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900;">
+            نموذج تسليم عهدة عسكرية رسمية
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 24px; font-weight: 900; color: #1e3a8a; letter-spacing: 2px;">نموذج تسليم عهدة عسكرية رسمية</div>
-            <div style="font-size: 13px; color: #64748b; margin-top: 4px;">إذن صرف مخزني معتمد - قطاع التسليح والتجهيز</div>
-          </div>
-          <div style="text-align: left; font-size: 13px;">
-            <div><strong>رقم الإذن:</strong> INV-UBR-${item.id}</div>
-            <div><strong>التاريخ:</strong> ${today}</div>
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 800;">
+            رقم الإذن: INV-UBR-${item.id} • تاريخ الإصدار: ${today}
           </div>
         </div>
 

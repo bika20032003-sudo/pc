@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { CreditCard, Search, Download, Printer, Filter, DollarSign, Building, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { CreditCard, Search, Download, Printer, Filter, DollarSign, Building, CheckCircle2, ChevronRight, ChevronLeft, Eye, FileText, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64.js';
+import { createOfficialLetterHtml } from '../utils/officialLetterTemplate.js';
 
 export default function PayrollSection({ forceMembers = [], user = {} }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBank, setSelectedBank] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewMember, setPreviewMember] = useState(null);
   const itemsPerPage = 25;
 
   // Compute calculated payroll for forceMembers
@@ -106,46 +109,62 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
   // Print Bank Transfer Sheet A4
   const handlePrintBankRoster = () => {
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
-    const printRows = filteredData.slice(0, 28); // 1-page fit
+    const printRows = filteredData.slice(0, 30); // 1-page fit
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 3px 0; font-size: 18px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 13px; color: #475569;">الشؤون المالية والميزانية | قسم المرتبات</h4>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">حوالة إيداع رواتب القوة العمومية بالمصارف</div>
-            <div style="font-size: 13px; color: #64748b; margin-top: 4px;">عن شهر: ${new Date().toLocaleDateString('ar-LY', { month: 'long', year: 'numeric' })}</div>
-          </div>
-          <div style="text-align: left; font-size: 13px;">
-            <div><strong>التاريخ:</strong> ${today}</div>
-            <div><strong>المصرف المحال إليه:</strong> ${selectedBank === 'all' ? 'كافة المصارف' : selectedBank}</div>
-          </div>
+      <div style="font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
+        <!-- الشريط الوطني الليبي المعتمد (4 ألوان) -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
         </div>
 
-        <!-- Summary -->
-        <div style="display: flex; justify-content: space-around; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 20px; font-size: 13px;">
+        <!-- الترويسة الرسمية لوزارة الداخلية -->
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
+          <tr>
+            <td style="text-align: right; width: 38%; vertical-align: middle;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a;">دولة ليبيا - وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 12px; color: #475569; font-weight: 700;">الشؤون المالية والميزانية | قسم المرتبات</div>
+            </td>
+            <td style="text-align: center; width: 24%; vertical-align: middle;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 68px; height: 68px; object-fit: contain; margin: 0 auto; display: block;" />
+              <div style="font-size: 9.5px; font-weight: 800; color: #d4af37; margin-top: 2px;">مديرية أمن أوباري</div>
+            </td>
+            <td style="text-align: left; width: 38%; vertical-align: middle; font-size: 12px;">
+              <div><strong>التاريخ:</strong> ${today}م</div>
+              <div><strong>رقم الإحالة:</strong> MOI-UBR-PAY/${new Date().getFullYear()}/${selectedBank !== 'all' ? selectedBank.slice(0, 6) : 'ALL'}</div>
+              <div><strong>المصرف المحال إليه:</strong> ${selectedBank === 'all' ? 'كافة المصارف المعتمدة' : selectedBank}</div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- عنوان الكشف -->
+        <div style="text-align: center; margin-bottom: 14px;">
+          <div style="font-size: 19px; font-weight: 900; color: #1e3a8a;">حوالة إيداع رواتب القوة العمومية بالمصارف</div>
+          <div style="font-size: 12.5px; color: #64748b; margin-top: 2px;">عن شهر: ${new Date().toLocaleDateString('ar-LY', { month: 'long', year: 'numeric' })}</div>
+        </div>
+
+        <!-- ملخص الإجماليات -->
+        <div style="display: flex; justify-content: space-around; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 18px; font-size: 12px;">
           <div><strong>عدد الأعضاء:</strong> ${filteredData.length} عضو</div>
           <div><strong>إجمالي الرواتب الأساسية:</strong> ${totals.totalBasic.toLocaleString('ar-LY')} د.ل</div>
-          <div><strong>إجمالي الاستقطاعات:</strong> ${totals.totalDeductions.toLocaleString('ar-LY')} د.ل</div>
-          <div><strong>صافي المبلغ المحال:</strong> <span style="color: #1e3a8a; font-weight: 900;">${totals.totalNet.toLocaleString('ar-LY')} د.ل</span></div>
+          <div><strong>إجمالي الاستقطاعات:</strong> <span style="color: #dc2626; font-weight: bold;">${totals.totalDeductions.toLocaleString('ar-LY')} د.ل</span></div>
+          <div><strong>صافي المبلغ المحال:</strong> <span style="color: #1e3a8a; font-weight: 900; font-size: 13.5px;">${totals.totalNet.toLocaleString('ar-LY')} د.ل</span></div>
         </div>
 
-        <!-- Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 25px;">
+        <!-- جدول الكشف -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 22px;">
           <thead>
             <tr style="background: #1e3a8a; color: white;">
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 35px; text-align: center;">ت</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px;">الرقم المالي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 140px;">المصرف والفرع</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 120px;">رقم الحساب المصرفي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px;">الأساسي</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 75px;">الاستقطاع</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 95px;">الصافي المحول</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 32px; text-align: center;">ت</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 80px;">الرقم المالي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 130px;">المصرف والفرع</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 120px;">رقم الحساب المصرفي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 80px;">الأساسي</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 75px;">الاستقطاع</th>
+              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 95px;">الصافي المحول</th>
             </tr>
           </thead>
           <tbody>
@@ -164,24 +183,192 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
           </tbody>
         </table>
 
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 35px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">المراجع المالي الداخلي</div>
-            <div style="margin-top: 35px; font-size: 12px;">أ. الطاهر مسعود الشريف</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس القسم المالي</div>
-            <div style="margin-top: 35px; font-size: 12px;">مقدم / سالم محمد الناجم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
+        <!-- التوقيعات والختم المعتمد -->
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
+          <tr>
+            <td style="width: 32%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a;">المراجع المالي الداخلي</div>
+              <div style="margin-top: 35px; font-size: 12px; font-weight: 800; color: #000000; border-top: 1px dashed #64748b; padding-top: 4px; width: 80%; margin-left: auto; margin-right: auto;">
+                أ. الطاهر مسعود الشريف
+              </div>
+            </td>
+            <td style="width: 36%; vertical-align: middle;">
+              <div style="width: 72px; height: 72px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25; background: rgba(30,58,138,0.02);">
+                <span>دولة ليبيا</span>
+                <span>وزارة الداخلية</span>
+                <span style="font-size: 8px; color: #000000; font-weight: 900;">مديرية أمن أوباري</span>
+                <span style="color: #b91c1c; font-size: 7px; margin-top: 1px;">القسم المالي</span>
+              </div>
+            </td>
+            <td style="width: 32%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a;">يعتمد / مدير أمن أوباري</div>
+              <div style="margin-top: 35px; font-size: 12px; font-weight: 800; color: #000000; border-top: 1px dashed #64748b; padding-top: 4px; width: 80%; margin-left: auto; margin-right: auto;">
+                لواء / موسى سعد البدين
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
     `;
     printDocumentInIframe(html, `كشف_حوالة_رواتب_${selectedBank}`);
+  };
+
+  // Official Bank Transfer Letter A4 (خطاب إحالة رسمي موجه لمدير المصرف)
+  const handlePrintBankCoverLetter = () => {
+    const bankName = selectedBank === 'all' ? 'السادة / مدراء فروع المصارف العاملة ببلدية أوباري' : `السيد / مدير ${selectedBank}`;
+    const monthYear = new Date().toLocaleDateString('ar-LY', { month: 'long', year: 'numeric' });
+    const letterHtml = createOfficialLetterHtml({
+      reference: `FIN-PAY-${new Date().getFullYear()}/84`,
+      recordNumber: '92/ح',
+      department: 'قسم الشؤون المالية والميزانية | وحدة الرواتب والحوافظ',
+      recipientTitle: bankName,
+      subject: `إحالة حوافظ رواتب منتسبي مديرية أمن أوباري عن شهر (${monthYear})`,
+      greeting: 'بعد التحية والتقدير والاحترام ،،،',
+      bodyText: `نحيل إليكم طيه كشوفات وحوافظ صرف مرتبات السادة ضباط وضباط صف وأفراد وموظفي مديرية أمن أوباري لشهر (${monthYear})، بقيمة إجمالية قدرها (${totals.totalNet.toLocaleString('ar-LY')} دينار ليبي) فقط وقدره ${totals.totalNet.toLocaleString('ar-LY')} دينار ليبي لا غير.
+
+عليه؛ يُرجى التفضل بالإيعاز للقسم المالي والمقاصة طرفكم بإيداع المستحقات المالية بحسابات السادة المذكورين بالكشوفات المرفقة كلٌ حسب رقم حسابه الجاري، مع موافاتنا بإشعار الخصم والإيداع المصرفي المعتمد لإتمام التسويات الدفترية والمحاسبية اللازمة لدينا.
+
+شاكرين لكم حسن تعاونكم الدائم لما فيه الصالح العام وخدمة الوطن والمواطن.`,
+      signerName: 'لواء / موسى سعد محمد',
+      signerTitle: 'مدير مديرية أمن أوباري',
+      deptOfficerName: 'مقدم / سالم محمد الناجم',
+      deptOfficerTitle: 'رئيس قسم الشؤون المالية',
+      ccList: [
+        'مكتب السيد وزير الداخلية - للتفضل بالعلم',
+        'الإدارة العامة للشؤون المالية بوزارة الداخلية',
+        'مكتب المراجعة الداخلية بالمديرية',
+        'الملف الدوري والمحفوظات'
+      ]
+    });
+    printDocumentInIframe(letterHtml, `خطاب_إحالة_رواتب_${monthYear}`);
+  };
+
+  // Print Individual Pay Slip (قسيمة صرف مرتب فردية معتمدة)
+  const handlePrintPaySlip = (member) => {
+    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const monthYear = new Date().toLocaleDateString('ar-LY', { month: 'long', year: 'numeric' });
+    const html = `
+      <div style="font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; padding: 25px; color: #0a192f; max-width: 720px; margin: 0 auto; border: 1.5px solid #cbd5e1; border-radius: 8px;">
+        <!-- الشريط الوطني الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
+          <tr>
+            <td style="text-align: right; width: 40%; vertical-align: middle;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a;">دولة ليبيا - وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 12px; color: #475569;">قسم الشؤون المالية | قسيمة راتب معتمدة</div>
+            </td>
+            <td style="text-align: center; width: 20%; vertical-align: middle;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 65px; height: 65px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; width: 40%; vertical-align: middle; font-size: 12px;">
+              <div><strong>رقم القسيمة:</strong> SLIP-${member.job_number}</div>
+              <div><strong>تاريخ الإصدار:</strong> ${today}م</div>
+              <div><strong>الشهر المالي:</strong> ${monthYear}</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #1e3a8a;">قسيمة صرف مرتب شهري</h2>
+          <span style="font-size: 12px; color: #64748b;">(بيان رسمي بالمستحقات المالية والاستقطاعات القانونية)</span>
+        </div>
+
+        <!-- تفاصيل العضو -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+            <div><strong>الاسم الرباعي:</strong> <span style="font-weight: 800; color: #1e3a8a;">${member.name}</span></div>
+            <div><strong>الرتبة / الوظيفة:</strong> ${member.rank}</div>
+            <div><strong>الرقم المالي:</strong> ${member.job_number}</div>
+            <div><strong>الرقم الوطني:</strong> ${member.national_id}</div>
+            <div><strong>جهة العمل:</strong> ${member.department}</div>
+            <div><strong>المصرف والفرع:</strong> ${member.bank_name}</div>
+            <div style="grid-column: span 2;"><strong>رقم الحساب المصرفي:</strong> <span style="font-family: monospace; font-weight: 900; color: #0a192f;">${member.account_number}</span></div>
+          </div>
+        </div>
+
+        <!-- جدول المستحقات والاستقطاعات -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #1e3a8a; color: white;">
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 50%; text-align: center;">المستحقات (الإضافات)</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 50%; text-align: center;">الاستقطاعات القانونية</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; vertical-align: top;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <span>المرتب الأساسي:</span>
+                  <strong>${member.basic_salary.toLocaleString('ar-LY')} د.ل</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <span>علاوة خطر وميدان:</span>
+                  <strong>+${member.risk_allowance.toLocaleString('ar-LY')} د.ل</strong>
+                </div>
+                <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 800; color: #1e3a8a;">
+                  <span>إجمالي الراتب الإجمالي:</span>
+                  <span>${(member.basic_salary + member.risk_allowance).toLocaleString('ar-LY')} د.ل</span>
+                </div>
+              </td>
+              <td style="padding: 10px; border: 1px solid #cbd5e1; vertical-align: top;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #dc2626;">
+                  <span>صندوق الضمان (5.125%):</span>
+                  <span>-${member.social_security.toLocaleString('ar-LY')} د.ل</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #dc2626;">
+                  <span>التضامن الاجتماعي (1%):</span>
+                  <span>-${member.solidarity.toLocaleString('ar-LY')} د.ل</span>
+                </div>
+                ${member.penalty_deduction ? `
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #dc2626;">
+                    <span>خصم عقوبات وجزاءات:</span>
+                    <span>-${member.penalty_deduction.toLocaleString('ar-LY')} د.ل</span>
+                  </div>
+                ` : ''}
+                <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 800; color: #dc2626;">
+                  <span>إجمالي الاستقطاعات:</span>
+                  <span>-${member.total_deductions.toLocaleString('ar-LY')} د.ل</span>
+                </div>
+              </td>
+            </tr>
+            <tr style="background: #f0fdf4; font-weight: 900; font-size: 14px;">
+              <td colspan="2" style="padding: 12px; border: 1px solid #cbd5e1; text-align: center; color: #15803d;">
+                صافي المرتب المحول للمصرف: ${member.net_salary.toLocaleString('ar-LY')} دينار ليبي
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- التوقيعات والختم -->
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
+          <tr>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px;">المراجع المالي</div>
+              <div style="margin-top: 30px; font-size: 12px;">أ. الطاهر الشريف</div>
+            </td>
+            <td style="width: 34%; vertical-align: middle;">
+              <div style="width: 70px; height: 70px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25;">
+                <span>دولة ليبيا</span>
+                <span>وزارة الداخلية</span>
+                <span style="font-size: 8px; color: #000;">أمن أوباري</span>
+                <span style="color: #b91c1c; font-size: 7px;">الختم المالي</span>
+              </div>
+            </td>
+            <td style="width: 33%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 12px;">رئيس قسم الشؤون المالية</div>
+              <div style="margin-top: 30px; font-size: 12px; font-weight: bold; color: #1e3a8a;">مقدم / سالم محمد الناجم</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+    printDocumentInIframe(html, `قسيمة_راتب_${member.job_number}`);
   };
 
   return (
@@ -217,6 +404,28 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
           >
             <Download size={16} />
             تصدير إكسيل (Excel)
+          </button>
+
+          <button
+            onClick={handlePrintBankCoverLetter}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              background: '#047857',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              fontWeight: 800,
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(4,120,87,0.2)'
+            }}
+            title="طباعة خطاب إحالة رسمي معتمد موجه لمدير المصرف"
+          >
+            <FileText size={16} />
+            خطاب إحالة رسمي للمصرف 📜
           </button>
 
           <button
@@ -343,6 +552,7 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
               <th style={{ padding: '14px 16px' }}>علاوة خطر</th>
               <th style={{ padding: '14px 16px' }}>الاستقطاعات</th>
               <th style={{ padding: '14px 16px' }}>الصافي المستحق</th>
+              <th style={{ padding: '14px 16px', textAlign: 'center' }}>قسيمة الراتب</th>
             </tr>
           </thead>
           <tbody>
@@ -365,6 +575,48 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
                 <td style={{ padding: '14px 16px', color: '#dc2626', fontWeight: 700 }}>-{row.total_deductions.toLocaleString('ar-LY')} د.ل</td>
                 <td style={{ padding: '14px 16px', fontWeight: 900, color: '#15803d', fontSize: '14px' }}>
                   {row.net_salary.toLocaleString('ar-LY')} د.ل
+                </td>
+                <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      onClick={() => setPreviewMember(row)}
+                      style={{
+                        background: '#f1f5f9',
+                        color: '#334155',
+                        border: '1px solid #cbd5e1',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="معاينة قسيمة الراتب"
+                    >
+                      <Eye size={13} /> معاينة
+                    </button>
+                    <button
+                      onClick={() => handlePrintPaySlip(row)}
+                      style={{
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        border: '1px solid #bfdbfe',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="طباعة قسيمة الراتب الرسمية"
+                    >
+                      <Printer size={13} /> طباعة
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -416,6 +668,94 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
           </div>
         </div>
       </div>
+
+      {/* Pay Slip Preview Modal */}
+      {previewMember && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '16px', maxWidth: '640px', width: '100%', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
+            {/* National ribbon */}
+            <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '16px' }}>
+              <div style={{ flex: 1, background: '#e11d48' }}></div>
+              <div style={{ flex: 2, background: '#000000' }}></div>
+              <div style={{ flex: 1, background: '#16a34a' }}></div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#1e3a8a' }}>معاينة قسيمة الراتب الرسمية</h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>مديرية أمن أوباري | الشؤون المالية</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewMember(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '16px', marginBottom: '16px', fontSize: '13px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div><strong>الاسم:</strong> {previewMember.name}</div>
+                <div><strong>الرقم المالي:</strong> {previewMember.job_number}</div>
+                <div><strong>الرقم الوطني:</strong> {previewMember.national_id}</div>
+                <div><strong>الرتبة:</strong> {previewMember.rank}</div>
+                <div><strong>المصرف:</strong> {previewMember.bank_name}</div>
+                <div><strong>رقم الحساب:</strong> <span style={{ fontFamily: 'monospace' }}>{previewMember.account_number}</span></div>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <tbody>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700 }}>المرتب الأساسي</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 800 }}>{previewMember.basic_salary.toLocaleString('ar-LY')} د.ل</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700 }}>علاوة خطر وميدان</td>
+                    <td style={{ padding: '8px 12px', color: '#2563eb', fontWeight: 800 }}>+{previewMember.risk_allowance} د.ل</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700 }}>استقطاع الضمان الاجتماعي (5.125%)</td>
+                    <td style={{ padding: '8px 12px', color: '#dc2626' }}>-{previewMember.social_security.toLocaleString('ar-LY')} د.ل</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 700 }}>استقطاع التضامن (1%)</td>
+                    <td style={{ padding: '8px 12px', color: '#dc2626' }}>-{previewMember.solidarity.toLocaleString('ar-LY')} د.ل</td>
+                  </tr>
+                  <tr style={{ background: '#f0fdf4', borderTop: '2px solid #16a34a' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 900, color: '#15803d', fontSize: '14px' }}>صافي المرتب المستحق للصرف</td>
+                    <td style={{ padding: '10px 12px', fontWeight: 900, color: '#15803d', fontSize: '16px' }}>{previewMember.net_salary.toLocaleString('ar-LY')} د.ل</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setPreviewMember(null)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handlePrintPaySlip(previewMember);
+                  setPreviewMember(null);
+                }}
+                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#1e3a8a', color: '#ffffff', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={16} /> طباعة القسيمة الرسمية
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

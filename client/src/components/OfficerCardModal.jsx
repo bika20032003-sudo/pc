@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 
 export default function OfficerCardModal({
   member,
@@ -61,7 +63,7 @@ export default function OfficerCardModal({
                 <div style="font-size: 12px; font-weight: 800; color: #0f172a; line-height: 1.2;">مديرية أمن أوباري</div>
               </td>
               <td style="text-align: center; vertical-align: middle; width: 60px;">
-                <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style="width: 42px; height: 42px; object-fit: contain;" />
+                <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 42px; height: 42px; object-fit: contain;" />
               </td>
               <td style="text-align: left; direction: ltr; vertical-align: middle;">
                 <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior</div>
@@ -86,7 +88,7 @@ export default function OfficerCardModal({
                 <tr>
                   <td style="text-align: right; vertical-align: middle;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <img src="${window.location.origin}/moi-logo.png" alt="شعار الوزارة" style="width: 36px; height: 36px; object-fit: contain;" />
+                      <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 36px; height: 36px; object-fit: contain;" />
                       <div>
                         <div style="font-size: 11px; font-weight: 900; color: #1e3a8a; line-height: 1.1;">دولة ليبيا • وزارة الداخلية</div>
                         <div style="font-size: 12.5px; font-weight: 900; color: #0f172a; line-height: 1.1;">مديرية أمن أوباري</div>
@@ -267,7 +269,7 @@ export default function OfficerCardModal({
               <div style="font-size: 12px; font-weight: 700; color: #334155;">مديرية أمن أوباري</div>
             </td>
             <td style="text-align: center; vertical-align: middle; width: 80px;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style="width: 60px; height: 60px; object-fit: contain;" />
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 60px; height: 60px; object-fit: contain;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle;">
               <div style="font-size: 12px; font-weight: 800; color: #1e3a8a;">State of Libya</div>
@@ -402,6 +404,64 @@ export default function OfficerCardModal({
     `;
 
     printDocumentInIframe(dossierHtml, `الملف الوظيفي الشامل - ${member.name || ''}`);
+  };
+
+  // طباعة إفادة خدمة رسمية معتمدة على ورق وزارة الداخلية A4
+  const handlePrintServiceCertificate = () => {
+    const certHtml = createOfficialLetterHtml({
+      reference: `MOI-UBR-SRV-${member.financial_number || member.job_number || member.id || '2026'}`,
+      recordNumber: `${member.id || '1'}`,
+      date: new Date().toLocaleDateString('ar-LY'),
+      codeNo: `SRV-${member.national_id ? member.national_id.slice(-4) : '2026'}`,
+      department: 'قسم الشؤون الإدارية والمالية • وحدة شؤون الضباط والأفراد',
+      recipientTitle: 'إلى السادة / كافة الجهات الرسمية ذات العلاقة المحترمين',
+      subject: `إفادة خدمة وإثبات صفة أمنية رسمية للمنتسب: ${member.name}`,
+      greeting: 'بعد التحية والتقدير والاحترام ،،،',
+      bodyHtml: `
+        <div style="font-size: 14.5px; line-height: 2.2; text-align: justify; color: #000000;">
+          <p style="margin-bottom: 14px;">
+            تشهد <strong>مديرية أمن أوباري بوزارة الداخلية</strong> بأن السيد المذكورة بياناته الرسمية بالجدول أدناه:
+          </p>
+          <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000000; font-size: 13px; margin-bottom: 16px;">
+            <tr style="background: #f8fafc;">
+              <td style="padding: 9px 12px; border: 1px solid #000000; width: 25%; font-weight: 800; color: #475569;">الاسم الرباعي:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; color: #0f172a; font-size: 14px;" colspan="3">${member.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569;">الرتبة والصفة:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; color: #1e3a8a;">${member.rank || member.job_title || 'عضو هيئة شرطة'}</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569; width: 25%;">الرقم المالي:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; font-family: monospace; color: #0284c7;">${member.financial_number || member.job_number || '---'}</td>
+            </tr>
+            <tr style="background: #f8fafc;">
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569;">الرقم الوطني:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; font-family: monospace;">${member.national_id || '---'}</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569;">جهة العمل والتبعية:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; color: #1e3a8a;">${member.department || 'مديرية أمن أوباري'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569;">الحالة الوظيفية:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 900; color: #16a34a;">${member.job_status || 'على رأس العمل'}</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800; color: #475569;">تاريخ التعيين والمباشرة:</td>
+              <td style="padding: 9px 12px; border: 1px solid #000000; font-weight: 800;">${member.appointment_date || member.start_date || 'مسجل بالقوة الرسمية'}</td>
+            </tr>
+          </table>
+          <p style="margin-bottom: 12px;">
+            هو أحد منتسبي هيئة الشرطة التابعين لملاك مديرية أمن أوباري، وهو مستمر في أداء مهامه وواجباته الوظيفية والأمنية حتى تاريخه دون أي انقطاع.
+          </p>
+          <p style="margin-bottom: 0;">
+            وقد أعطيت له هذه الإفادة الرسمية المعتمدة بناءً على طلبه لتقديمها إلى من يلزم من الجهات الرسمية ذات العلاقة، دون أدنى مسؤولية أو التزام مالي على عاتق وزارة الداخلية ومديرية أمن أوباري تجاه حقوق الغير.
+          </p>
+        </div>
+      `,
+      signerName: 'لواء / موسى سعد محمد',
+      signerTitle: 'مدير مديرية أمن أوباري',
+      deptOfficerName: 'عقيد / إبراهيم عبدالكريم صالح',
+      deptOfficerTitle: 'رئيس قسم الشؤون الإدارية والمالية',
+      showStamp: true,
+      showSignature: true
+    });
+    printDocumentInIframe(certHtml, `إفادة خدمة رسمية - ${member.name}`);
   };
 
   useEffect(() => {
@@ -933,7 +993,7 @@ export default function OfficerCardModal({
                         transform: 'translate(50%, -50%)',
                         width: '260px',
                         height: '260px',
-                        backgroundImage: 'url("./moi-logo.png")',
+                        backgroundImage: `url("${MOI_LOGO_BASE64}")`,
                         backgroundSize: 'contain',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
@@ -957,7 +1017,7 @@ export default function OfficerCardModal({
                         {/* Right: MOI Logo */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <img
-                            src="${window.location.origin}/moi-logo.png"
+                            src={MOI_LOGO_BASE64}
                             alt="شعار وزارة الداخلية"
                             style={{
                               width: '48px',
@@ -1819,6 +1879,28 @@ export default function OfficerCardModal({
               <Printer size={15} />
               <span>طباعة الملف الشامل</span>
             </button>
+
+            <button
+              type="button"
+              onClick={handlePrintServiceCertificate}
+              style={{
+                padding: '9px 16px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(30,58,138,0.25)'
+              }}
+            >
+              <FileText size={15} />
+              <span>طباعة إفادة خدمة رسمية 📜</span>
+            </button>
           </div>
 
           <button
@@ -1853,7 +1935,7 @@ export default function OfficerCardModal({
                   <div style={{ fontSize: '12px', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.2 }}>دولة ليبيا • وزارة الداخلية</div>
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>مديرية أمن أوباري</div>
                 </div>
-                <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style={{ width: '38px', height: '38px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
                 <div style={{ textAlign: 'left', direction: 'ltr' }}>
                   <div style={{ fontSize: '10px', fontWeight: 800, color: '#1e3a8a' }}>Ministry of Interior</div>
                   <div style={{ fontSize: '9px', fontWeight: 700, color: '#0f172a' }}>Ubari Security Directorate</div>
@@ -1901,7 +1983,7 @@ export default function OfficerCardModal({
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <img src="${window.location.origin}/moi-logo.png" alt="شعار الوزارة" style={{ width: '34px', height: '34px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      <img src={MOI_LOGO_BASE64} alt="شعار الوزارة" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
                       <div>
                         <div style={{ fontSize: '11px', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.1 }}>دولة ليبيا • وزارة الداخلية</div>
                         <div style={{ fontSize: '12.5px', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>مديرية أمن أوباري</div>
@@ -2127,7 +2209,7 @@ export default function OfficerCardModal({
                 <h3 style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>وزارة الداخليـــــة</h3>
                 <h4 style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 700, color: '#334155' }}>مديرية أمن أوباري</h4>
               </div>
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style={{ width: '60px', height: '60px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
               <div style={{ textAlign: 'left', direction: 'ltr' }}>
                 <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a' }}>State of Libya</div>
                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#0f172a' }}>Ministry of Interior</div>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wrench, Car, Search, Plus, Calendar, DollarSign, CheckCircle2, Clock, Printer, AlertTriangle } from 'lucide-react';
+import { Wrench, Car, Search, Plus, Calendar, DollarSign, CheckCircle2, Clock, Printer, AlertTriangle, Eye, Trash2, FileText, X } from 'lucide-react';
 import initialMaintenance from '../data/maintenance_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64.js';
+import { createOfficialLetterHtml } from '../utils/officialLetterTemplate.js';
 
 export default function MaintenanceSection({ forceMembers = [], user = {} }) {
   const [records, setRecords] = useState(() => {
@@ -12,6 +14,7 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [previewRecord, setPreviewRecord] = useState(null);
 
   // New Maintenance Form
   const [form, setForm] = useState({
@@ -55,34 +58,86 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
     setIsAddModalOpen(false);
   };
 
+  // Handle Delete Record
+  const handleDeleteRecord = (id) => {
+    if (window.confirm('هل أنت متأكد من حذف بطاقة الصيانة هذه نهائياً من السجلات؟')) {
+      setRecords(records.filter(r => r.id !== id));
+    }
+  };
+
+  // Official Letter for Maintenance / Parts Supply
+  const handlePrintOfficialMaintenanceLetter = (record) => {
+    const letterHtml = createOfficialLetterHtml({
+      reference: `MECH-${new Date().getFullYear()}/${record.id % 1000}`,
+      recordNumber: '114/ص',
+      department: 'قسم الآليات والمركبات | شعبة الصيانة الفنية',
+      recipientTitle: 'إلى السيد / مدير الإدارة العامة للشؤون الفنية والآليات - وزارة الداخلية',
+      subject: `إذن صيانة وإصلاح الآلية الشرطية لوحة (${record.vehicle_plate} / شرطة)`,
+      greeting: 'بعد التحية والتقدير والاحترام ،،،',
+      bodyText: `نحيل إليكم طيه تقرير الفحص الفني المبدئي للآلية الشرطية التابعة لمديرية أمن أوباري نوع (${record.vehicle_type}) والمقيدة برقم لوحة (${record.vehicle_plate} / شرطة) بقراءة عداد (${Number(record.odometer).toLocaleString('ar-LY')} كم).
+
+حيث تبيّن حاجتها الماسة لإجراء أعمال صيانة (${record.maintenance_type}) واستبدال قطع الغيار والمستهلكات التالية:
+(${record.parts_replaced})، بتكلفة تقديرية بلغت (${record.cost}).
+
+عليه؛ يرجى التفضل بالموافقة والإيعاز للجهات المختصة طرفكم لتوفير قطع الغيار اللازمة وصرف أمر التشغيل للورشة المعتمدة، ليتسنى إعادة الآلية للخدمة الميدانية وتأمين القطاع الأمني بالمنطقة.`,
+      signerName: 'لواء / موسى سعد محمد',
+      signerTitle: 'مدير مديرية أمن أوباري',
+      deptOfficerName: 'عقيد / إبراهيم عبدالكريم',
+      deptOfficerTitle: 'رئيس قسم الآليات والمركبات',
+      ccList: [
+        'مكتب السيد وكيل وزارة الداخلية للشؤون الفنية',
+        'الإدارة العامة للآليات والمركبات بالوزارة',
+        'قسم الشؤون الإدارية والمالية بالمديرية',
+        'الملف الدوري والمحفوظات'
+      ]
+    });
+    printDocumentInIframe(letterHtml, `خطاب_صيانة_آلية_${record.vehicle_plate}`);
+  };
+
   // Print Job Card A4
   const handlePrintJobCard = (record) => {
     const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 25px;">
-          <div style="text-align: right;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
-            <h2 style="margin: 3px 0; font-size: 18px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
-            <h4 style="margin: 0; font-size: 13px; color: #475569;">قسم الآليات والمركبات | ورشة الصيانة المركزية</h4>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 22px; font-weight: 900; color: #1e3a8a;">بطاقة شغل وفحص فني لآلية شرطية</div>
-            <div style="font-size: 13px; color: #64748b; margin-top: 4px;">إذن صيانة وإصلاح معتمد</div>
-          </div>
-          <div style="text-align: left; font-size: 13px;">
-            <div><strong>رقم البطاقة:</strong> JOB-UBR-${record.id}</div>
-            <div><strong>التاريخ:</strong> ${today}</div>
-          </div>
+      <div style="font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
+        <!-- الشريط الوطني الليبي المعتمد (4 ألوان) -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
+        <!-- الترويسة الرسمية لوزارة الداخلية -->
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
+          <tr>
+            <td style="text-align: right; width: 38%; vertical-align: middle;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a;">دولة ليبيا - وزارة الداخلية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
+              <div style="font-size: 12px; color: #475569; font-weight: 700;">قسم الآليات والمركبات | ورشة الصيانة المركزية</div>
+            </td>
+            <td style="text-align: center; width: 24%; vertical-align: middle;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 70px; height: 70px; object-fit: contain; margin: 0 auto; display: block;" />
+              <div style="font-size: 9.5px; font-weight: 800; color: #d4af37; margin-top: 2px;">مديرية أمن أوباري</div>
+            </td>
+            <td style="text-align: left; width: 38%; vertical-align: middle; font-size: 12px;">
+              <div><strong>رقم البطاقة:</strong> JOB-UBR-${record.id}</div>
+              <div><strong>تاريخ الإصدار:</strong> ${today}م</div>
+              <div><strong>تاريخ الصيانة:</strong> ${record.maintenance_date}م</div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- عنوان البطاقة -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">بطاقة شغل وفحص فني لآلية شرطية</div>
+          <div style="font-size: 13px; color: #64748b; margin-top: 3px;">إذن صيانة وإصلاح معتمد رسمياً</div>
         </div>
 
         <!-- Vehicle Box -->
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
-          <h4 style="margin: 0 0 12px; color: #1e3a8a; font-size: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+        <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+          <h4 style="margin: 0 0 12px; color: #1e3a8a; font-size: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
             أولاً: بيانات الآلية الخاضعة للصيانة
           </h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; font-size: 14px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; font-size: 13.5px;">
             <div><strong>رقم لوحة الآلية:</strong> <span style="font-family: monospace; font-size: 16px; font-weight: 900; color: #1e3a8a;">${record.vehicle_plate} / شرطة</span></div>
             <div><strong>نوع وطراز المركبة:</strong> ${record.vehicle_type}</div>
             <div><strong>قراءة العداد (كم):</strong> ${Number(record.odometer).toLocaleString('ar-LY')} كم</div>
@@ -90,38 +145,44 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
         </div>
 
         <!-- Service Details -->
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; margin-bottom: 25px;">
-          <h4 style="margin: 0 0 12px; color: #1e3a8a; font-size: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+        <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 12px; color: #1e3a8a; font-size: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
             ثانياً: الأعمال المنجزة وقطع الغيار
           </h4>
-          <div style="font-size: 14px; line-height: 2;">
-            <div><strong>نوع الصيانة:</strong> ${record.maintenance_type}</div>
+          <div style="font-size: 13.5px; line-height: 2;">
+            <div><strong>نوع الصيانة:</strong> <span style="font-weight: 800; color: #0a192f;">${record.maintenance_type}</span></div>
             <div><strong>قطع الغيار والمستهلكات:</strong> ${record.parts_replaced}</div>
             <div><strong>الورشة / الفني المسؤول:</strong> ${record.mechanic_name}</div>
-            <div><strong>التكلفة الإجمالية:</strong> <span style="font-weight: 900; color: #15803d;">${record.cost}</span></div>
+            <div><strong>التكلفة الإجمالية:</strong> <span style="font-weight: 900; color: #15803d; font-size: 15px;">${record.cost}</span></div>
           </div>
         </div>
 
         <!-- Technical Certification -->
-        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.8; margin-bottom: 30px; background: #f0fdf4;">
+        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.8; margin-bottom: 25px; background: #f0fdf4;">
           <strong>تقرير الفحص الفني:</strong> تمت المعاينة والتجربة الفنية للآلية بعد إتمام الصيانة، وتأكدت جاهزيتها التامة واستيفاء معايير السلامة للخدمة الميدانية بقطاع مديرية أمن أوباري.
         </div>
 
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 45px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">الفني المسؤول عن الصيانة</div>
-            <div style="margin-top: 40px; font-size: 13px;">فني / صالح علي</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">رئيس قسم الآليات والمركبات</div>
-            <div style="margin-top: 40px; font-size: 13px;">عقيد / إبراهيم عبدالكريم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 40px; font-size: 13px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
+        <!-- Signatures & Stamp -->
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 30px;">
+          <tr>
+            <td style="width: 32%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a;">الفني المسؤول عن الصيانة</div>
+              <div style="margin-top: 35px; font-size: 12.5px; font-weight: 800; border-top: 1px dashed #64748b; padding-top: 5px; width: 80%; margin: 0 auto;">${record.mechanic_name.split('-')[1]?.trim() || 'فني / صالح علي'}</div>
+            </td>
+            <td style="width: 36%; vertical-align: middle;">
+              <div style="width: 72px; height: 72px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25; background: rgba(30,58,138,0.02);">
+                <span>دولة ليبيا</span>
+                <span>وزارة الداخلية</span>
+                <span style="font-size: 8px; color: #000000; font-weight: 900;">مديرية أمن أوباري</span>
+                <span style="color: #b91c1c; font-size: 7px; margin-top: 1px;">قسم الآليات</span>
+              </div>
+            </td>
+            <td style="width: 32%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a;">يعتمد / مدير أمن أوباري</div>
+              <div style="margin-top: 35px; font-size: 12.5px; font-weight: 800; border-top: 1px dashed #64748b; padding-top: 5px; width: 80%; margin: 0 auto; color: #1e3a8a;">لواء / موسى سعد البدين</div>
+            </td>
+          </tr>
+        </table>
       </div>
     `;
     printDocumentInIframe(html, `أمر_صيانة_${record.vehicle_plate}`);
@@ -260,7 +321,7 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
               <th style={{ padding: '14px 16px' }}>قطع الغيار والمستهلكات</th>
               <th style={{ padding: '14px 16px' }}>الورشة / الفني</th>
               <th style={{ padding: '14px 16px' }}>التكلفة</th>
-              <th style={{ padding: '14px 16px', textAlign: 'center' }}>الإجراء</th>
+              <th style={{ padding: '14px 16px', textAlign: 'center' }}>الإجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -279,28 +340,88 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
                 <td style={{ padding: '14px 16px', direction: 'ltr', textAlign: 'right' }}>
                   {Number(r.odometer).toLocaleString('ar-LY')} كم
                 </td>
-                <td style={{ padding: '14px 16px', color: '#334155', maxWidth: '280px' }}>{r.parts_replaced}</td>
+                <td style={{ padding: '14px 16px', color: '#334155', maxWidth: '260px' }}>{r.parts_replaced}</td>
                 <td style={{ padding: '14px 16px', color: '#64748b' }}>{r.mechanic_name}</td>
                 <td style={{ padding: '14px 16px', fontWeight: 800, color: '#15803d' }}>{r.cost}</td>
                 <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                  <button
-                    onClick={() => handlePrintJobCard(r)}
-                    style={{
-                      background: '#eff6ff',
-                      color: '#1d4ed8',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      fontWeight: 700
-                    }}
-                  >
-                    <Printer size={14} /> طباعة بطاقة الشغل
-                  </button>
+                  <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      onClick={() => setPreviewRecord(r)}
+                      style={{
+                        background: '#f1f5f9',
+                        color: '#334155',
+                        border: '1px solid #cbd5e1',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="معاينة بطاقة الصيانة والفحص"
+                    >
+                      <Eye size={13} /> معاينة
+                    </button>
+                    <button
+                      onClick={() => handlePrintJobCard(r)}
+                      style={{
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        border: '1px solid #bfdbfe',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="طباعة بطاقة الشغل A4"
+                    >
+                      <Printer size={13} /> طباعة
+                    </button>
+                    <button
+                      onClick={() => handlePrintOfficialMaintenanceLetter(r)}
+                      style={{
+                        background: '#f0fdf4',
+                        color: '#15803d',
+                        border: '1px solid #bbf7d0',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="طباعة خطاب إذن صيانة وتوريد رسمي موجه للوزارة"
+                    >
+                      <FileText size={13} /> خطاب رسمي 📜
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRecord(r.id)}
+                      style={{
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}
+                      title="حذف بطاقة الصيانة نهائياً"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -414,7 +535,80 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
           </div>
         </div>
       )}
+
+      {/* Job Card Preview Modal */}
+      {previewRecord && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '16px', maxWidth: '640px', width: '100%', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
+            {/* National ribbon */}
+            <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '16px' }}>
+              <div style={{ flex: 1, background: '#e11d48' }}></div>
+              <div style={{ flex: 2, background: '#000000' }}></div>
+              <div style={{ flex: 1, background: '#16a34a' }}></div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#1e3a8a' }}>معاينة بطاقة شغل وفحص آلية</h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>مديرية أمن أوباري | قسم الآليات والمركبات</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewRecord(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '16px', marginBottom: '16px', fontSize: '13px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div><strong>رقم اللوحة:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#1e3a8a' }}>{previewRecord.vehicle_plate} / شرطة</span></div>
+                <div><strong>نوع المركبة:</strong> {previewRecord.vehicle_type}</div>
+                <div><strong>تاريخ الصيانة:</strong> {previewRecord.maintenance_date}</div>
+                <div><strong>قراءة العداد:</strong> {Number(previewRecord.odometer).toLocaleString('ar-LY')} كم</div>
+              </div>
+              <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px' }}>
+                <div style={{ marginBottom: '6px' }}><strong>نوع الصيانة:</strong> <span style={{ fontWeight: 800, color: '#0a192f' }}>{previewRecord.maintenance_type}</span></div>
+                <div style={{ marginBottom: '6px' }}><strong>قطع الغيار:</strong> {previewRecord.parts_replaced}</div>
+                <div style={{ marginBottom: '6px' }}><strong>الورشة / الفني:</strong> {previewRecord.mechanic_name}</div>
+                <div><strong>التكلفة:</strong> <span style={{ color: '#15803d', fontWeight: 900 }}>{previewRecord.cost}</span></div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setPreviewRecord(null)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handlePrintOfficialMaintenanceLetter(previewRecord);
+                }}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#15803d', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FileText size={16} /> خطاب رسمي 📜
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handlePrintJobCard(previewRecord);
+                  setPreviewRecord(null);
+                }}
+                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#1e3a8a', color: '#ffffff', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={16} /> طباعة بطاقة الشغل
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 import {
   Car,
   Wrench,
@@ -188,7 +190,14 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
   const handlePrintVehicleCard = (v) => {
     if (!v) return;
     const cardHtml = `
-      <div style="width: 100%; max-width: 540px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a;">
+      <div style="width: 100%; max-width: 580px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 12px;">
           <tr>
             <td style="text-align: right; vertical-align: middle;">
@@ -196,8 +205,8 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
               <div style="font-size: 13px; font-weight: 800; color: #0f172a;">مديرية أمن أوباري</div>
               <div style="font-size: 11px; font-weight: 700; color: #64748b;">قسم الخدمات والمركبات والآليات</div>
             </td>
-            <td style="text-align: center; vertical-align: middle; width: 60px;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style="width: 48px; height: 48px; object-fit: contain;" />
+            <td style="text-align: center; vertical-align: middle; width: 70px;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 55px; height: 55px; object-fit: contain; margin: 0 auto; display: block;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle;">
               <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior</div>
@@ -287,7 +296,14 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
     if (!v) return;
     const todayStr = new Date().toLocaleDateString('ar-LY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const docHtml = `
-      <div style="width: 100%; max-width: 680px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a; line-height: 1.6;">
+      <div style="width: 100%; max-width: 700px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a; line-height: 1.6;">
+        <!-- الشريط الرسمي بألوان العلم الليبي -->
+        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+
         <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 12px;">
           <tr>
             <td style="text-align: right; vertical-align: middle;">
@@ -295,8 +311,8 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
               <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">مديرية أمن أوباري</div>
               <div style="font-size: 11px; font-weight: 700; color: #64748b;">قسم الخدمات والمركبات والآليات</div>
             </td>
-            <td style="text-align: center; vertical-align: middle; width: 60px;">
-              <img src="${window.location.origin}/moi-logo.png" alt="شعار وزارة الداخلية" style="width: 50px; height: 50px; object-fit: contain;" />
+            <td style="text-align: center; vertical-align: middle; width: 70px;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 55px; height: 55px; object-fit: contain; margin: 0 auto; display: block;" />
             </td>
             <td style="text-align: left; direction: ltr; vertical-align: middle;">
               <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior</div>
@@ -1861,14 +1877,39 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
 
             {/* Scrollable Content */}
             <div id="printable-vehicles-roster" style={{ flex: '1 1 auto', padding: '24px', overflowY: 'auto', fontSize: '12px' }}>
-              {/* Official Header */}
-              <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '14px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '17px', fontWeight: '900', color: '#1e3a8a' }}>دولة ليبيا - وزارة الداخلية</div>
-                <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>مديرية أمن أوباري | قسم الخدمات والمركبات</div>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#b45309', marginTop: '4px' }}>
+              {/* الشريط الرسمي بألوان العلم الليبي */}
+              <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
+                <div style={{ flex: 1, background: '#e11d48' }}></div>
+                <div style={{ flex: 2, background: '#000000' }}></div>
+                <div style={{ flex: 1, background: '#16a34a' }}></div>
+              </div>
+
+              {/* Official Header Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: '2.5px solid #1e3a8a', paddingBottom: '10px', marginBottom: '16px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ textAlign: 'right', verticalAlign: 'middle', width: '38%' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 900, color: '#1e3a8a' }}>دولة ليبيا • وزارة الداخلية</div>
+                      <div style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>مديرية أمن أوباري</div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>قسم الخدمات والمركبات والآليات</div>
+                    </td>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle', width: '24%' }}>
+                      <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '65px', height: '65px', objectFit: 'contain', margin: '0 auto', display: 'block' }} />
+                    </td>
+                    <td style={{ textAlign: 'left', direction: 'ltr', verticalAlign: 'middle', width: '38%' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e3a8a' }}>State of Libya • Ministry of Interior</div>
+                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#0f172a' }}>Ubari Security Directorate</div>
+                      <div style={{ fontSize: '9px', color: '#64748b' }}>Fleet Management Division</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'inline-block', background: '#1e3a8a', color: '#ffffff', padding: '5px 22px', borderRadius: '6px', fontSize: '15px', fontWeight: 900 }}>
                   بيان القوة العمومية للآليات والسيارات الرسمية وآلية توزيعها
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', fontWeight: 700 }}>
                   تاريخ استخراج الكشف: {new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               </div>

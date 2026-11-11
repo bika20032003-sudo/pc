@@ -81,6 +81,7 @@ import SettingsSection from './components/SettingsSection';
 import AuditLogSection from './components/AuditLogSection';
 import AttendanceSection from './components/AttendanceSection';
 import ReferredMailSection from './components/ReferredMailSection';
+import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
 
@@ -2192,7 +2193,7 @@ export default function App() {
           <div className="sidebar-header">
             <div className="sidebar-brand">
               <div className="sidebar-logo">
-                <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = './moi-logo.png'; }} alt="وزارة الداخلية" />
+                <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }} alt="وزارة الداخلية" />
               </div>
               <div className="sidebar-title">
                 <h2>وزارة الداخلية</h2>
@@ -3343,7 +3344,7 @@ export default function App() {
 
           <div className="visual-content-top">
             <div className="visual-logo-badge">
-              <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = './moi-logo.png'; }} alt="شعار وزارة الداخلية" />
+              <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }} alt="شعار وزارة الداخلية" />
             </div>
             <div className="visual-title-wrap">
               <h2>وزارة الداخلية</h2>

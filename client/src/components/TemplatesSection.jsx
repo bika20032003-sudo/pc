@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 // Sample pre-seeded employees matching reference image 4 + directorate officers
 const SAMPLE_EMPLOYEES = [
@@ -1500,6 +1501,13 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
 
   return (
     <div className="official-a4-letter-sheet" id="official-template-to-print">
+      {/* الشريط الوطني الليبي المعتمد (4 ألوان) */}
+      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
+        <div style={{ flex: 1, background: '#e11d48' }}></div>
+        <div style={{ flex: 2, background: '#000000' }}></div>
+        <div style={{ flex: 1, background: '#16a34a' }}></div>
+      </div>
+
       {/* Top Header Block matching Directorate Standard */}
       <header className="a4-letter-header">
         <div className="header-lang-right">
@@ -1509,7 +1517,7 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
 
         {doc.show_header_emblem !== false && (
           <div className="header-emblem-center">
-            <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = './moi-logo.png'; }} alt="شعار مديرية أمن أوباري" className="emblem-img" />
+            <img src={MOI_LOGO_BASE64} alt="شعار مديرية أمن أوباري" className="emblem-img" style={{ width: '68px', height: '68px', objectFit: 'contain' }} />
           </div>
         )}
 
