@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { normalizeArabicText } from './utils/arabicUtils.js';
 import {
   LayoutDashboard,
   Radio,
@@ -84,18 +85,6 @@ import * as XLSX from 'xlsx';
 import { printDocumentInIframe } from './utils/printHelper';
 
 // Normalize Arabic text for accurate search matching regardless of diacritics, alef forms, and taa marbuta
-const normalizeArabicText = (text) => {
-  if (!text) return '';
-  return String(text)
-    .trim()
-    .replace(/[\u064B-\u065F\u0670]/g, '') // remove harakat/tashkeel
-    .replace(/[إأآاٱ]/g, 'ا')               // unify all alef variations
-    .replace(/ة/g, 'ه')                     // unify taa marbuta
-    .replace(/[ىي]/g, 'ي')                   // unify yaa & alif maqsura
-    .replace(/ؤ/g, 'و')                     // unify waw hamza
-    .replace(/ئ/g, 'ي')                     // unify yaa hamza
-    .toLowerCase();
-};
 
 // Official Sections of Ubari Security Directorate (مديرية أمن أوباري)
 const SECTIONS = [
