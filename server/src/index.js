@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import forceRoutes from './routes/forceRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import vehicleRoutes from './routes/vehicleRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/force', forceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
