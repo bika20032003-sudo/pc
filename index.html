@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="./moi-logo.png" />
+    <link rel="apple-touch-icon" href="./moi-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>منظومة وزارة الداخلية | البوابة الإلكترونية الموحدة</title>
+    
+    <!-- Meta & Theme for Mobile PWA & Stability -->
+    <meta name="theme-color" content="#0a192f" />
+    <meta name="description" content="منظومة وزارة الداخلية الموحدة - مديرية أمن أوباري" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <!-- Google Fonts: Cairo, Amiri, Scheherazade New, Tajawal, Almarai, Noto Naskh Arabic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Automatic Image Fallback & GitHub Pages Subpath Resolver -->
+    <script>
+      (function() {
+        // Global error listener to automatically rescue broken images on GitHub Pages subpaths
+        window.addEventListener('error', function(e) {
+          if (e.target && e.target.tagName === 'IMG') {
+            var img = e.target;
+            var currentSrc = img.getAttribute('src') || '';
+            if (currentSrc.startsWith('/') && !currentSrc.startsWith('//') && !img.dataset.hasRescued) {
+              img.dataset.hasRescued = 'true';
+              var fileName = currentSrc.substring(currentSrc.lastIndexOf('/') + 1);
+              img.src = './' + fileName;
+            }
+          }
+        }, true);
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-C1pu2vko.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/vendor-react-CrngDXSn.js">
+    <link rel="modulepreload" crossorigin href="./assets/data-force-db-DPvBXS7K.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor-qrcode-CjSdxGTc.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor-icons-4li2Fvdn.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-Cu3oTSlC.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
