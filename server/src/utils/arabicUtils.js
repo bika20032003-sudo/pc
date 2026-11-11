@@ -13,3 +13,4 @@ export function normalizeArabicText(text) {
     .replace(/ئ/g, 'ي')
     .toLowerCase();
 }
+
