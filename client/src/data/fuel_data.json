@@ -1,0 +1,56 @@
+{
+  "main_balance": 38450,
+  "sub_balance": 14200,
+  "total_consumed": 12550,
+  "shipments": [
+    {
+      "id": 1,
+      "station": "المحطة الرئيسية",
+      "quantity": 40000,
+      "supplier": "مستودع سبها النفطي - شحنة رقم 8812",
+      "date": "2026-10-25"
+    },
+    {
+      "id": 2,
+      "station": "المحطة الفرعية",
+      "quantity": 15000,
+      "supplier": "مستودع سبها النفطي - شحنة رقم 8840",
+      "date": "2026-10-27"
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1,
+      "station": "المحطة الرئيسية",
+      "plate_number": "31595",
+      "driver_name": "بوابة سوق الخميس",
+      "vehicle_type": "هونداي ستار فيرد",
+      "liters": 60,
+      "odometer": 42100,
+      "date": "2026-10-30T10:15:00Z",
+      "is_external": false
+    },
+    {
+      "id": 2,
+      "station": "المحطة الرئيسية",
+      "plate_number": "31680",
+      "driver_name": "سعيد محمد العجل",
+      "vehicle_type": "تويوتا مزدوجة",
+      "liters": 70,
+      "odometer": 18500,
+      "date": "2026-10-30T14:30:00Z",
+      "is_external": false
+    },
+    {
+      "id": 3,
+      "station": "المحطة الفرعية",
+      "plate_number": "14-8890",
+      "driver_name": "دورية اللواء 128 مشاة",
+      "vehicle_type": "لاندكروزر صحراوية",
+      "liters": 80,
+      "odometer": 94000,
+      "date": "2026-10-31T09:00:00Z",
+      "is_external": true
+    }
+  ]
+}

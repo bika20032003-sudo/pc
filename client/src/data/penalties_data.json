@@ -1,0 +1,30 @@
+[
+  {
+    "PenaltyID": 5,
+    "FullName": "عبدالرحمن المهدي إبراهيم يونس",
+    "AdminNumber": null,
+    "NationalNumber": "119930563247",
+    "MilitaryNumber": null,
+    "JobNumber": "8163115",
+    "EmployeeCategory": "مدني",
+    "PenaltyType": "إيقاف عن العمل",
+    "Reason": "تقاعس عن أداء العمل المكلف به وتأخير متكرر وعدم الجدية في العمل و مخالفة أوامر الرئيس المباشر و إفشاء أسرار العمل و عدم التقيد با��تعليمات و مخالفة اللوائح و القوانين المنظمة للعمل",
+    "PenaltyDate": "2026-10-15",
+    "DeductionDays": 0,
+    "IsApplied": false
+  },
+  {
+    "PenaltyID": 3,
+    "FullName": "عبدالرحمن المهدي إبراهيم يونس",
+    "AdminNumber": null,
+    "NationalNumber": "119930563247",
+    "MilitaryNumber": null,
+    "JobNumber": "8163115",
+    "EmployeeCategory": "مدني",
+    "PenaltyType": "خصم مالي",
+    "Reason": "عدم الانضباط",
+    "PenaltyDate": "2026-10-03",
+    "DeductionDays": 3,
+    "IsApplied": false
+  }
+]

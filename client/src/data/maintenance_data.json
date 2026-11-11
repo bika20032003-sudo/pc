@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "vehicle_plate": "31595",
+    "vehicle_type": "هونداي ستار فيرد",
+    "maintenance_date": "2026-10-22",
+    "maintenance_type": "تغيير زيت وفلاتر",
+    "odometer": 41800,
+    "parts_replaced": "زيت محرك 10W-40 (6 لتر) + فلتر زيت وفلتر هواء أصلي",
+    "mechanic_name": "الورشة المركزية بالمديرية - فني / صالح علي",
+    "cost": "280 د.ل"
+  },
+  {
+    "id": 2,
+    "vehicle_plate": "31680",
+    "vehicle_type": "تويوتا مزدوجة رباعية 2025",
+    "maintenance_date": "2026-10-26",
+    "maintenance_type": "تغيير إطارات",
+    "odometer": 18200,
+    "parts_replaced": "طاقم إطارات صحراوية Bridgestone (4 إطارات)",
+    "mechanic_name": "شركة الواحة لخدمات الإطارات",
+    "cost": "1,900 د.ل"
+  }
+]

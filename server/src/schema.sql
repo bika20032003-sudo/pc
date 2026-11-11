@@ -58,3 +58,22 @@ VALUES
 ('SECURITY', 'الأمن الوقائي والدوريات', 'إشراف على الدوريات ونقاط التمركز الأمني', 'ShieldAlert', 5),
 ('HR', 'الشؤون الإدارية وشؤون الضباط', 'سجلات المنتسبين والضباط والترقيات والرواتب', 'Users', 6)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+-- Vehicles Table (سجل الآليات والمركبات والقوة الآلية)
+CREATE TABLE IF NOT EXISTS vehicles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    record_no INT NULL,
+    plate_number VARCHAR(50) NOT NULL UNIQUE,
+    vehicle_type VARCHAR(150) NOT NULL,
+    category ENUM('سيارة مراكز وأقسام', 'سيارة عهدة شخصية', 'دراجة نارية شرطية', 'حافلة نقل وشاحنة خدمات') DEFAULT 'سيارة مراكز وأقسام',
+    model_year VARCHAR(20) NULL,
+    chassis_number VARCHAR(100) NULL,
+    department VARCHAR(150) NOT NULL,
+    custodian_name VARCHAR(150) NULL,
+    custodian_rank VARCHAR(100) NULL,
+    status ENUM('جاهزة للعمل', 'عاطلة', 'حادث سير / في الصيانة') DEFAULT 'جاهزة للعمل',
+    fuel_type ENUM('بنزين', 'ديزل') DEFAULT 'بنزين',
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

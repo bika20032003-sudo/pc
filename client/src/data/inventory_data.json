@@ -1,0 +1,102 @@
+{
+  "stock": [
+    {
+      "id": 1,
+      "category": "أسلحة وذخائر",
+      "name": "بندقية كلاشنكوف AK-47",
+      "serial_number": "AK-LIB-9921",
+      "quantity": 180,
+      "unit": "قطعة",
+      "min_limit": 20
+    },
+    {
+      "id": 2,
+      "category": "أسلحة وذخائر",
+      "name": "مسدس ميري 9 ملم Beretta",
+      "serial_number": "MOI-BR-0441",
+      "quantity": 95,
+      "unit": "قطعة",
+      "min_limit": 15
+    },
+    {
+      "id": 3,
+      "category": "أسلحة وذخائر",
+      "name": "ذخيرة 7.62×39 ملم",
+      "serial_number": "LOT-2025-41",
+      "quantity": 12000,
+      "unit": "طلقة",
+      "min_limit": 2000
+    },
+    {
+      "id": 4,
+      "category": "أسلحة وذخائر",
+      "name": "ذخيرة مسدس 9 ملم",
+      "serial_number": "LOT-2025-09",
+      "quantity": 4500,
+      "unit": "طلقة",
+      "min_limit": 1000
+    },
+    {
+      "id": 5,
+      "category": "مهمات وأجهزة",
+      "name": "جهاز اتصال لاسلكي يدوي Motorola",
+      "serial_number": "MOT-UBR-77",
+      "quantity": 42,
+      "unit": "جهاز",
+      "min_limit": 10
+    },
+    {
+      "id": 6,
+      "category": "مهمات وأجهزة",
+      "name": "سترة واقية من الرصاص عسكرية",
+      "serial_number": "VEST-LV3-2026",
+      "quantity": 65,
+      "unit": "سترة",
+      "min_limit": 15
+    },
+    {
+      "id": 7,
+      "category": "قطع غيار وزيوت",
+      "name": "زيت محرك شل ديزل 15W-40",
+      "serial_number": "SHL-4410",
+      "quantity": 120,
+      "unit": "صندوق",
+      "min_limit": 25
+    },
+    {
+      "id": 8,
+      "category": "سلع تموينية وإعاشة",
+      "name": "وجبات غذائية جافة وجاهزة (إعاشة)",
+      "serial_number": "FOOD-2026-B",
+      "quantity": 850,
+      "unit": "وجبة",
+      "min_limit": 150
+    }
+  ],
+  "issued": [
+    {
+      "id": 1,
+      "item_name": "بندقية كلاشنكوف AK-47",
+      "serial_number": "AK-LIB-9921",
+      "receiver_name": "الزهره صالح عبدالقادر الخيري",
+      "receiver_id": "1082235",
+      "department": "مديرية أمن أوباري",
+      "quantity": 1,
+      "issue_type": "عهدة",
+      "issue_date": "2026-10-18",
+      "status": "مصروفة - تحت العهدة"
+    },
+    {
+      "id": 2,
+      "item_name": "جهاز اتصال لاسلكي يدوي Motorola",
+      "serial_number": "MOT-UBR-77",
+      "receiver_name": "حسن المهدي الشريف محمد",
+      "receiver_id": "1085610",
+      "department": "قسم الدوريات والنجدة",
+      "quantity": 1,
+      "issue_type": "عهدة",
+      "issue_date": "2026-10-20",
+      "status": "مصروفة - تحت العهدة"
+    }
+  ]
+}

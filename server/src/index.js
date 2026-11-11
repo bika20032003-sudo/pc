@@ -5,6 +5,7 @@ import { initDatabase } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import forceRoutes from './routes/forceRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import vehicleRoutes from './routes/vehicleRoutes.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/force', forceRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

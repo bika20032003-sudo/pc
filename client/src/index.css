@@ -3994,27 +3994,92 @@ body {
 }
 
 /* ========================================================================= */
-/* STRICT PRINT STYLES FOR OFFICIAL A4 LETTER & REGISTERS                     */
+/* UNIFIED MASTER PRINT STYLES FOR OFFICIAL A4 LETTERS, TEMPLATES, REGISTERS, AND CARDS */
 /* ========================================================================= */
+@media screen {
+  .hide-on-screen-only,
+  #moi-printable-officer-area {
+    display: none !important;
+  }
+}
+
 @media print {
+  /* 1. Global Print Reset */
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 2. Hide all non-printable UI elements */
   body * {
     visibility: hidden;
   }
 
+  /* 3. When printing Officer Card or Dossier, hide everything in background to keep 1 sheet */
+  body:has(#moi-printable-officer-area) .app-sidebar,
+  body:has(#moi-printable-officer-area) .sidebar,
+  body:has(#moi-printable-officer-area) .main-header,
+  body:has(#moi-printable-officer-area) .personnel-toolbar,
+  body:has(#moi-printable-officer-area) .personnel-table-container,
+  body:has(#moi-printable-officer-area) .moi-officer-modal-container,
+  body.moi-printing-active .app-sidebar,
+  body.moi-printing-active .sidebar,
+  body.moi-printing-active .main-header,
+  body.moi-printing-active .personnel-toolbar,
+  body.moi-printing-active .personnel-table-container,
+  body.moi-printing-active .moi-officer-modal-container {
+    display: none !important;
+  }
+
+  /* 4. Whitelist all official printable targets */
   #official-letter-to-print,
   #official-letter-to-print *,
   #official-template-to-print,
   #official-template-to-print *,
   #printable-register-area,
-  #printable-register-area * {
-    visibility: visible;
+  #printable-register-area *,
+  #handover-document,
+  #handover-document *,
+  .official-a4-letter-sheet,
+  .official-a4-letter-sheet *,
+  #moi-printable-officer-area,
+  #moi-printable-officer-area * {
+    visibility: visible !important;
   }
 
+  /* 5. Neutralize modal overlay during print */
+  .moi-modal-overlay,
+  .letter-modal-box,
+  .register-print-box,
+  .letter-modal-body,
+  .letter-modal-preview-pane {
+    background: transparent !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .hide-on-screen-only {
+    display: block !important;
+  }
+
+  /* 6. Strictly position A4 letter sheet at top-left with crisp printing */
   #official-letter-to-print,
-  #official-template-to-print {
-    position: absolute;
-    left: 0;
-    top: 0;
+  #official-template-to-print,
+  .official-a4-letter-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     min-height: 100% !important;
@@ -4022,20 +4087,93 @@ body {
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* 7. Printable Full Registers */
   #printable-register-area {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
     padding: 10mm !important;
     margin: 0 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 8. Printable Handover Report */
+  #handover-document {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    padding: 10mm !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 9. Dedicated Officer Card & Dossier Print Document (100% on 1 Sheet) */
+  #moi-printable-officer-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 4mm 8mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    visibility: visible !important;
+    z-index: 999999 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .printable-card-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .moi-officer-modal-container {
+    display: none !important;
+  }
+
+  /* 10. Hide interactive UI controls, buttons, toolbars */
+  button,
+  .moi-modal-close-btn,
+  .moi-modal-header,
+  .moi-modal-footer,
+  .designer-top-toolbar,
+  .letter-customizer-panel,
+  .full-document-editor-panel,
+  .letter-modal-topbar,
+  .editor-mode-toggle-group,
+  .btn-save-doc-edits,
+  .btn-toolbar-save,
+  .btn-toolbar-print {
+    display: none !important;
   }
 
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 6mm 8mm;
   }
 }
 
@@ -5155,3 +5293,6 @@ body {
   background: rgba(30, 58, 138, 0.05);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   OFFICER SECURITY CARD MODAL & PRINT STYLES
+   ══════════════════════════════════════════════════════════════ */

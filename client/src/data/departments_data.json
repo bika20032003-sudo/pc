@@ -1,0 +1,157 @@
+[
+  {
+    "DepartmentID": 1,
+    "DepartmentName": "شؤون الموظفين",
+    "HeadName": "محمد علي أبوسته"
+  },
+  {
+    "DepartmentID": 2,
+    "DepartmentName": "قسم الخدمات",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 3,
+    "DepartmentName": "ديوان المديرية",
+    "HeadName": null
+  },
+  {
+    "DepartmentID": 4,
+    "DepartmentName": "الشؤون الإدارية",
+    "HeadName": null
+  },
+  {
+    "DepartmentID": 5,
+    "DepartmentName": "القسم المالي",
+    "HeadName": "مقدم / سالم محمد الناجم"
+  },
+  {
+    "DepartmentID": 6,
+    "DepartmentName": "الموارد البشرية",
+    "HeadName": null
+  },
+  {
+    "DepartmentID": 7,
+    "DepartmentName": "مركز شرطة أوباري",
+    "HeadName": null
+  },
+  {
+    "DepartmentID": 8,
+    "DepartmentName": "مركز شرطة المشروع",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 9,
+    "DepartmentName": "مركز شرطة الحطية",
+    "HeadName": "ملازم / سالم باقاج"
+  },
+  {
+    "DepartmentID": 10,
+    "DepartmentName": "مركز شرطة الغريفة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 11,
+    "DepartmentName": "مركز شرطة جرمة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 12,
+    "DepartmentName": "مركز شرطة قراقرة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 13,
+    "DepartmentName": "مركز شرطة الفجيج",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 14,
+    "DepartmentName": "مركز شرطة الرقيبة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 15,
+    "DepartmentName": "مركز شرطة بنت بية",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 16,
+    "DepartmentName": "مركز شرطة الأبيض",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 17,
+    "DepartmentName": "قسم المرور والتراخيص",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 18,
+    "DepartmentName": "قسم شرطة النجدة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 19,
+    "DepartmentName": "قسم البحث الجنائي",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 20,
+    "DepartmentName": "قسم الأهداف الحيوية",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 21,
+    "DepartmentName": "قسم التدريب",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 22,
+    "DepartmentName": "قسم حماية الآداب",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 23,
+    "DepartmentName": "قسم حماية الطفل والأسرة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 24,
+    "DepartmentName": "قسم شؤون المرأة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 25,
+    "DepartmentName": "الشؤون الأمنية",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 26,
+    "DepartmentName": "العلاقات العامة",
+    "HeadName": "ممدوح محمد أبو الأسعاد محمد"
+  },
+  {
+    "DepartmentID": 27,
+    "DepartmentName": "الشؤون العامة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 28,
+    "DepartmentName": "قسم التفتيش والمتابعة",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 29,
+    "DepartmentName": "مكتب مدير الأمن",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 31,
+    "DepartmentName": "المخازن والتموين",
+    "HeadName": "غير محدد"
+  },
+  {
+    "DepartmentID": 32,
+    "DepartmentName": "الاتصالات",
+    "HeadName": "غير محدد"
+  }
+]

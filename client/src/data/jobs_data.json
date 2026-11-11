@@ -1,0 +1,42 @@
+[
+  {
+    "JobTitleID": 7,
+    "JobTitleName": "سباك"
+  },
+  {
+    "JobTitleID": 4,
+    "JobTitleName": "عضو شرطة"
+  },
+  {
+    "JobTitleID": 8,
+    "JobTitleName": "كهربائي"
+  },
+  {
+    "JobTitleID": 3,
+    "JobTitleName": "مدير الأمن"
+  },
+  {
+    "JobTitleID": 1,
+    "JobTitleName": "مدير المنظومة"
+  },
+  {
+    "JobTitleID": 5,
+    "JobTitleName": "مشغل من��ومة"
+  },
+  {
+    "JobTitleID": 10,
+    "JobTitleName": "مهندس اتصالات"
+  },
+  {
+    "JobTitleID": 9,
+    "JobTitleName": "مهندس معماري"
+  },
+  {
+    "JobTitleID": 2,
+    "JobTitleName": "موظف"
+  },
+  {
+    "JobTitleID": 6,
+    "JobTitleName": "ميكانيكي"
+  }
+]

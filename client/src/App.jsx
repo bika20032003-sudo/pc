@@ -51,14 +51,37 @@ import {
   UserPlus,
   Key,
   ShieldCheck,
-  User
+  User,
+  Share2
 } from 'lucide-react';
 
 import importedForceData from './data/force_data.json';
 import MailSection from './components/MailSection';
 import TemplatesSection from './components/TemplatesSection';
+import VehiclesSection from './components/VehiclesSection';
 import ForceNameAutocomplete from './components/ForceNameAutocomplete';
 import DashboardSection from './components/DashboardSection';
+import OfficerCardModal from './components/OfficerCardModal';
+import OperationsSection from './components/OperationsSection';
+import DetaineesSection from './components/DetaineesSection';
+import LeavesSection from './components/LeavesSection';
+import PenaltiesSection from './components/PenaltiesSection';
+import FuelSection from './components/FuelSection';
+import InventorySection from './components/InventorySection';
+import PatrolsSection from './components/PatrolsSection';
+import StationLogsSection from './components/StationLogsSection';
+import PayrollSection from './components/PayrollSection';
+import MaintenanceSection from './components/MaintenanceSection';
+import DecisionsSection from './components/DecisionsSection';
+import ArchiveSection from './components/ArchiveSection';
+import StrategicReportsSection from './components/StrategicReportsSection';
+import AdministrativeReportsSection from './components/AdministrativeReportsSection';
+import SettingsSection from './components/SettingsSection';
+import AuditLogSection from './components/AuditLogSection';
+import AttendanceSection from './components/AttendanceSection';
+import ReferredMailSection from './components/ReferredMailSection';
+import * as XLSX from 'xlsx';
+import { printDocumentInIframe } from './utils/printHelper';
 
 // Normalize Arabic text for accurate search matching regardless of diacritics, alef forms, and taa marbuta
 const normalizeArabicText = (text) => {
@@ -93,6 +116,7 @@ const SECTIONS = [
   { id: 'discipline', name: 'العقوبات والانضباط', icon: Scale },
   { id: 'decrees', name: 'القرارات والأوامر', icon: Scroll },
   { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
+  { id: 'referred', name: 'البريد المحال (تأشيرات)', icon: Share2 },
   { id: 'letters', name: 'النماذج والرسائل', icon: Send },
   { id: 'archive', name: 'الأرشيف الإلكتروني', icon: Archive },
   { id: 'general_reports', name: 'التقارير الشاملة', icon: BarChart3 },
@@ -254,7 +278,7 @@ const DEFAULT_SYSTEM_USERS = [
     department: 'مديرية أمن أوباري',
     role: 'force_manager',
     role_label: 'مسؤول القوة العمومية والصلاحيات',
-    allowed_sections: ['force', 'user_management', 'mail', 'letters'],
+    allowed_sections: ['dashboard', 'force', 'user_management', 'mail', 'letters'],
     phone: '091-3043754',
     status: 'active',
     avatar: '',
@@ -317,29 +341,36 @@ export default function App() {
             parsed.avatar = privateAvatar;
           }
 
-          // Strict section permissions check for Abdul Samad
           const isAbdulSamad =
             parsed.username === 'abdulsamad' ||
             parsed.username === 'عبدالصمد' ||
             parsed.badge_number === 'MOI-3043754' ||
             (parsed.full_name && parsed.full_name.includes('عبدالصمد'));
 
+          // Ensure dashboard is always present in allowed sections
+          if (!parsed.allowed_sections) {
+            parsed.allowed_sections = ['dashboard', 'force'];
+          } else if (!parsed.allowed_sections.includes('dashboard')) {
+            parsed.allowed_sections = ['dashboard', ...parsed.allowed_sections];
+          }
+
           if (isAbdulSamad) {
-            parsed.allowed_sections = ['force', 'user_management', 'mail', 'letters'];
+            parsed.allowed_sections = ['dashboard', 'force', 'user_management', 'mail', 'letters'];
           }
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
         return parsed;
       } catch (e) {
-        return null;
+        return DEFAULT_SYSTEM_USERS[0];
       }
     }
-    return null;
+    // Default to Super Admin (سيادة اللواء / موسى سعد محمد البدين) so user lands directly on Dashboard
+    return DEFAULT_SYSTEM_USERS[0];
   });
   const [token, setToken] = useState(() => localStorage.getItem('moi_token') || '');
 
-  // Active Navigation Section - default to 'force'
-  const [activeSection, setActiveSection] = useState('force');
+  // Active Navigation Section - default to 'dashboard'
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   // Form State for Login
   const [identifier, setIdentifier] = useState('');
@@ -365,7 +396,11 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Strictly filter out any corrupted entries without a real name
+          const valid = parsed.filter(m => m && m.name && String(m.name).trim().length > 1);
+          if (valid.length > 0) return valid;
+        }
       } catch (e) {}
     }
     return importedForceData || [];
@@ -373,11 +408,23 @@ export default function App() {
 
   const [forceSearchTerm, setForceSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('الكل'); // 'الكل', 'شرطي', 'مدني'
+  const [statusFilter, setStatusFilter] = useState('الكل'); // 'الكل', 'على رأس العمل', 'إجازة', 'موقوف'
 
   // Form Visibility and Edit State
   const [showForceForm, setShowForceForm] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [forceFormData, setForceFormData] = useState(EMPTY_FORCE_FORM);
+
+  // Force Member Detailed Preview Modal State
+  const [previewMember, setPreviewMember] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  // Force Import & Replacement State (Replacing old force with new imported dataset)
+  const forceFileInputRef = useRef(null);
+  const [pendingImportData, setPendingImportData] = useState(null);
+  const [showImportConfirmModal, setShowImportConfirmModal] = useState(false);
+  const [importFileName, setImportFileName] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   // System Users and Permissions Management State
   const [systemUsers, setSystemUsers] = useState(() => {
@@ -405,7 +452,7 @@ export default function App() {
         (updated.full_name && updated.full_name.includes('عبدالصمد'));
 
       if (isAbdulSamad) {
-        updated.allowed_sections = ['force', 'user_management', 'mail', 'letters'];
+        updated.allowed_sections = ['dashboard', 'force', 'user_management', 'mail', 'letters'];
         if (updated.avatar === generalAvatar) {
           updated.avatar = '';
         }
@@ -430,7 +477,7 @@ export default function App() {
 
   // Permitted Sections Filter based on user permissions
   const userAllowedSections = useMemo(() => {
-    if (!user) return [];
+    if (!user) return SECTIONS;
     if (
       user.role === 'super_admin' ||
       user.username === 'admin' ||
@@ -441,8 +488,9 @@ export default function App() {
     }
     const allowed = Array.isArray(user.allowed_sections) && user.allowed_sections.length > 0
       ? user.allowed_sections
-      : ['force'];
-    return SECTIONS.filter(sec => allowed.includes(sec.id));
+      : ['dashboard', 'force'];
+    const withDashboard = allowed.includes('dashboard') ? allowed : ['dashboard', ...allowed];
+    return SECTIONS.filter(sec => withDashboard.includes(sec.id));
   }, [user]);
 
   // Ensure activeSection is strictly allowed for the current user
@@ -450,7 +498,7 @@ export default function App() {
     if (user && userAllowedSections.length > 0) {
       const isAllowed = userAllowedSections.some(s => s.id === activeSection) || activeSection === 'profile';
       if (!isAllowed) {
-        setActiveSection(userAllowedSections[0].id);
+        setActiveSection('dashboard');
       }
     }
   }, [user, userAllowedSections, activeSection]);
@@ -682,11 +730,12 @@ export default function App() {
           foundUser.badge_number === 'MOI-3043754' ||
           (foundUser.full_name && foundUser.full_name.includes('عبدالصمد'));
 
-        const userSections = isAbdulSamad
-          ? ['force', 'user_management', 'mail', 'letters']
+        const rawSections = isAbdulSamad
+          ? ['dashboard', 'force', 'user_management', 'mail', 'letters']
           : ((Array.isArray(foundUser.allowed_sections) && foundUser.allowed_sections.length > 0)
               ? foundUser.allowed_sections
-              : ['force']);
+              : ['dashboard', 'force']);
+        const userSections = rawSections.includes('dashboard') ? rawSections : ['dashboard', ...rawSections];
 
         const authenticatedUser = {
           ...foundUser,
@@ -704,7 +753,7 @@ export default function App() {
         };
 
         setUser(authenticatedUser);
-        setActiveSection(userSections[0] || 'force');
+        setActiveSection('dashboard');
         const tokenVal = `local-token-${authenticatedUser.id}-${Date.now()}`;
         setToken(tokenVal);
         localStorage.setItem('moi_token', tokenVal);
@@ -736,6 +785,7 @@ export default function App() {
         status: 'active'
       };
       setUser(adminUser);
+      setActiveSection('dashboard');
       const tokenVal = `moi-admin-token-${Date.now()}`;
       setToken(tokenVal);
       localStorage.setItem('moi_token', tokenVal);
@@ -769,7 +819,90 @@ export default function App() {
     setEditingMemberId(member.id);
     setForceFormData({ ...member });
     setShowForceForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 180, behavior: 'smooth' });
+  };
+
+  // Open Preview Modal for Member (معاينة بطاقة الهوية والملف الشامل)
+  const handleOpenPreview = (member) => {
+    const savedPhoto = member.photo || localStorage.getItem(`ubari_officer_photo_${member.id}`) || '';
+    setPreviewMember({ ...member, photo: savedPhoto });
+    setShowPreviewModal(true);
+  };
+
+  // Update Officer Photo in Force State and Storage
+  const handleUpdateMemberPhoto = (memberId, photoDataUrl) => {
+    // 1. Prioritize saving the dedicated individual photo key first (lightweight, guaranteed not to exceed quota)
+    try {
+      if (photoDataUrl) {
+        localStorage.setItem(`ubari_officer_photo_${memberId}`, photoDataUrl);
+      } else {
+        localStorage.removeItem(`ubari_officer_photo_${memberId}`);
+      }
+    } catch (err) {
+      console.warn('Dedicated officer photo storage warning:', err);
+    }
+
+    // 2. Update React in-memory state
+    const updated = forceMembers.map((m) => {
+      if (String(m.id) === String(memberId)) {
+        return { ...m, photo: photoDataUrl };
+      }
+      return m;
+    });
+    setForceMembers(updated);
+
+    if (previewMember && String(previewMember.id) === String(memberId)) {
+      setPreviewMember({ ...previewMember, photo: photoDataUrl });
+    }
+
+    // 3. Safely sync forceMembers to localStorage without embedding bloated base64 data into all 2,211 records
+    try {
+      const cleanForceForStorage = updated.map((m) => {
+        if (m.photo && m.photo.startsWith('data:')) {
+          const { photo, ...rest } = m;
+          return rest;
+        }
+        return m;
+      });
+      localStorage.setItem('ubari_force_members', JSON.stringify(cleanForceForStorage));
+    } catch (e) {
+      console.warn('Storage warning for ubari_force_members:', e);
+    }
+
+    fetch(`/api/force/${memberId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo: photoDataUrl })
+    }).catch(() => {});
+
+    setNotificationMsg(photoDataUrl ? '✅ تم حفظ وتحديث صورة المنتسب في السجل الأمني' : '🗑️ تم إزالة الصورة الشخصية');
+    setTimeout(() => setNotificationMsg(''), 4500);
+  };
+
+  // Instant Live Status Change for Member (تفعيل وتحديث الوضع الوظيفي الفوري)
+  const handleQuickStatusChange = (id, newStatus) => {
+    let memberName = '';
+    const updated = forceMembers.map((m) => {
+      if (m.id === id) {
+        memberName = m.name;
+        return { ...m, job_status: newStatus, status: newStatus };
+      }
+      return m;
+    });
+
+    setForceMembers(updated);
+    try {
+      localStorage.setItem('ubari_force_members', JSON.stringify(updated));
+    } catch (e) {}
+
+    fetch(`/api/force/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_status: newStatus, status: newStatus })
+    }).catch(() => {});
+
+    setNotificationMsg(`✅ تم تحديث الوضع الوظيفي لـ (${memberName}) إلى: [${newStatus}] بنجاح`);
+    setTimeout(() => setNotificationMsg(''), 4500);
   };
 
   // Save or Update Personnel
@@ -835,12 +968,56 @@ export default function App() {
     }
   };
 
-  // Filtered Members (Search + Optional Type Filter)
+  // Score hierarchy for Libyan Police / Security Ranks (1 = highest: لواء, down to شرطي = 17, civilians = 1000)
+  const getMilitaryRankScore = (rawRank, type) => {
+    const r = String(rawRank || '').replace(/[\u0640]/g, '').trim().toLowerCase();
+    const isCiv = (type && String(type).includes('مدني')) || r.includes('مدني');
+    if (isCiv) return 1000;
+
+    // Commissioned Officers (الضباط)
+    if (r.includes('لواء')) return 1;
+    if (r.includes('عميد')) return 2;
+    if (r.includes('عقيد')) return 3;
+    if (r.includes('مقدم')) return 4;
+    if (r.includes('رائد')) return 5;
+    if (r.includes('نقيب')) return 6;
+    if (r.includes('ملازم') && (r.includes('اول') || r.includes('أول') || r.includes('1') || r.includes('//'))) return 7;
+    if (r.includes('ملازم')) return 8;
+
+    // Warrant & Non-Commissioned Officers (ضباط الصف والشرف)
+    if (r.includes('نائب ضابط اول') || r.includes('نائب ضابط أول') || r === 'ن.ض.أ' || r === 'ن ض ا') return 9;
+    if (r.includes('نائب ضابط') || r === 'ن.ض' || r === 'ن ض') return 10;
+    if (r.includes('مساعد ضابط اول') || r.includes('مساعد ضابط أول') || r === 'م.ض.أ' || r === 'م ض ا') return 11;
+    if (r.includes('مساعد ضابط') || r === 'م.ض' || r === 'م ض' || r === 'م.ص') return 12;
+    if (r.includes('رئيس عرفاء اول') || r.includes('رئيس عرفاء أول') || r.includes('ريس عرفاء اول') || r.includes('ر.ع.أ') || r.includes('ر.ع. أ') || r.includes('ر ع ا') || r.includes('ع.أ.ر')) return 13;
+    if (r.includes('رئيس عرفاء') || r.includes('ريس عرفاء') || r === 'ر.ع' || r === 'رع' || r === 'ر ع' || r === 'ر .ع') return 14;
+    if (r.includes('عريف') && !r.includes('نائب') && !r.includes('ن.ع')) return 15;
+    if (r.includes('نائب عريف') || r === 'ن.ع') return 16;
+    if (r.includes('شرطي') || r.includes('شـرطـي')) return 17;
+
+    return 900;
+  };
+
+  // Filtered & Sorted Members:
+  // 1. Police ranks sorted hierarchically from highest to lowest (لواء -> شرطي)
+  // 2. Within each military rank, officers are sorted alphabetically by Arabic name
+  // 3. Civilian members are grouped and sorted alphabetically by Arabic name (أبجدياً)
   const filteredMembers = useMemo(() => {
     const term = forceSearchTerm.trim().toLowerCase();
-    return forceMembers.filter((m) => {
+    const list = forceMembers.filter((m) => {
       const matchesType = typeFilter === 'الكل' || m.type === typeFilter;
       if (!matchesType) return false;
+
+      const rawSt = (m.job_status || m.status || 'على رأس العمل').trim();
+      const matchesStatus =
+        statusFilter === 'الكل' ||
+        (statusFilter === 'على رأس العمل' && !rawSt.includes('إجازة') && !rawSt.includes('موقوف') && !rawSt.includes('إيقاف') && !rawSt.includes('معلق')) ||
+        (statusFilter === 'إجازة' && rawSt.includes('إجازة')) ||
+        (statusFilter === 'موقوف' && (rawSt.includes('موقوف') || rawSt.includes('إيقاف') || rawSt.includes('معلق'))) ||
+        rawSt === statusFilter;
+
+      if (!matchesStatus) return false;
+
       if (!term) return true;
       return (
         (m.name && m.name.toLowerCase().includes(term)) ||
@@ -850,10 +1027,38 @@ export default function App() {
         (m.bank_name && m.bank_name.toLowerCase().includes(term)) ||
         (m.account_number && String(m.account_number).includes(term)) ||
         (m.job_title && m.job_title.toLowerCase().includes(term)) ||
-        (m.department && m.department.toLowerCase().includes(term))
+        (m.department && m.department.toLowerCase().includes(term)) ||
+        (m.job_status && m.job_status.toLowerCase().includes(term))
       );
     });
-  }, [forceMembers, forceSearchTerm, typeFilter]);
+
+    return list.sort((a, b) => {
+      const scoreA = getMilitaryRankScore(a.rank || a.job_title, a.type);
+      const scoreB = getMilitaryRankScore(b.rank || b.job_title, b.type);
+
+      // Military rank hierarchy first
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+
+      // Alphabetical sorting within the same rank or among civilians
+      const nameA = a.name ? String(a.name).trim() : '';
+      const nameB = b.name ? String(b.name).trim() : '';
+      return nameA.localeCompare(nameB, 'ar-LY', { sensitivity: 'base' });
+    });
+  }, [forceMembers, forceSearchTerm, typeFilter, statusFilter]);
+
+  // Live Status Stats across all members (3 official statuses: على رأس العمل، إجازة رسمية، موقوف مؤقتاً)
+  const statusStats = useMemo(() => {
+    let onDuty = 0, onLeave = 0, onSuspended = 0;
+    forceMembers.forEach(m => {
+      const st = (m.job_status || m.status || 'على رأس العمل').trim();
+      if (st.includes('إجازة')) onLeave++;
+      else if (st.includes('موقوف') || st.includes('إيقاف') || st.includes('معلق')) onSuspended++;
+      else onDuty++;
+    });
+    return { onDuty, onLeave, onSuspended };
+  }, [forceMembers]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredMembers.length / rowsPerPage) || 1;
@@ -893,6 +1098,319 @@ export default function App() {
       console.error(e);
       alert('حدث خطأ أثناء تصدير الملف');
     }
+  };
+
+
+  const handlePrintForceRoster = () => {
+    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const printRows = filteredMembers.slice(0, 32);
+    const html = `
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0a192f;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px;">
+          <div style="text-align: right;">
+            <h3 style="margin: 0; font-size: 14px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</h3>
+            <h2 style="margin: 2px 0; font-size: 17px; font-weight: 900; color: #1e3a8a;">مديرية أمن أوباري</h2>
+            <h4 style="margin: 0; font-size: 12px; color: #475569;">قسم شؤون الضباط والأفراد | السجل العام للقوة العمومية</h4>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف القوة العمومية المعتمد</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">تاريخ الاستخراج: ${today}</div>
+          </div>
+          <div style="text-align: left; font-size: 12px;">
+            <div><strong>عدد السجلات:</strong> ${filteredMembers.length} عضو</div>
+            <div><strong>القسم:</strong> ${selectedDepartment === 'all' ? 'كافة الأقسام' : selectedDepartment}</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 25px;">
+          <thead>
+            <tr style="background: #1e3a8a; color: white;">
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 35px; text-align: center;">ت</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 90px;">الرقم المالي</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px;">الرتبة</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1;">التبعية / جهة العمل</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 100px;">المصرف</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1; width: 85px; text-align: center;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${printRows.map((m, idx) => `
+              <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${idx + 1}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold;">${m.name}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.financial_number || m.job_number || '---'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.job_title || m.rank || 'شرطي'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.department || '---'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.bank_name || '---'}</td>
+                <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #15803d;">${m.job_status || m.status || 'على رأس العمل'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 35px; padding: 0 40px;">
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مسؤول شؤون القوة</div>
+            <div style="margin-top: 35px; font-size: 12px;">نقيب / علي محمد البشير</div>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الشؤون الإدارية</div>
+            <div style="margin-top: 35px; font-size: 12px;">مقدم / سالم عبدالكريم</div>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
+            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
+          </div>
+        </div>
+      </div>
+    `;
+    printDocumentInIframe(html, 'كشف_القوة_العمومية_أوباري');
+  };
+
+  // Trigger file selection for force import
+  const handleTriggerForceImport = () => {
+    if (forceFileInputRef.current) {
+      forceFileInputRef.current.value = '';
+      forceFileInputRef.current.click();
+    }
+  };
+
+  // Handle file reading and parsing (.xlsx, .xls, .csv, .json)
+  const handleForceFileChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const fileName = file.name;
+      setImportFileName(fileName);
+      const extension = fileName.split('.').pop().toLowerCase();
+
+      let rawArray = [];
+
+      if (extension === 'json') {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        rawArray = Array.isArray(json) ? json : (json.data || json.members || []);
+      } else {
+        // Excel (.xlsx, .xls) or CSV
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        rawArray = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+      }
+
+      if (!rawArray || rawArray.length === 0) {
+        alert('الملف المحدد فارغ أو لا يحتوي على صفوف بيانات.');
+        setIsImporting(false);
+        return;
+      }
+
+      const removeTatweel = (s) => String(s || '').replace(/[\u0640]/g, '').trim();
+      const normalizeColKey = (k) => removeTatweel(k).replace(/\s+/g, '').toLowerCase();
+
+      const normalized = rawArray.map((row, idx) => {
+        const normRow = {};
+        for (const k of Object.keys(row)) {
+          normRow[normalizeColKey(k)] = row[k];
+        }
+
+        // 1. Full Name
+        let rawName = '';
+        for (const k of Object.keys(normRow)) {
+          if (k.includes('اسم') || k.includes('name')) {
+            rawName = normRow[k];
+            break;
+          }
+        }
+        const name = removeTatweel(rawName);
+
+        // 2. Rank & Position
+        let rawRank = '';
+        for (const k of Object.keys(normRow)) {
+          if (k.includes('رتب') || k.includes('صف') || k.includes('وظي') || k.includes('درج') || k.includes('rank')) {
+            rawRank = normRow[k];
+            break;
+          }
+        }
+        const rank = removeTatweel(rawRank) || 'شرطي';
+        const isCivil = rank.includes('مدني');
+        const type = isCivil ? 'مدني' : 'شرطي';
+        const job_title = rank || (isCivil ? 'مدني' : 'شـرطـي');
+
+        // 3. National ID (only numeric digits)
+        let rawNat = '';
+        for (const k of Object.keys(normRow)) {
+          if (k.includes('وطن') || k.includes('هوي') || k.includes('national')) {
+            rawNat = normRow[k];
+            break;
+          }
+        }
+        const national_id = removeTatweel(rawNat).replace(/\D/g, '');
+
+        // 4. Financial Number / Job Number
+        let rawJob = '';
+        for (const k of Object.keys(normRow)) {
+          if (k === 'الرقم' || k.includes('مال') || k.includes('عسكر') || k.includes('قيد') || k.includes('job') || k.includes('fin')) {
+            rawJob = normRow[k];
+            break;
+          }
+        }
+        const cleanJobVal = removeTatweel(rawJob);
+        const hasDigits = /\d/.test(cleanJobVal);
+        const isNoNum = !cleanJobVal || cleanJobVal.includes('لا') || cleanJobVal.includes('بدون') || !hasDigits;
+        const financial_number = isNoNum ? '' : cleanJobVal.replace(/[^\d-]/g, '');
+        const job_number = isNoNum ? 'بدون رقم مالي' : cleanJobVal;
+
+        // 5. Department / Station
+        let rawDept = '';
+        for (const k of Object.keys(normRow)) {
+          if (k.includes('قسم') || k.includes('ادار') || k.includes('مركز') || k.includes('تبع') || k.includes('جه')) {
+            rawDept = normRow[k];
+            break;
+          }
+        }
+        const department = removeTatweel(rawDept) || 'مركز شرطة أوباري المدينة';
+
+        return {
+          id: idx + 1,
+          name,
+          rank,
+          job_title,
+          type,
+          job_number,
+          financial_number,
+          national_id,
+          department,
+          job_status: 'على رأس العمل',
+          status: 'على رأس العمل',
+          bank_name: 'الصحاري بنت بيه',
+          bank_branch: 'فرع أوباري',
+          account_number: '',
+          basic_salary: '2200',
+          blood_type: 'O+'
+        };
+      }).filter(m => m.name && m.name.length >= 2);
+
+      if (normalized.length === 0) {
+        alert('تعذر استخراج بيانات صالحة من الملف. يرجى التأكد من احتواء الملف على أعمدة مثل (الاسم، الرتبة، الرقم المالي أو الوظيفي).');
+        setIsImporting(false);
+        return;
+      }
+
+      setPendingImportData(normalized);
+      setShowImportConfirmModal(true);
+    } catch (err) {
+      console.error('Error importing force file:', err);
+      alert('حدث خطأ أثناء قراءة ومعالجة الملف: ' + (err.message || 'تأكد من صيغة الملف'));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Confirm adding new imported force members onto the existing force (strictly preserving all old members)
+  const handleConfirmReplaceForce = async () => {
+    if (!pendingImportData || pendingImportData.length === 0) return;
+
+    // Build identifier lookup to match existing records if re-imported
+    const existingNatMap = new Map();
+    const existingFinMap = new Map();
+    const existingNameMap = new Map();
+
+    forceMembers.forEach(m => {
+      const nat = m.national_id ? String(m.national_id).replace(/\D/g, '').trim() : '';
+      const fin = m.financial_number ? String(m.financial_number).replace(/\D/g, '').trim() : '';
+      const nName = m.name ? normalizeArabicText(m.name) : '';
+
+      // Only index strictly valid identifiers (never index empty, 0, or generic words!)
+      if (nat && nat.length >= 8) existingNatMap.set(nat, m);
+      if (fin && fin.length >= 2) existingFinMap.set(fin, m);
+      if (nName && nName.length >= 5) existingNameMap.set(nName, m);
+    });
+
+    let addedCount = 0;
+    let updatedCount = 0;
+    // Strict requirement: NEVER delete old records. Start with 100% of existing force intact!
+    const mergedList = [...forceMembers];
+    const maxCurrentId = mergedList.reduce((max, m) => Math.max(max, Number(m.id) || 0), 0);
+
+    pendingImportData.forEach(newItem => {
+      const nat = newItem.national_id ? String(newItem.national_id).replace(/\D/g, '').trim() : '';
+      const fin = newItem.financial_number ? String(newItem.financial_number).replace(/\D/g, '').trim() : '';
+      const nName = newItem.name ? normalizeArabicText(newItem.name) : '';
+
+      let existingMatch = null;
+      if (nat && nat.length >= 8 && existingNatMap.has(nat)) {
+        existingMatch = existingNatMap.get(nat);
+      } else if (fin && fin.length >= 2 && existingFinMap.has(fin)) {
+        existingMatch = existingFinMap.get(fin);
+      } else if (nName && nName.length >= 5 && existingNameMap.has(nName)) {
+        existingMatch = existingNameMap.get(nName);
+      }
+
+      if (existingMatch) {
+        // Exists in old force: update any new/refreshed details while preserving original ID
+        const idx = mergedList.findIndex(m => m.id === existingMatch.id);
+        if (idx !== -1) {
+          mergedList[idx] = {
+            ...mergedList[idx],
+            ...newItem,
+            id: mergedList[idx].id,
+            // Keep existing identifiers if new one was missing
+            national_id: newItem.national_id || mergedList[idx].national_id || '',
+            financial_number: newItem.financial_number || mergedList[idx].financial_number || '',
+            job_number: (newItem.job_number && newItem.job_number !== 'بدون رقم مالي') ? newItem.job_number : (mergedList[idx].job_number || 'بدون رقم مالي')
+          };
+          updatedCount++;
+        }
+      } else {
+        // Brand new member: strictly append onto existing force without touching old ones
+        addedCount++;
+        const newRecord = {
+          ...newItem,
+          id: maxCurrentId + addedCount
+        };
+        mergedList.push(newRecord);
+        if (nat && nat.length >= 8) existingNatMap.set(nat, newRecord);
+        if (fin && fin.length >= 2) existingFinMap.set(fin, newRecord);
+        if (nName && nName.length >= 5) existingNameMap.set(nName, newRecord);
+      }
+    });
+
+    setForceMembers(mergedList);
+    try {
+      localStorage.setItem('ubari_force_members', JSON.stringify(mergedList));
+    } catch (err) {
+      console.warn('LocalStorage save error:', err);
+    }
+
+    // Sync full combined list with backend API
+    try {
+      await fetch('/api/force/replace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ members: mergedList })
+      });
+    } catch (e) {
+      console.warn('Backend sync failed, saved locally:', e);
+    }
+
+    setShowImportConfirmModal(false);
+    setPendingImportData(null);
+    if (forceFileInputRef.current) forceFileInputRef.current.value = '';
+
+    const summaryText = `✅ تم بنجاح إضافة (${addedCount.toLocaleString('ar-LY')}) فرداً جديداً وتحديث بيانات (${updatedCount.toLocaleString('ar-LY')}) فرداً مع حفظ كافة القوة القديمة (${forceMembers.length.toLocaleString('ar-LY')} فرد) بالكامل دون حذف أي قيد! إجمالي القوة الآن: (${mergedList.length.toLocaleString('ar-LY')}) فرد.`;
+
+    setNotificationMsg(summaryText);
+    setTimeout(() => setNotificationMsg(''), 7000);
+  };
+
+  const handleCancelImport = () => {
+    setShowImportConfirmModal(false);
+    setPendingImportData(null);
+    if (forceFileInputRef.current) forceFileInputRef.current.value = '';
   };
 
   // Open Profile Modal
@@ -1500,6 +2018,32 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button
                 type="button"
+                className="btn-toolbar-import"
+                onClick={handleTriggerForceImport}
+                disabled={isImporting}
+                title="استيراد وإضافة أفراد جدد إلى القوة العمومية الحالية (تضاف السجلات الجديدة فوق القديمة دون حذف)"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: isImporting ? 'wait' : 'pointer',
+                  boxShadow: '0 2px 10px rgba(2,132,199,0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <UploadCloud size={16} />
+                <span>{isImporting ? 'جاري قراءة الملف...' : 'استيراد وإضافة أفراد للقوة'}</span>
+              </button>
+
+              <button
+                type="button"
                 className="btn-toolbar-excel"
                 onClick={handleExportExcel}
               >
@@ -1510,7 +2054,7 @@ export default function App() {
               <button
                 type="button"
                 className="btn-toolbar-print"
-                onClick={() => window.print()}
+                onClick={handlePrintForceRoster}
               >
                 <Printer size={16} />
                 <span>طباعة القوة العمومية</span>
@@ -2002,9 +2546,6 @@ export default function App() {
                       >
                         <option value="على رأس العمل">على رأس العمل</option>
                         <option value="إجازة رسمية">إجازة رسمية</option>
-                        <option value="مهمة أمنية">مهمة أمنية</option>
-                        <option value="منتدب">منتدب</option>
-                        <option value="مكلف بمأمورية">مكلف بمأمورية</option>
                         <option value="موقوف مؤقتاً">موقوف مؤقتاً</option>
                       </select>
                     </div>
@@ -2181,33 +2722,78 @@ export default function App() {
                 />
               </div>
 
-              {/* Type Filter Buttons */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className={`filter-pill-btn ${typeFilter === 'الكل' ? 'active' : ''}`}
-                  onClick={() => { setTypeFilter('الكل'); setCurrentPage(1); }}
-                >
-                  الكل ({forceMembers.length})
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill-btn ${typeFilter === 'شرطي' ? 'active' : ''}`}
-                  onClick={() => { setTypeFilter('شرطي'); setCurrentPage(1); }}
-                >
-                  شرطة ({policeTotal})
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill-btn ${typeFilter === 'مدني' ? 'active' : ''}`}
-                  onClick={() => { setTypeFilter('مدني'); setCurrentPage(1); }}
-                >
-                  مدني ({civilTotal})
-                </button>
+              {/* Type Filter Buttons + Status Filter Dropdown */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className={`filter-pill-btn ${typeFilter === 'الكل' ? 'active' : ''}`}
+                    onClick={() => { setTypeFilter('الكل'); setCurrentPage(1); }}
+                  >
+                    الكل ({forceMembers.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-pill-btn ${typeFilter === 'شرطي' ? 'active' : ''}`}
+                    onClick={() => { setTypeFilter('شرطي'); setCurrentPage(1); }}
+                  >
+                    شرطة ({policeTotal})
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-pill-btn ${typeFilter === 'مدني' ? 'active' : ''}`}
+                    onClick={() => { setTypeFilter('مدني'); setCurrentPage(1); }}
+                  >
+                    مدني ({civilTotal})
+                  </button>
+                </div>
+
+                {/* Live Status Filter Dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      background: statusFilter === 'الكل' ? '#f8fafc' : '#eff6ff',
+                      color: statusFilter === 'الكل' ? '#334155' : '#1e40af',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    title="فرز القوة حسب الوضع الوظيفي الفعلي"
+                  >
+                    <option value="الكل">الوضع الوظيفي: الكل ({forceMembers.length})</option>
+                    <option value="على رأس العمل">🟢 على رأس العمل ({statusStats.onDuty})</option>
+                    <option value="إجازة">🟡 إجازات رسمية ({statusStats.onLeave})</option>
+                    <option value="موقوف">🔴 موقوف مؤقتاً ({statusStats.onSuspended})</option>
+                  </select>
+                </div>
               </div>
 
-              <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
-                المطابق: {filteredMembers.length.toLocaleString('ar-LY')} قيد (الصفحة {currentPage} من {totalPages})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#166534',
+                  fontWeight: 700
+                }}>
+                  <ShieldCheck size={14} color="#16a34a" />
+                  <span>الترتيب: حسب الرتبة العسكرية (لواء ← شرطي) والمدنيين أبجدياً</span>
+                </div>
+
+                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
+                  المطابق: {filteredMembers.length.toLocaleString('ar-LY')} قيد (الصفحة {currentPage} من {totalPages})
+                </div>
               </div>
             </div>
 
@@ -2233,7 +2819,46 @@ export default function App() {
                       <td style={{ fontWeight: 800, color: '#1e3a8a' }}>
                         {m.financial_number || m.job_number || '-'}
                       </td>
-                      <td style={{ fontWeight: 800, color: '#0f172a' }}>{m.name}</td>
+                      <td style={{ fontWeight: 800, color: '#0f172a' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {(() => {
+                            const rowPhoto = m.photo || localStorage.getItem(`ubari_officer_photo_${m.id}`);
+                            return rowPhoto ? (
+                              <img
+                                src={rowPhoto}
+                                alt={m.name}
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  border: '1.5px solid #d4af37',
+                                  flexShrink: 0
+                                }}
+                              />
+                            ) : (
+                            <span
+                              style={{
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '50%',
+                                background: m.type === 'شرطي' ? '#1e3a8a' : '#64748b',
+                                color: '#ffffff',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                flexShrink: 0
+                              }}
+                            >
+                              {m.name ? m.name.trim().charAt(0) : 'ش'}
+                            </span>
+                          );
+                        })()}
+                        <span>{m.name}</span>
+                        </div>
+                      </td>
                       <td>
                         <span style={{
                           padding: '3px 8px',
@@ -2253,40 +2878,87 @@ export default function App() {
                         {m.account_number || '-'}
                       </td>
                       <td>
-                        <span className={`badge-official ${
-                          m.job_status === 'على رأس العمل'
-                            ? 'badge-active'
-                            : m.job_status === 'إجازة رسمية'
-                            ? 'badge-leave'
-                            : 'badge-mission'
-                        }`}>
-                          {m.job_status || 'على رأس العمل'}
-                        </span>
+                        <select
+                          value={m.job_status || 'على رأس العمل'}
+                          onChange={(e) => handleQuickStatusChange(m.id, e.target.value)}
+                          style={{
+                            cursor: 'pointer',
+                            border: '1px solid rgba(0,0,0,0.08)',
+                            outline: 'none',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            borderRadius: '20px',
+                            padding: '4px 8px',
+                            textAlign: 'center',
+                            fontFamily: 'inherit',
+                            background:
+                              (!m.job_status || m.job_status === 'على رأس العمل') ? '#dcfce7' :
+                              m.job_status.includes('إجازة') ? '#fef3c7' :
+                              m.job_status.includes('موقوف') || m.job_status.includes('إيقاف') ? '#fee2e2' : '#dcfce7',
+                            color:
+                              (!m.job_status || m.job_status === 'على رأس العمل') ? '#15803d' :
+                              m.job_status.includes('إجازة') ? '#b45309' :
+                              m.job_status.includes('موقوف') || m.job_status.includes('إيقاف') ? '#b91c1c' : '#15803d'
+                          }}
+                          title="الوضع الوظيفي: اضغط لتغيير الحالة وتفعيلها مباشرة"
+                        >
+                          <option value="على رأس العمل">🟢 على رأس العمل</option>
+                          <option value="إجازة رسمية">🟡 إجازة رسمية</option>
+                          <option value="موقوف مؤقتاً">🔴 موقوف مؤقتاً</option>
+                        </select>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <button
+                            type="button"
+                            onClick={() => handleOpenPreview(m)}
+                            style={{
+                              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                              border: 'none',
+                              color: '#ffffff',
+                              cursor: 'pointer',
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              boxShadow: '0 1px 4px rgba(2,132,199,0.3)',
+                              transition: 'all 0.15s ease'
+                            }}
+                            title="معاينة الملف الشامل للمنتسب"
+                          >
+                            <Eye size={13} />
+                            <span>معاينة</span>
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => handleOpenEdit(m)}
                             style={{
                               background: '#eff6ff',
                               border: '1px solid #bfdbfe',
                               color: '#1e3a8a',
                               cursor: 'pointer',
-                              padding: '5px 9px',
+                              padding: '5px 10px',
                               borderRadius: '6px',
                               fontSize: '12px',
                               fontWeight: 700,
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '4px',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              transition: 'all 0.15s ease'
                             }}
                             title="تعديل وتحديث بيانات الشخص"
                           >
-                            <Edit size={13} />
+                            <Edit size={13} color="#2563eb" />
                             <span>تعديل</span>
                           </button>
 
                           <button
+                            type="button"
                             onClick={() => handleDeleteMember(m.id, m.name)}
                             style={{
                               background: '#fef2f2',
@@ -2294,7 +2966,8 @@ export default function App() {
                               color: '#dc2626',
                               cursor: 'pointer',
                               padding: '5px 7px',
-                              borderRadius: '6px'
+                              borderRadius: '6px',
+                              transition: 'all 0.15s ease'
                             }}
                             title="حذف القيد"
                           >
@@ -2365,6 +3038,7 @@ export default function App() {
           forceMembers={forceMembers}
           setForceMembers={setForceMembers}
           setActiveSection={setActiveSection}
+          onTriggerImport={handleTriggerForceImport}
         />
       );
     }
@@ -2671,8 +3345,84 @@ export default function App() {
       return <MailSection user={user} forceMembers={forceMembers} />;
     }
 
+    if (activeSection === 'referred') {
+      return <ReferredMailSection user={user} />;
+    }
+
     if (activeSection === 'letters') {
       return <TemplatesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'vehicles') {
+      return <VehiclesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'operations') {
+      return <OperationsSection forceMembers={forceMembers} user={user} />;
+    }
+
+    if (activeSection === 'detainees') {
+      return <DetaineesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'attendance') {
+      return <AttendanceSection forceMembers={forceMembers} user={user} />;
+    }
+
+    if (activeSection === 'leaves') {
+      return <LeavesSection forceMembers={forceMembers} user={user} />;
+    }
+
+    if (activeSection === 'discipline') {
+      return <PenaltiesSection forceMembers={forceMembers} user={user} />;
+    }
+
+    if (activeSection === 'fuel') {
+      return <FuelSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'inventory') {
+      return <InventorySection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'shifts') {
+      return <PatrolsSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'records') {
+      return <StationLogsSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'salaries') {
+      return <PayrollSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'maintenance') {
+      return <MaintenanceSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'decrees') {
+      return <DecisionsSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'archive') {
+      return <ArchiveSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'general_reports') {
+      return <AdministrativeReportsSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'command_reports') {
+      return <StrategicReportsSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'general_settings') {
+      return <SettingsSection user={user} />;
+    }
+
+    if (activeSection === 'audit_log') {
+      return <AuditLogSection user={user} />;
     }
 
     // Generic View for other sections
@@ -2788,6 +3538,15 @@ export default function App() {
   if (user) {
     return (
       <div className="dashboard-container">
+        {/* Hidden File Input for Force Import (.xlsx, .xls, .csv, .json) */}
+        <input
+          type="file"
+          ref={forceFileInputRef}
+          accept=".xlsx, .xls, .csv, .json"
+          style={{ display: 'none' }}
+          onChange={handleForceFileChange}
+        />
+
         {/* Backdrop for Mobile */}
         <div
           className={`sidebar-backdrop ${isMobileMenuOpen ? 'active' : ''}`}
@@ -2867,7 +3626,7 @@ export default function App() {
         <main className="dashboard-main">
           {/* Top Navigation Bar */}
           <header className="dashboard-topbar">
-            <div className="topbar-right">
+            <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 className="mobile-menu-btn"
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -2878,20 +3637,6 @@ export default function App() {
             </div>
 
             <div className="topbar-left">
-              {/* Official Facebook Link for Directorate */}
-              <a
-                href="https://www.facebook.com/share/1CYt5jTzG7/?mibextid=wwXIfr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="topbar-facebook-link"
-                title="الصفحة الرسمية لمديرية أمن أوباري على فيسبوك"
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                <span>صفحة مديرية الأمن</span>
-              </a>
-
               {/* Officer Profile Quick Button */}
               <button
                 type="button"
@@ -3776,6 +4521,169 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Force Import Append & Merge Confirmation Modal */}
+        {showImportConfirmModal && pendingImportData && (
+          <div className="moi-modal-overlay" onClick={handleCancelImport}>
+            <div className="moi-modal-box" style={{ maxWidth: '720px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="moi-modal-header" style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
+                <h3 style={{ color: '#166534', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <UploadCloud size={22} color="#16a34a" />
+                  <span>تأكيد إضافة ودمج الأفراد الجدد مع القوة العمومية</span>
+                </h3>
+                <button
+                  type="button"
+                  className="moi-modal-close-btn"
+                  onClick={handleCancelImport}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="moi-modal-body" style={{ padding: '20px' }}>
+                {/* Safe Append Notice */}
+                <div style={{
+                  background: '#f0fdf4',
+                  border: '1.5px solid #86efac',
+                  borderRadius: '12px',
+                  padding: '14px 18px',
+                  marginBottom: '18px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803d', fontWeight: 800, fontSize: '14px', marginBottom: '6px' }}>
+                    <CheckCircle2 size={18} />
+                    <span>حفظ تام للقوة القديمة وإضافة السجلات الجديدة:</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#166534', lineHeight: 1.6 }}>
+                    <strong>لن يتم حذف أي سجل قديم إطلاقاً</strong>. سيتم إضافة الأفراد الجدد الواردين بالملف <code>({importFileName})</code> وإلحاقهم بالقوة العمومية الحالية وحفظ السجلات القديمة والجديدة معاً.
+                  </p>
+                </div>
+
+                {/* Comparison Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '18px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>القوة القديمة الحالية</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e3a8a' }}>{forceMembers.length.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>فرد</span></div>
+                    <div style={{ fontSize: '10px', color: '#059669', fontWeight: 700 }}>✓ محفوظة بالكامل</div>
+                  </div>
+
+                  <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 700 }}>الأفراد الجدد بالملف</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#0284c7' }}>+{pendingImportData.length.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>فرد</span></div>
+                    <div style={{ fontSize: '10px', color: '#0284c7', fontWeight: 700 }}>+ ستتم إضافتهم</div>
+                  </div>
+
+                  <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700 }}>الإجمالي الكلي بعد الإضافة</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#16a34a' }}>
+                      {(forceMembers.length + pendingImportData.length).toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>فرد</span>
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700 }}>قوة موحدة مكتملة</div>
+                  </div>
+                </div>
+
+                {/* Preview Table of First 5 rows */}
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>معاينة عينة من السجلات المستوردة (أول 5 أفراد):</span>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>إجمالي: {pendingImportData.length} فرد</span>
+                  </div>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'right' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                          <th style={{ padding: '6px 8px' }}>#</th>
+                          <th style={{ padding: '6px 8px' }}>الاسم الكامل</th>
+                          <th style={{ padding: '6px 8px' }}>الرتبة / الوظيفة</th>
+                          <th style={{ padding: '6px 8px' }}>الرقم المالي</th>
+                          <th style={{ padding: '6px 8px' }}>النوع</th>
+                          <th style={{ padding: '6px 8px' }}>جهة العمل / المركز</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingImportData.slice(0, 5).map((m, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '6px 8px', color: '#64748b' }}>{i + 1}</td>
+                            <td style={{ padding: '6px 8px', fontWeight: 700 }}>{m.name || '---'}</td>
+                            <td style={{ padding: '6px 8px' }}>{m.job_title || '---'}</td>
+                            <td style={{ padding: '6px 8px', direction: 'ltr', textAlign: 'right' }}>{m.job_number || '---'}</td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <span style={{
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                background: m.type === 'مدني' ? '#f3e8ff' : '#eff6ff',
+                                color: m.type === 'مدني' ? '#7c3aed' : '#1e3a8a'
+                              }}>
+                                {m.type}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 8px', color: '#475569' }}>{m.department}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {pendingImportData.length > 5 && (
+                    <div style={{ fontSize: '11px', color: '#166534', marginTop: '6px', textAlign: 'center', fontWeight: 700 }}>
+                      ... بالإضافة إلى ({ (pendingImportData.length - 5).toLocaleString('ar-LY') }) فرداً آخرين سيتم إضافتهم وإلحاقهم بالقوة العمومية دون المساس بالقوة السابقة.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="moi-modal-footer" style={{ borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '14px 20px' }}>
+                <button
+                  type="button"
+                  className="btn-moi-secondary"
+                  onClick={handleCancelImport}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    background: '#f8fafc',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  إلغاء الأمر
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmReplaceForce}
+                  style={{
+                    padding: '9px 24px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(22, 163, 74, 0.35)'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>تأكيد إضافة الأفراد وحفظ القوة كاملة (إضافة ع القديمة)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Personnel Preview Modal (بطاقة المعاينة الشاملة والهوية الأمنية المعتمدة) */}
+        {showPreviewModal && previewMember && (
+          <OfficerCardModal
+            member={previewMember}
+            onClose={() => setShowPreviewModal(false)}
+            onEdit={(m) => handleOpenEdit(m)}
+            onUpdatePhoto={handleUpdateMemberPhoto}
+          />
         )}
       </div>
     );

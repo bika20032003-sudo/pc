@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "username": "عبدالرحمن المهدي",
+    "FullName": "عبدالرحمن",
+    "role": "admin",
+    "Email": "abdoulrahman1993@gmail.com",
+    "AssignedDept": null
+  },
+  {
+    "id": 8,
+    "username": "عبدالصمد",
+    "FullName": "عبدالصمد",
+    "role": "admin",
+    "Email": null,
+    "AssignedDept": null
+  },
+  {
+    "id": 9,
+    "username": "أمينة بدر",
+    "FullName": "أمينة بدر",
+    "role": "admin",
+    "Email": null,
+    "AssignedDept": null
+  },
+  {
+    "id": 10,
+    "username": "mousa",
+    "FullName": "مدير الأمن",
+    "role": "admin",
+    "Email": "mosaasaad@gmail.com",
+    "AssignedDept": null
+  },
+  {
+    "id": 11,
+    "username": "محمد أبوستة",
+    "FullName": "أبو ستة",
+    "role": "dept_manager",
+    "Email": null,
+    "AssignedDept": "شؤون الموظفين"
+  },
+  {
+    "id": 12,
+    "username": "حامد",
+    "FullName": "حامد",
+    "role": "fuel_manager",
+    "Email": null,
+    "AssignedDept": null
+  },
+  {
+    "id": 13,
+    "username": "عبدالرحمن",
+    "FullName": "عبدالرحمن المهدي إبراهيم",
+    "role": "admin",
+    "Email": null,
+    "AssignedDept": null
+  },
+  {
+    "id": 14,
+    "username": "مريم يونس",
+    "FullName": "مريم يونس",
+    "role": "admin",
+    "Email": null,
+    "AssignedDept": null
+  },
+  {
+    "id": 15,
+    "username": "إبراهيم محمد علي",
+    "FullName": "إبراهيم محمد علي",
+    "role": "dept_manager",
+    "Email": null,
+    "AssignedDept": "قسم البحث الجنائي"
+  },
+  {
+    "id": 16,
+    "username": "أفندي سليمان",
+    "FullName": "أفندي سليمان",
+    "role": "fuel_manager",
+    "Email": null,
+    "AssignedDept": null
+  }
+]

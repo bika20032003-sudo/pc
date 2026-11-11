@@ -125,3 +125,35 @@ export async function deleteForceMember(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function replaceForceList(req, res) {
+  try {
+    const { members } = req.body;
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({ success: false, message: 'قائمة الأفراد غير صالحة أو فارغة' });
+    }
+
+    memoryForce = members.map((m, idx) => ({
+      ...m,
+      id: m.id || idx + 1
+    }));
+
+    try {
+      fs.writeFileSync(jsonPath, JSON.stringify(memoryForce, null, 2), 'utf8');
+    } catch (e) {
+      console.error('Error saving force json:', e);
+    }
+
+    console.log(`✅ تم استبدال القوة العمومية بنجاح: ${memoryForce.length} عضو`);
+
+    return res.json({
+      success: true,
+      message: `تم استبدال وتحديث القوة العمومية بنجاح (${memoryForce.length} فرد)`,
+      total: memoryForce.length,
+      data: memoryForce
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+

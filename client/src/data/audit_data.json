@@ -1,0 +1,1722 @@
+[
+  {
+    "LogID": 215,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-28T00:11:05.120Z"
+  },
+  {
+    "LogID": 214,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-26T12:48:36.897Z"
+  },
+  {
+    "LogID": 213,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 8",
+    "ActionDate": "2026-10-26T12:48:06.273Z"
+  },
+  {
+    "LogID": 212,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 48",
+    "ActionDate": "2026-10-26T12:24:04.090Z"
+  },
+  {
+    "LogID": 211,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 44",
+    "ActionDate": "2026-10-26T12:17:19.397Z"
+  },
+  {
+    "LogID": 210,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 39",
+    "ActionDate": "2026-10-26T12:01:43.233Z"
+  },
+  {
+    "LogID": 209,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 41",
+    "ActionDate": "2026-10-26T12:01:36.443Z"
+  },
+  {
+    "LogID": 208,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 40",
+    "ActionDate": "2026-10-26T12:01:26.603Z"
+  },
+  {
+    "LogID": 207,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 38",
+    "ActionDate": "2026-10-26T12:00:47.233Z"
+  },
+  {
+    "LogID": 206,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 36",
+    "ActionDate": "2026-10-26T11:57:46.510Z"
+  },
+  {
+    "LogID": 205,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-22T12:50:07.803Z"
+  },
+  {
+    "LogID": 204,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-19T14:26:16.180Z"
+  },
+  {
+    "LogID": 203,
+    "Username": "عبدالصمد",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالصمد موسى محمد الشيخ الانصارى",
+    "ActionDate": "2026-10-19T10:55:35.213Z"
+  },
+  {
+    "LogID": 202,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-16T23:31:48.680Z"
+  },
+  {
+    "LogID": 201,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-16T01:20:03.210Z"
+  },
+  {
+    "LogID": 200,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 6",
+    "ActionDate": "2026-10-16T01:08:34.323Z"
+  },
+  {
+    "LogID": 199,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 7",
+    "ActionDate": "2026-10-16T01:05:39.760Z"
+  },
+  {
+    "LogID": 198,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-16T01:02:35.390Z"
+  },
+  {
+    "LogID": 197,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-15T14:40:34.170Z"
+  },
+  {
+    "LogID": 196,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-15T12:01:20.433Z"
+  },
+  {
+    "LogID": 195,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-15T01:50:05.787Z"
+  },
+  {
+    "LogID": 194,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-15T00:40:58.327Z"
+  },
+  {
+    "LogID": 193,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-15T00:38:50.933Z"
+  },
+  {
+    "LogID": 192,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-14T19:35:05.443Z"
+  },
+  {
+    "LogID": 191,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 31",
+    "ActionDate": "2026-10-14T11:53:03.707Z"
+  },
+  {
+    "LogID": 190,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 30",
+    "ActionDate": "2026-10-14T11:53:01.660Z"
+  },
+  {
+    "LogID": 189,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 32",
+    "ActionDate": "2026-10-14T11:52:59.120Z"
+  },
+  {
+    "LogID": 188,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 33",
+    "ActionDate": "2026-10-14T11:52:56.820Z"
+  },
+  {
+    "LogID": 187,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 35",
+    "ActionDate": "2026-10-14T11:52:54.880Z"
+  },
+  {
+    "LogID": 186,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 34",
+    "ActionDate": "2026-10-14T11:52:51.663Z"
+  },
+  {
+    "LogID": 185,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 5",
+    "ActionDate": "2026-10-14T11:25:55.760Z"
+  },
+  {
+    "LogID": 184,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 1",
+    "ActionDate": "2026-10-14T11:25:49.073Z"
+  },
+  {
+    "LogID": 183,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 2",
+    "ActionDate": "2026-10-14T01:36:24.877Z"
+  },
+  {
+    "LogID": 182,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 3",
+    "ActionDate": "2026-10-14T01:36:21.643Z"
+  },
+  {
+    "LogID": 181,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 4",
+    "ActionDate": "2026-10-14T01:36:15.043Z"
+  },
+  {
+    "LogID": 180,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 9",
+    "ActionDate": "2026-10-13T20:11:48.990Z"
+  },
+  {
+    "LogID": 179,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 8",
+    "ActionDate": "2026-10-13T19:36:22.987Z"
+  },
+  {
+    "LogID": 178,
+    "Username": "عبدالرحمن",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-10-13T14:10:41.550Z"
+  },
+  {
+    "LogID": 177,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-13T14:08:04.223Z"
+  },
+  {
+    "LogID": 176,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-13T14:05:12.673Z"
+  },
+  {
+    "LogID": 175,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-13T12:13:19.450Z"
+  },
+  {
+    "LogID": 174,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-13T00:12:19.620Z"
+  },
+  {
+    "LogID": 173,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: ممدوح محمد أبو الأسعاد محمد",
+    "ActionDate": "2026-10-12T22:22:31.540Z"
+  },
+  {
+    "LogID": 172,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: ممدوح محمد أبو الاسعار محمد",
+    "ActionDate": "2026-10-12T22:20:58.313Z"
+  },
+  {
+    "LogID": 171,
+    "Username": "عبدالصمد",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 3",
+    "ActionDate": "2026-10-12T21:55:47.803Z"
+  },
+  {
+    "LogID": 170,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-12T14:48:24.537Z"
+  },
+  {
+    "LogID": 169,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالصمد موسى محمد الشيخ الانصارى",
+    "ActionDate": "2026-10-12T14:18:32.650Z"
+  },
+  {
+    "LogID": 168,
+    "Username": "عبدالرحمن",
+    "ActionType": "نسخ احتياطي",
+    "TableName": "قاعدة البيانات",
+    "RecordDetails": "تم أخذ نسخة احتياطية للمنظومة",
+    "ActionDate": "2026-10-12T12:35:09.270Z"
+  },
+  {
+    "LogID": 167,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-12T12:26:58.260Z"
+  },
+  {
+    "LogID": 166,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-12T02:17:16.983Z"
+  },
+  {
+    "LogID": 165,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-12T02:07:23.960Z"
+  },
+  {
+    "LogID": 164,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-12T00:42:09.247Z"
+  },
+  {
+    "LogID": 163,
+    "Username": "مستخدم غير معروف",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-11T22:33:43.537Z"
+  },
+  {
+    "LogID": 162,
+    "Username": "مستخدم غير معروف",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-11T22:32:41.960Z"
+  },
+  {
+    "LogID": 161,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-11T22:00:09.413Z"
+  },
+  {
+    "LogID": 160,
+    "Username": "أبو ستة",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 5198320704",
+    "ActionDate": "2026-10-11T21:25:04.180Z"
+  },
+  {
+    "LogID": 159,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عابدين محمد عابدين عمر",
+    "ActionDate": "2026-10-11T20:14:21.863Z"
+  },
+  {
+    "LogID": 158,
+    "Username": "عبدالرحمن",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-11T14:25:00.333Z"
+  },
+  {
+    "LogID": 157,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 15",
+    "ActionDate": "2026-10-11T13:51:49.147Z"
+  },
+  {
+    "LogID": 156,
+    "Username": "عبدالرحمن",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: خديجة محمد كري عبدالله",
+    "ActionDate": "2026-10-11T13:17:26.943Z"
+  },
+  {
+    "LogID": 155,
+    "Username": "عبدالرحمن",
+    "ActionType": "حذف",
+    "TableName": "المستخدمين",
+    "RecordDetails": "تم حذف حساب: admin",
+    "ActionDate": "2026-10-11T13:01:32.963Z"
+  },
+  {
+    "LogID": 154,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "المستخدمين",
+    "RecordDetails": "حساب: عبدالرحمن المهدي",
+    "ActionDate": "2026-10-11T12:55:10.337Z"
+  },
+  {
+    "LogID": 153,
+    "Username": "مدير الأمن",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 111111111111",
+    "ActionDate": "2026-10-11T02:12:45.777Z"
+  },
+  {
+    "LogID": 152,
+    "Username": "مدير الأمن",
+    "ActionType": "تعديل",
+    "TableName": "الحضور والانصراف",
+    "RecordDetails": "تم حفظ أو تعديل سجل الحضور يدوياً ليوم: 2026-10-11",
+    "ActionDate": "2026-10-11T02:10:33.220Z"
+  },
+  {
+    "LogID": 151,
+    "Username": "عبدالرحمن المهد��",
+    "ActionType": "إضافة",
+    "TableName": "المستخدمين",
+    "RecordDetails": "حساب: mousa",
+    "ActionDate": "2026-10-11T00:19:23.377Z"
+  },
+  {
+    "LogID": 150,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-10T19:54:29.860Z"
+  },
+  {
+    "LogID": 149,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "استرجاع",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استرجاع الموظف للخدمة: 119930563247",
+    "ActionDate": "2026-10-08T13:38:18.337Z"
+  },
+  {
+    "LogID": 148,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "أرشفة",
+    "TableName": "الموظفين",
+    "RecordDetails": "أرشفة الموظف (119930563247) بسبب: مستقيل",
+    "ActionDate": "2026-10-08T13:38:00.280Z"
+  },
+  {
+    "LogID": 147,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-10-08T13:12:44.953Z"
+  },
+  {
+    "LogID": 146,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-08T02:10:48.000Z"
+  },
+  {
+    "LogID": 145,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-08T01:57:42.557Z"
+  },
+  {
+    "LogID": 144,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-08T01:50:52.080Z"
+  },
+  {
+    "LogID": 143,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-08T01:34:38.033Z"
+  },
+  {
+    "LogID": 142,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-08T01:10:02.940Z"
+  },
+  {
+    "LogID": 141,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: خديجة محمد كري عبدالله",
+    "ActionDate": "2026-10-08T00:35:37.470Z"
+  },
+  {
+    "LogID": 140,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 10",
+    "ActionDate": "2026-10-07T05:35:10.280Z"
+  },
+  {
+    "LogID": 139,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "حذف مراسلة رقم: 3",
+    "ActionDate": "2026-10-07T01:36:08.193Z"
+  },
+  {
+    "LogID": 138,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "حذف مراسلة رقم: 4",
+    "ActionDate": "2026-10-07T01:36:05.713Z"
+  },
+  {
+    "LogID": 137,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "حذف مراسلة رقم: 5",
+    "ActionDate": "2026-10-07T01:36:02.683Z"
+  },
+  {
+    "LogID": 136,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 1",
+    "ActionDate": "2026-10-07T01:35:49.093Z"
+  },
+  {
+    "LogID": 135,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 6",
+    "ActionDate": "2026-10-07T01:35:45.307Z"
+  },
+  {
+    "LogID": 134,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 7",
+    "ActionDate": "2026-10-07T01:35:42.667Z"
+  },
+  {
+    "LogID": 133,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 8",
+    "ActionDate": "2026-10-07T01:35:39.750Z"
+  },
+  {
+    "LogID": 132,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الصادر",
+    "RecordDetails": "حذف مراسلة رقم: 9",
+    "ActionDate": "2026-10-07T01:35:36.290Z"
+  },
+  {
+    "LogID": 131,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-06T21:42:51.847Z"
+  },
+  {
+    "LogID": 130,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-06T02:17:14.400Z"
+  },
+  {
+    "LogID": 129,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "حذف مراسلة رقم: 2",
+    "ActionDate": "2026-10-06T01:21:16.467Z"
+  },
+  {
+    "LogID": 128,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-05T20:10:44.437Z"
+  },
+  {
+    "LogID": 127,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الحضور والانصراف",
+    "RecordDetails": "تم حفظ أو تعديل سجل الحضور يدوياً ليوم: 2026-10-05",
+    "ActionDate": "2026-10-05T09:57:00.843Z"
+  },
+  {
+    "LogID": 126,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-05T09:54:45.903Z"
+  },
+  {
+    "LogID": 125,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "نسخ احتياطي",
+    "TableName": "قاعدة البيانات",
+    "RecordDetails": "تم أخذ نسخة احتياطية للمنظومة",
+    "ActionDate": "2026-10-04T13:44:18.283Z"
+  },
+  {
+    "LogID": 124,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 111111111111",
+    "ActionDate": "2026-10-04T13:31:05.947Z"
+  },
+  {
+    "LogID": 123,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "استرجاع",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استرجاع الموظف للخدمة: 119930563247",
+    "ActionDate": "2026-10-04T13:27:20.960Z"
+  },
+  {
+    "LogID": 122,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "أرشفة",
+    "TableName": "الموظفين",
+    "RecordDetails": "أرشفة الموظف (119930563247) بسبب: منقول",
+    "ActionDate": "2026-10-04T13:26:55.577Z"
+  },
+  {
+    "LogID": 121,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-10-04T13:23:54.443Z"
+  },
+  {
+    "LogID": 120,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-04T13:19:56.740Z"
+  },
+  {
+    "LogID": 119,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-04T13:09:12.160Z"
+  },
+  {
+    "LogID": 118,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الحضور والانصراف",
+    "RecordDetails": "تم حفظ أو تعديل سجل الحضور يدوياً ليوم: 2026-10-04",
+    "ActionDate": "2026-10-04T08:37:40.790Z"
+  },
+  {
+    "LogID": 117,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-04T08:27:30.020Z"
+  },
+  {
+    "LogID": 116,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "المستخدمين",
+    "RecordDetails": "تم حذف حساب: صفية يونس",
+    "ActionDate": "2026-10-04T07:52:40.997Z"
+  },
+  {
+    "LogID": 115,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "المستخدمين",
+    "RecordDetails": "تم حذف حساب: مريم يونس",
+    "ActionDate": "2026-10-04T07:52:37.303Z"
+  },
+  {
+    "LogID": 114,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "المستخدمين",
+    "RecordDetails": "تم حذف حساب: محمد أبوسته",
+    "ActionDate": "2026-10-04T07:52:21.023Z"
+  },
+  {
+    "LogID": 113,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "المستخدمين",
+    "RecordDetails": "تم حذف حساب: سالمة",
+    "ActionDate": "2026-10-04T07:52:15.267Z"
+  },
+  {
+    "LogID": 112,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "المستخدمين",
+    "RecordDetails": "حساب: admin",
+    "ActionDate": "2026-10-04T07:51:59.217Z"
+  },
+  {
+    "LogID": 111,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-04T07:50:31.877Z"
+  },
+  {
+    "LogID": 110,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-10-04T01:40:16.600Z"
+  },
+  {
+    "LogID": 109,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-10-04T01:39:08.503Z"
+  },
+  {
+    "LogID": 108,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "المستخدمين",
+    "RecordDetails": "حساب: أمينة بدر",
+    "ActionDate": "2026-10-03T23:38:04.740Z"
+  },
+  {
+    "LogID": 107,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T19:52:45.217Z"
+  },
+  {
+    "LogID": 106,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119800555555",
+    "ActionDate": "2026-10-03T18:29:13.790Z"
+  },
+  {
+    "LogID": 105,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T17:59:48.260Z"
+  },
+  {
+    "LogID": 104,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119860566736",
+    "ActionDate": "2026-10-03T12:45:17.510Z"
+  },
+  {
+    "LogID": 103,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T02:39:44.853Z"
+  },
+  {
+    "LogID": 102,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-10-03T02:16:55.290Z"
+  },
+  {
+    "LogID": 101,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-10-03T02:16:41.930Z"
+  },
+  {
+    "LogID": 100,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-10-03T02:16:39.083Z"
+  },
+  {
+    "LogID": 99,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-10-03T02:16:19.540Z"
+  },
+  {
+    "LogID": 98,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T02:15:19.773Z"
+  },
+  {
+    "LogID": 97,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T02:00:43.663Z"
+  },
+  {
+    "LogID": 96,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T01:43:33.990Z"
+  },
+  {
+    "LogID": 95,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T01:27:35.310Z"
+  },
+  {
+    "LogID": 94,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T00:53:05.603Z"
+  },
+  {
+    "LogID": 93,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-03T00:09:48.287Z"
+  },
+  {
+    "LogID": 92,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119930563247",
+    "ActionDate": "2026-10-02T23:27:01.433Z"
+  },
+  {
+    "LogID": 91,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T22:16:26.743Z"
+  },
+  {
+    "LogID": 90,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T22:14:23.007Z"
+  },
+  {
+    "LogID": 89,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T22:01:48.537Z"
+  },
+  {
+    "LogID": 88,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T02:33:17.823Z"
+  },
+  {
+    "LogID": 87,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T02:07:43.080Z"
+  },
+  {
+    "LogID": 86,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-10-02T01:43:02.700Z"
+  },
+  {
+    "LogID": 85,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-10-02T00:41:50.100Z"
+  },
+  {
+    "LogID": 84,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-29T10:07:54.983Z"
+  },
+  {
+    "LogID": 83,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-29T07:15:22.023Z"
+  },
+  {
+    "LogID": 82,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 29",
+    "ActionDate": "2026-09-28T13:17:18.560Z"
+  },
+  {
+    "LogID": 81,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 27",
+    "ActionDate": "2026-09-28T13:17:15.333Z"
+  },
+  {
+    "LogID": 80,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119930563247",
+    "ActionDate": "2026-09-28T13:14:24.720Z"
+  },
+  {
+    "LogID": 79,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 28",
+    "ActionDate": "2026-09-28T11:42:57.750Z"
+  },
+  {
+    "LogID": 78,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119660153637",
+    "ActionDate": "2026-09-28T11:42:19.447Z"
+  },
+  {
+    "LogID": 77,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "المستخدمين",
+    "RecordDetails": "حساب: عبدالصمد",
+    "ActionDate": "2026-09-28T09:21:04.623Z"
+  },
+  {
+    "LogID": 76,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-28T01:53:40.543Z"
+  },
+  {
+    "LogID": 75,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-28T00:55:17.610Z"
+  },
+  {
+    "LogID": 74,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-28T00:39:35.777Z"
+  },
+  {
+    "LogID": 73,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-27T22:56:49.597Z"
+  },
+  {
+    "LogID": 72,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "نسخ احتياطي",
+    "TableName": "قاعدة البيانات",
+    "RecordDetails": "تم أخذ نسخة احتياطية للمنظومة",
+    "ActionDate": "2026-09-26T21:24:29.050Z"
+  },
+  {
+    "LogID": 71,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-26T19:26:52.663Z"
+  },
+  {
+    "LogID": 70,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-09-26T19:23:33.307Z"
+  },
+  {
+    "LogID": 69,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-09-26T19:22:39.443Z"
+  },
+  {
+    "LogID": 68,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-26T00:23:46.630Z"
+  },
+  {
+    "LogID": 67,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119930563247",
+    "ActionDate": "2026-09-26T00:14:58.373Z"
+  },
+  {
+    "LogID": 66,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 26",
+    "ActionDate": "2026-09-25T22:53:56.953Z"
+  },
+  {
+    "LogID": 65,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119930563247",
+    "ActionDate": "2026-09-25T22:52:39.103Z"
+  },
+  {
+    "LogID": 64,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T22:18:43.400Z"
+  },
+  {
+    "LogID": 63,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T22:00:09.203Z"
+  },
+  {
+    "LogID": 62,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T20:10:08.747Z"
+  },
+  {
+    "LogID": 61,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T20:09:08.797Z"
+  },
+  {
+    "LogID": 60,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T19:20:30.770Z"
+  },
+  {
+    "LogID": 59,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-09-25T08:52:36.607Z"
+  },
+  {
+    "LogID": 58,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T08:49:28.723Z"
+  },
+  {
+    "LogID": 57,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T07:15:23.487Z"
+  },
+  {
+    "LogID": 56,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف قرار",
+    "TableName": "سجل القرارات",
+    "RecordDetails": "تم مسح قرار يحمل المعرف: 2",
+    "ActionDate": "2026-09-25T06:51:15.113Z"
+  },
+  {
+    "LogID": 55,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 25",
+    "ActionDate": "2026-09-25T06:45:11.350Z"
+  },
+  {
+    "LogID": 54,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 24",
+    "ActionDate": "2026-09-25T06:45:08.470Z"
+  },
+  {
+    "LogID": 53,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 23",
+    "ActionDate": "2026-09-25T06:45:05.447Z"
+  },
+  {
+    "LogID": 52,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الإجازات",
+    "RecordDetails": "تم إلغاء إجازة رقم: 22",
+    "ActionDate": "2026-09-25T06:45:02.560Z"
+  },
+  {
+    "LogID": 51,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: مسعود عيسى مسعود المهدي",
+    "ActionDate": "2026-09-25T06:44:29.573Z"
+  },
+  {
+    "LogID": 50,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T06:42:52.563Z"
+  },
+  {
+    "LogID": 49,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T02:54:43.247Z"
+  },
+  {
+    "LogID": 48,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T02:21:48.000Z"
+  },
+  {
+    "LogID": 47,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T02:12:58.543Z"
+  },
+  {
+    "LogID": 46,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: موسى سعد البدين",
+    "ActionDate": "2026-09-25T01:51:42.317Z"
+  },
+  {
+    "LogID": 45,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T01:49:10.307Z"
+  },
+  {
+    "LogID": 44,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: السنوسي الطاهر سليمان كنه",
+    "ActionDate": "2026-09-25T01:11:07.210Z"
+  },
+  {
+    "LogID": 43,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 1329 موظف/عسكري من ملف إكسل",
+    "ActionDate": "2026-09-25T01:07:52.660Z"
+  },
+  {
+    "LogID": 42,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 0 موظف/عسكري من ملف إكسل",
+    "ActionDate": "2026-09-25T00:45:54.057Z"
+  },
+  {
+    "LogID": 41,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 0 موظفاً من ملف إكسل من إجمالي 1769 سجل",
+    "ActionDate": "2026-09-25T00:41:12.900Z"
+  },
+  {
+    "LogID": 40,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 0 موظفاً من ملف إكسل من إجمالي 1769 سجل",
+    "ActionDate": "2026-09-25T00:39:15.397Z"
+  },
+  {
+    "LogID": 39,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 0 موظفاً من ملف إكسل من إجمالي 1769 سجل",
+    "ActionDate": "2026-09-25T00:38:35.230Z"
+  },
+  {
+    "LogID": 38,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة قرار",
+    "TableName": "سجل القرارات",
+    "RecordDetails": "تسجيل قرار رقم 1",
+    "ActionDate": "2026-09-25T00:33:44.330Z"
+  },
+  {
+    "LogID": 37,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-09-25T00:32:38.613Z"
+  },
+  {
+    "LogID": 36,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T00:31:25.427Z"
+  },
+  {
+    "LogID": 35,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف قرار",
+    "TableName": "سجل القرارات",
+    "RecordDetails": "تم مسح قرار يحمل المعرف: 1",
+    "ActionDate": "2026-09-25T00:12:34.177Z"
+  },
+  {
+    "LogID": 34,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة قرار",
+    "TableName": "سجل القرارات",
+    "RecordDetails": "تسجيل قرار رقم 1",
+    "ActionDate": "2026-09-25T00:12:11.930Z"
+  },
+  {
+    "LogID": 33,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-25T00:10:40.477Z"
+  },
+  {
+    "LogID": 32,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T23:51:37.863Z"
+  },
+  {
+    "LogID": 31,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم رفع مستند بعنوان: صورة التعريف الشخصي",
+    "ActionDate": "2026-09-24T18:38:43.447Z"
+  },
+  {
+    "LogID": 30,
+    "Username": "مدير المنظومة",
+    "ActionType": "حذف",
+    "TableName": "الأرشيف",
+    "RecordDetails": "تم حذف مستند من الأرشيف",
+    "ActionDate": "2026-09-24T18:33:48.133Z"
+  },
+  {
+    "LogID": 29,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T18:28:38.897Z"
+  },
+  {
+    "LogID": 28,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T10:30:11.083Z"
+  },
+  {
+    "LogID": 27,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T10:22:24.620Z"
+  },
+  {
+    "LogID": 26,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T10:20:14.420Z"
+  },
+  {
+    "LogID": 25,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "حذف مراسلة رقم: 1",
+    "ActionDate": "2026-09-24T09:15:10.020Z"
+  },
+  {
+    "LogID": 24,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "البريد الوارد",
+    "RecordDetails": "مراسلة من: مديرية الأمن",
+    "ActionDate": "2026-09-24T09:10:28.847Z"
+  },
+  {
+    "LogID": 23,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T09:08:20.370Z"
+  },
+  {
+    "LogID": 22,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T08:50:11.797Z"
+  },
+  {
+    "LogID": 21,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T08:26:42.423Z"
+  },
+  {
+    "LogID": 20,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T08:08:12.800Z"
+  },
+  {
+    "LogID": 19,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T08:04:47.520Z"
+  },
+  {
+    "LogID": 18,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T07:54:39.520Z"
+  },
+  {
+    "LogID": 17,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T07:49:11.130Z"
+  },
+  {
+    "LogID": 16,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T07:23:12.250Z"
+  },
+  {
+    "LogID": 15,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إرسال تقرير",
+    "TableName": "التليجرام",
+    "RecordDetails": "تم إرسال الموقف اليومي لمدير الأمن.",
+    "ActionDate": "2026-09-24T07:12:48.393Z"
+  },
+  {
+    "LogID": 14,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الحضور والانصراف",
+    "RecordDetails": "تم تحديث أو حفظ سجل الحضور ليوم: 2026-09-24",
+    "ActionDate": "2026-09-24T07:08:17.377Z"
+  },
+  {
+    "LogID": 13,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الحضور والانصراف",
+    "RecordDetails": "تم تحديث أو حفظ سجل الحضور ليوم: 2026-09-24",
+    "ActionDate": "2026-09-24T05:05:54.120Z"
+  },
+  {
+    "LogID": 12,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الإجازات",
+    "RecordDetails": "تسجيل إجازة جديدة للموظف ذو الرقم الوطني: 119860566736",
+    "ActionDate": "2026-09-24T04:26:09.983Z"
+  },
+  {
+    "LogID": 11,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: موسى سعد البدين",
+    "ActionDate": "2026-09-19T19:08:06.697Z"
+  },
+  {
+    "LogID": 10,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "حذف",
+    "TableName": "الموظفين",
+    "RecordDetails": "حذف نهائي للموظف ذو المعرف: 111111111111",
+    "ActionDate": "2026-09-19T19:07:22.360Z"
+  },
+  {
+    "LogID": 9,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: موسى سعد البدين",
+    "ActionDate": "2026-09-19T19:03:25.720Z"
+  },
+  {
+    "LogID": 8,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: موسى سعد البدين",
+    "ActionDate": "2026-09-19T16:36:25.933Z"
+  },
+  {
+    "LogID": 7,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: موسى سعد البدين",
+    "ActionDate": "2026-09-19T16:35:42.997Z"
+  },
+  {
+    "LogID": 6,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-09-19T16:33:18.700Z"
+  },
+  {
+    "LogID": 5,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-09-19T16:31:34.127Z"
+  },
+  {
+    "LogID": 4,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: وديعة علي عبدالله عموش",
+    "ActionDate": "2026-09-19T15:48:48.663Z"
+  },
+  {
+    "LogID": 3,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: وديعة علي عبدالله عموش",
+    "ActionDate": "2026-09-19T07:03:55.763Z"
+  },
+  {
+    "LogID": 2,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "تعديل",
+    "TableName": "الموظفين",
+    "RecordDetails": "الموظف: عبدالرحمن المهدي إبراهيم يونس",
+    "ActionDate": "2026-09-18T08:48:11.140Z"
+  },
+  {
+    "LogID": 1,
+    "Username": "عبدالرحمن المهدي",
+    "ActionType": "إضافة",
+    "TableName": "الموظفين",
+    "RecordDetails": "تم استيراد 0 موظفاً من ملف إكسل من إجمالي 230 سجل",
+    "ActionDate": "2026-09-18T08:23:52.967Z"
+  }
+]

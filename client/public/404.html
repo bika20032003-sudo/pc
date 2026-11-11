@@ -2,30 +2,13 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8">
-    <title>منظومة وزارة الداخلية | إعادة التوجيه التلقائي</title>
+    <title>منظومة وزارة الداخلية | تشغيل داخلي آمن</title>
     <link rel="icon" type="image/png" href="./moi-logo.png" />
-    <script>
-      // Single Page App redirect for GitHub Pages to ensure zero 404 errors
-      (function() {
-        var l = window.location;
-        // If repo path includes '/-/'
-        var repoName = '/-';
-        var pathname = l.pathname;
-        var subpath = '';
-        if (pathname.indexOf(repoName) !== -1) {
-          subpath = pathname.substring(pathname.indexOf(repoName) + repoName.length);
-        } else {
-          subpath = pathname;
-        }
-        var target = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + repoName + '/#' + subpath + (l.search || '') + (l.hash || '');
-        window.location.replace(target);
-      })();
-    </script>
   </head>
   <body style="font-family: system-ui, sans-serif; background: #0a192f; color: #ffffff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; direction: rtl;">
-    <div style="text-align: center;">
+    <div style="text-align: center; max-width: 500px; padding: 24px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
       <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">منظومة وزارة الداخلية | مديرية أمن أوباري</h2>
-      <p style="color: #94a3b8; font-size: 14px;">جارٍ توجيهك إلى الصفحة المطلوبة بأمان واستقرار...</p>
+      <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">تم إلغاء رابط المعاينة العامة عبر الإنترنت. المنظومة تعمل حصرياً عبر الشبكة الداخلية للوزارة (Localhost / Intranet) لضمان أمان وسرية البيانات.</p>
     </div>
   </body>
 </html>

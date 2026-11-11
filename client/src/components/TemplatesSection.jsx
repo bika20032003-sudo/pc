@@ -41,6 +41,7 @@ import {
   Copy
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
+import { printDocumentInIframe } from '../utils/printHelper';
 
 // Sample pre-seeded employees matching reference image 4 + directorate officers
 const SAMPLE_EMPLOYEES = [
@@ -511,7 +512,12 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
   // Direct Browser Print Trigger
   const handlePrintDocument = () => {
-    window.print();
+    const el = document.getElementById('official-template-to-print');
+    if (el) {
+      printDocumentInIframe(el.outerHTML, activeDocument?.template_name || 'وثيقة رسمية');
+    } else {
+      window.print();
+    }
   };
 
   // Delete from archive
@@ -916,7 +922,25 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                         </div>
 
                         <div className="toolbar-group">
-                          <label className="toolbar-lbl">حجم الخط:</label>
+                                                  <div className="toolbar-group">
+                          <label className="toolbar-lbl">نوع الخط:</label>
+                          <select
+                            className="toolbar-select font-family-select"
+                            value={activeDocument.font_family || "'Cairo', sans-serif"}
+                            onChange={(e) => setActiveDocument({ ...activeDocument, font_family: e.target.value })}
+                            style={{ minWidth: '130px', fontWeight: 'bold' }}
+                          >
+                            <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
+                            <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
+                            <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
+                            <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
+                            <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
+                            <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
+                            <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
+                          </select>
+                        </div>
+
+<label className="toolbar-lbl">حجم الخط:</label>
                           <select
                             className="toolbar-select"
                             value={activeDocument.font_size || '16.5px'}
@@ -1456,11 +1480,10 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
               )}
 
               {/* PANEL 2: LIVE A4 PRINTABLE DOCUMENT SHEET */}
-              {(editorViewMode === 'split' || editorViewMode === 'preview') && (
-                <div className={`letter-modal-preview-pane ${editorViewMode === 'preview' ? 'full-preview' : ''}`}>
-                  <OfficialTemplateA4Sheet doc={activeDocument} qrUrl={qrCodeDataUrl} />
-                </div>
-              )}
+              {/* PANEL 2: LIVE A4 PRINTABLE DOCUMENT SHEET (Always in DOM for print) */}
+              <div className={`letter-modal-preview-pane ${editorViewMode === 'preview' ? 'full-preview' : ''} ${editorViewMode === 'editor' ? 'hide-on-screen-only' : ''}`}>
+                <OfficialTemplateA4Sheet doc={activeDocument} qrUrl={qrCodeDataUrl} />
+              </div>
             </div>
           </div>
         </div>
@@ -1563,6 +1586,7 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
           className="body-main-clause"
           style={{
             whiteSpace: 'pre-line',
+            fontFamily: doc.font_family || "'Cairo', sans-serif",
             fontSize: doc.font_size || '16.5px',
             lineHeight: doc.line_height || '2',
             textAlign: doc.text_align || 'right',
