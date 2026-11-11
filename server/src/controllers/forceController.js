@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getDb } from '../config/db.js';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,14 +29,14 @@ export async function getForceList(req, res) {
     }
 
     if (search && search.trim()) {
-      const q = search.trim().toLowerCase();
+      const q = normalizeArabicText(search);
       list = list.filter(item =>
-        (item.name && item.name.toLowerCase().includes(q)) ||
-        (item.financial_number && item.financial_number.includes(q)) ||
-        (item.national_id && item.national_id.includes(q)) ||
-        (item.job_title && item.job_title.toLowerCase().includes(q)) ||
-        (item.department && item.department.toLowerCase().includes(q)) ||
-        (item.bank_name && item.bank_name.toLowerCase().includes(q))
+        normalizeArabicText(item.name).includes(q) ||
+        normalizeArabicText(item.financial_number).includes(q) ||
+        normalizeArabicText(item.national_id).includes(q) ||
+        normalizeArabicText(item.job_title).includes(q) ||
+        normalizeArabicText(item.department).includes(q) ||
+        normalizeArabicText(item.bank_name).includes(q)
       );
     }
 
@@ -43,12 +44,27 @@ export async function getForceList(req, res) {
     const policeCount = memoryForce.filter(m => m.type === 'شرطي').length;
     const civilCount = memoryForce.filter(m => m.type === 'مدني').length;
 
+    let paginated = list;
+    let currentPage = 1;
+    let totalPages = 1;
+
+    if (limit) {
+      const parsedLimit = Math.max(1, parseInt(limit, 10));
+      currentPage = Math.max(1, parseInt(page || '1', 10));
+      totalPages = Math.ceil(total / parsedLimit) || 1;
+      const offset = (currentPage - 1) * parsedLimit;
+      paginated = list.slice(offset, offset + parsedLimit);
+    }
+
     return res.json({
       success: true,
       total,
       policeCount,
       civilCount,
-      data: list
+      page: limit ? currentPage : 1,
+      totalPages: limit ? totalPages : 1,
+      limit: limit ? parseInt(limit, 10) : total,
+      data: paginated
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

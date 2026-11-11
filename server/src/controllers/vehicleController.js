@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +33,7 @@ function persistVehicles() {
 
 export async function getVehicleList(req, res) {
   try {
-    const { search, category, status, department } = req.query;
+    const { search, category, status, department, limit, page } = req.query;
     let list = [...memoryVehicles];
 
     if (category && category !== 'الكل') {
@@ -48,14 +49,14 @@ export async function getVehicleList(req, res) {
     }
 
     if (search && search.trim()) {
-      const q = search.trim().toLowerCase();
+      const q = normalizeArabicText(search);
       list = list.filter(item =>
-        (item.plate_number && item.plate_number.toLowerCase().includes(q)) ||
-        (item.chassis_number && item.chassis_number.toLowerCase().includes(q)) ||
-        (item.vehicle_type && item.vehicle_type.toLowerCase().includes(q)) ||
-        (item.custodian_name && item.custodian_name.toLowerCase().includes(q)) ||
-        (item.department && item.department.toLowerCase().includes(q)) ||
-        (item.notes && item.notes.toLowerCase().includes(q))
+        normalizeArabicText(item.plate_number).includes(q) ||
+        normalizeArabicText(item.chassis_number).includes(q) ||
+        normalizeArabicText(item.vehicle_type).includes(q) ||
+        normalizeArabicText(item.custodian_name).includes(q) ||
+        normalizeArabicText(item.department).includes(q) ||
+        normalizeArabicText(item.notes).includes(q)
       );
     }
 
@@ -66,10 +67,25 @@ export async function getVehicleList(req, res) {
     const motorcycleCount = memoryVehicles.filter(v => v.category === 'دراجة نارية شرطية').length;
     const outOfServiceCount = memoryVehicles.filter(v => v.status !== 'جاهزة للعمل').length;
 
+    let paginated = list;
+    let currentPage = 1;
+    let totalPages = 1;
+
+    if (limit) {
+      const parsedLimit = Math.max(1, parseInt(limit, 10));
+      currentPage = Math.max(1, parseInt(page || '1', 10));
+      totalPages = Math.ceil(list.length / parsedLimit) || 1;
+      const offset = (currentPage - 1) * parsedLimit;
+      paginated = list.slice(offset, offset + parsedLimit);
+    }
+
     return res.json({
       success: true,
       total,
       filteredTotal: list.length,
+      page: limit ? currentPage : 1,
+      totalPages: limit ? totalPages : 1,
+      limit: limit ? parseInt(limit, 10) : list.length,
       stats: {
         total,
         activeCount,
@@ -78,7 +94,7 @@ export async function getVehicleList(req, res) {
         motorcycleCount,
         outOfServiceCount
       },
-      data: list
+      data: paginated
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
