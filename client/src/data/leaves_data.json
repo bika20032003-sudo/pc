@@ -1,5 +1,41 @@
 [
   {
+    "LeaveID": 51,
+    "NationalNumber": "119780260958",
+    "FullName": "أسماعيل محمد أسماعيل محمد",
+    "DepartmentName": "ديوان المديرية",
+    "LeaveType": "اجازة سنوية",
+    "StartDate": "2026-10-15T00:00:00.000Z",
+    "EndDate": "2026-11-13T00:00:00.000Z",
+    "TotalDays": 30,
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
+  },
+  {
+    "LeaveID": 37,
+    "NationalNumber": "119730294185",
+    "FullName": "عبدالسلام أحمد قدور محمد",
+    "DepartmentName": "ديوان المديرية",
+    "LeaveType": "اجازة سنوية",
+    "StartDate": "2026-10-13T00:00:00.000Z",
+    "EndDate": "2026-11-12T00:00:00.000Z",
+    "TotalDays": 31,
+    "Notes": "خارجية - تونس",
+    "Status": "سارية"
+  },
+  {
+    "LeaveID": 47,
+    "NationalNumber": "119840392146",
+    "FullName": "صلاح الدين عبدالفتاح محمد عثمان",
+    "DepartmentName": "ديوان المديرية",
+    "LeaveType": "اجازة طارئة",
+    "StartDate": "2026-10-26T00:00:00.000Z",
+    "EndDate": "2026-11-01T00:00:00.000Z",
+    "TotalDays": 7,
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
+  },
+  {
     "LeaveID": 52,
     "NationalNumber": "119870127152",
     "FullName": "أبو صلاح منصور أغالي أمنهي",
@@ -8,7 +44,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-11-26T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 54,
@@ -19,7 +56,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-11-26T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 55,
@@ -30,7 +68,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-12-26T00:00:00.000Z",
     "TotalDays": 60,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 58,
@@ -41,7 +80,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-11-26T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 57,
@@ -52,7 +92,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-12-11T00:00:00.000Z",
     "TotalDays": 45,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 53,
@@ -63,7 +104,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-11-26T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 56,
@@ -74,7 +116,8 @@
     "StartDate": "2026-10-28T00:00:00.000Z",
     "EndDate": "2026-11-26T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 45,
@@ -85,7 +128,8 @@
     "StartDate": "2026-10-27T00:00:00.000Z",
     "EndDate": "2027-01-24T00:00:00.000Z",
     "TotalDays": 90,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 50,
@@ -96,7 +140,8 @@
     "StartDate": "2026-10-26T00:00:00.000Z",
     "EndDate": "2026-12-24T00:00:00.000Z",
     "TotalDays": 60,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 49,
@@ -107,7 +152,8 @@
     "StartDate": "2026-10-26T00:00:00.000Z",
     "EndDate": "2026-12-09T00:00:00.000Z",
     "TotalDays": 45,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 46,
@@ -118,7 +164,8 @@
     "StartDate": "2026-10-26T00:00:00.000Z",
     "EndDate": "2026-11-24T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "خارج ليبيا الى دول�� تركيا"
+    "Notes": "خارج ليبيا إلى دولة تركيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 42,
@@ -129,7 +176,8 @@
     "StartDate": "2026-10-26T00:00:00.000Z",
     "EndDate": "2026-11-24T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
     "LeaveID": 43,
@@ -140,39 +188,21 @@
     "StartDate": "2026-10-26T00:00:00.000Z",
     "EndDate": "2026-11-24T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "سارية"
   },
   {
-    "LeaveID": 47,
-    "NationalNumber": "119840392146",
-    "FullName": "صلاح الدين عبدالفتاح محمد عثمان",
-    "DepartmentName": "ديوان المديرية",
-    "LeaveType": "طارئة",
-    "StartDate": "2026-10-26T00:00:00.000Z",
-    "EndDate": "2026-11-01T00:00:00.000Z",
-    "TotalDays": 7,
-    "Notes": "داخل ليبيا"
-  },
-  {
-    "LeaveID": 37,
-    "NationalNumber": "119730294185",
-    "FullName": "عبدالسلام أحمد قدور محمد",
-    "DepartmentName": "ديوان المديرية",
+    "LeaveID": 35,
+    "NationalNumber": "119800185932",
+    "FullName": "علي مسعود علي سالم",
+    "DepartmentName": "الشؤون الإدارية والمالية",
     "LeaveType": "اجازة سنوية",
-    "StartDate": "2026-10-21T00:00:00.000Z",
-    "EndDate": "2026-11-20T00:00:00.000Z",
-    "TotalDays": 31,
-    "Notes": "خارجية"
-  },
-  {
-    "LeaveID": 51,
-    "NationalNumber": "119780260958",
-    "FullName": "أسماعيل محمد أسماعيل محمد",
-    "DepartmentName": "ديوان المديرية",
-    "LeaveType": "اجازة سنوية",
-    "StartDate": "2026-10-21T00:00:00.000Z",
-    "EndDate": "2026-11-19T00:00:00.000Z",
+    "StartDate": "2026-10-05T00:00:00.000Z",
+    "EndDate": "2026-11-04T00:00:00.000Z",
     "TotalDays": 30,
-    "Notes": "داخل ليبيا"
+    "Notes": "داخل ليبيا",
+    "Status": "باشر العمل",
+    "ActualResumptionDate": "2026-11-05",
+    "ResumptionNotes": "باشر عمله في الموعد المحدد دون تأخير"
   }
 ]

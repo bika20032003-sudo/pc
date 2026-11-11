@@ -8,3 +8,4 @@ router.post('/', recordAttendance);
 router.post('/bulk', bulkRecordAttendance);
 
 export default router;
+

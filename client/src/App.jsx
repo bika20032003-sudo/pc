@@ -2003,7 +2003,7 @@ export default function App() {
     }
 
     if (activeSection === 'leaves') {
-      return <LeavesSection forceMembers={forceMembers} user={user} />;
+      return <LeavesSection forceMembers={forceMembers} setForceMembers={setForceMembers} user={user} />;
     }
 
     if (activeSection === 'discipline') {
