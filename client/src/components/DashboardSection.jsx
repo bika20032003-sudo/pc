@@ -24,7 +24,9 @@ import {
   FileText,
   DollarSign,
   AlertTriangle,
-  Layers
+  Layers,
+  Mail,
+  Send
 } from 'lucide-react';
 import './FinanceDashboard.css';
 
@@ -706,8 +708,11 @@ export default function DashboardSection({
             <div className="moi-shortcuts-grid">
               {[
                 { id: 'force', name: 'سجل القوة العمومية', desc: 'إدارة وفحص بيانات 2,211 منتسب', icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
+                { id: 'operations', name: 'غرفة العمليات', desc: 'تسجيل البلاغات والإشارات', icon: Radio, bg: '#fee2e2', clr: '#dc2626' },
                 { id: 'vehicles', name: 'الآليات والمركبات', desc: 'متابعة 92 آلية ومركبة أمنية', icon: Car, bg: '#ecfdf5', clr: '#059669' },
-                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' }
+                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' },
+                { id: 'mail', name: 'البريد والمراسلات', desc: 'الصادر والوارد والوثائق الرسمية', icon: Mail, bg: '#e0f2fe', clr: '#0284c7' },
+                { id: 'letters', name: 'النماذج والرسائل', desc: 'صياغة المكاتبات الرسمية', icon: Send, bg: '#f3e8ff', clr: '#7c3aed' }
               ].map(shortcut => {
                 const IconComponent = shortcut.icon;
                 return (

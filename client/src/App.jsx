@@ -62,6 +62,10 @@ import ForceSection from './components/ForceSection';
 import DashboardSection from './components/DashboardSection';
 import OfficerCardModal from './components/OfficerCardModal';
 import LeavesSection from './components/LeavesSection';
+import OperationsSection from './components/OperationsSection';
+import MailSection from './components/MailSection';
+import ReferredMailSection from './components/ReferredMailSection';
+import TemplatesSection from './components/TemplatesSection';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
 import CommandPaletteModal from './components/CommandPaletteModal';
@@ -71,9 +75,13 @@ import * as XLSX from 'xlsx';
 // Official Sections of Ubari Security Directorate (مديرية أمن أوباري)
 export const SECTIONS = [
   { id: 'dashboard', name: 'لوحة التحكم والمتابعة', icon: LayoutDashboard },
+  { id: 'operations', name: 'غرفة العمليات', icon: Radio },
   { id: 'force', name: 'القوة العمومية', icon: Users },
   { id: 'vehicles', name: 'الآليات والمركبات', icon: Car },
-  { id: 'leaves', name: 'سجل الإجازات', icon: Plane }
+  { id: 'leaves', name: 'سجل الإجازات', icon: Plane },
+  { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
+  { id: 'referred', name: 'البريد المحال (تأشيرات)', icon: Share2 },
+  { id: 'letters', name: 'النماذج والرسائل', icon: Send }
 ];
 
 const DEFAULT_SYSTEM_USERS = [
@@ -1532,6 +1540,10 @@ export default function App() {
       );
     }
 
+    if (activeSection === 'operations') {
+      return <OperationsSection forceMembers={forceMembers} user={user} />;
+    }
+
     if (activeSection === 'force') {
       return (
         <ForceSection
@@ -1566,6 +1578,18 @@ export default function App() {
 
     if (activeSection === 'leaves') {
       return <LeavesSection forceMembers={forceMembers} setForceMembers={setForceMembers} user={user} />;
+    }
+
+    if (activeSection === 'mail') {
+      return <MailSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'referred') {
+      return <ReferredMailSection user={user} />;
+    }
+
+    if (activeSection === 'letters') {
+      return <TemplatesSection user={user} forceMembers={forceMembers} />;
     }
 
     if (activeSection === 'user_management') {

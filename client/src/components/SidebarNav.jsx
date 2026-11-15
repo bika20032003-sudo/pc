@@ -7,6 +7,10 @@ import {
   Shield,
   Users,
   Car,
+  Radio,
+  Mail,
+  Share2,
+  Send,
   Camera,
   Settings
 } from 'lucide-react';
@@ -17,10 +21,10 @@ import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 export const SECTION_DIVISIONS = [
   {
     id: 'command',
-    title: 'المتابعة والتحليل الإحصائي',
+    title: 'القيادة والعمليات المركزية',
     icon: Shield,
     color: '#1e3a8a',
-    itemIds: ['dashboard']
+    itemIds: ['dashboard', 'operations']
   },
   {
     id: 'hr_force',
@@ -31,10 +35,17 @@ export const SECTION_DIVISIONS = [
   },
   {
     id: 'field_ops',
-    title: 'الأسطول والآليات',
+    title: 'الانتشار الميداني والآليات',
     icon: Car,
     color: '#b91c1c',
     itemIds: ['vehicles']
+  },
+  {
+    id: 'comms',
+    title: 'البريد والتوثيق الرسمي',
+    icon: Mail,
+    color: '#4f46e5',
+    itemIds: ['mail', 'referred', 'letters']
   }
 ];
 
