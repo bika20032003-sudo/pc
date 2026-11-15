@@ -2258,12 +2258,6 @@ export default function App() {
             </div>
 
             <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Live Server / System Status */}
-              <div className="topbar-live-status" title="حالة الخادم المباشر">
-                <span className="pulse-dot-green" />
-                <span>الخادم نشط</span>
-              </div>
-
               {/* Officer Profile Quick Button */}
               <button
                 type="button"
@@ -2495,9 +2489,9 @@ export default function App() {
                     <div className="input-field-group name-autocomplete-field" ref={nameAutocompleteRef}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <label style={{ margin: 0, fontWeight: 700 }}>الاسم الكامل والرتبة</label>
-                        <span className="name-db-badge" title="قائمة الأسماء مستخرجة ومطابقة لقاعدة بيانات قوة 2222">
+                        <span className="name-db-badge" title="قائمة الأسماء مستخرجة ومطابقة لقاعدة البيانات المركزية">
                           <Database size={11} />
-                          <span>قاعدة قوة 2222</span>
+                          <span>القاعدة المركزية</span>
                         </span>
                       </div>
 

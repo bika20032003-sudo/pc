@@ -242,7 +242,7 @@ export default function DashboardSection({
               </div>
               <h1 className="moi-banner-title">مركز القيادة والمعلومات والتحليل الإحصائي</h1>
               <p className="moi-banner-subtitle">
-                مديرية أمن أوباري | رصد وتحليل بيانات {stats.totalCount.toLocaleString('ar-LY')} منتسباً بسجل قوة 2222
+                مديرية أمن أوباري | رصد وتحليل بيانات {stats.totalCount.toLocaleString('ar-LY')} منتسباً بالسجلات الرسمية المعتمدة
               </p>
             </div>
           </div>
@@ -299,7 +299,7 @@ export default function DashboardSection({
                 <span className="moi-kpi-unit">عضواً</span>
               </div>
               <div className="moi-kpi-sub" style={{ color: '#059669' }}>
-                100% موثق بسجل قوة 2222 الرسمي
+                100% موثق بالسجلات المركزية المعتمدة
               </div>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function DashboardSection({
                 الانضباط والتواجد الميداني الفعلي
               </div>
             </div>
-            <span className="moi-command-badge">قوة 2222</span>
+            <span className="moi-command-badge">جاهزية أمنية</span>
           </div>
 
           <div className="moi-command-body">
@@ -478,7 +478,7 @@ export default function DashboardSection({
             <div>
               <h3 className="moi-card-title">
                 <MapPin size={18} style={{ color: '#0284c7' }} />
-                <span>مصفوفة الانتشار الميداني للمراكز والوحدات</span>
+                <span>توزيع الانتشار الميداني للمراكز والوحدات</span>
               </h3>
               <span className="moi-card-sublabel">
                 توزيع القوة الميدانية وتغطية نطاقات بلدية أوباري، بنت بيه، والغريفة
@@ -537,7 +537,7 @@ export default function DashboardSection({
           <div>
             <h3 className="moi-card-title">
               <Award size={18} style={{ color: '#d4af37' }} />
-              <span>مصفوفة الهيكل القيادي والرتب العسكرية والمدنية</span>
+              <span>الهيكل القيادي وتعداد الرتب العسكرية والمدنية</span>
             </h3>
             <span className="moi-card-sublabel">
               تعداد الرتب الرسمية المقيدة بالمنظومة وفقاً للتدرج العسكري المعتمد

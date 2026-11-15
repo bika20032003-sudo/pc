@@ -444,7 +444,7 @@ export default function ForceSection({
           <div className="title-gold-bar" />
           <div>
             <h1>إدارة القوة العمومية</h1>
-            <span>مديرية أمن أوباري | قاعدة البيانات المركزية المعتمدة (قوة 2222)</span>
+            <span>مديرية أمن أوباري | قاعدة البيانات المركزية المعتمدة</span>
           </div>
         </div>
 
@@ -531,7 +531,7 @@ export default function ForceSection({
           <div className="stat-box-icon"><Users size={22} /></div>
           <div className="stat-box-content">
             <h3>{forceMembers.length.toLocaleString('ar-LY')}</h3>
-            <p>إجمالي القوة المقيدة (قوة 2222)</p>
+            <p>إجمالي القوة المقيدة</p>
           </div>
         </div>
 
