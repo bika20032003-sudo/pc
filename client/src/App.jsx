@@ -57,179 +57,38 @@ import {
 } from 'lucide-react';
 
 import importedForceData from './data/force_data.json';
-import MailSection from './components/MailSection';
-import TemplatesSection from './components/TemplatesSection';
 import VehiclesSection from './components/VehiclesSection';
 import ForceSection from './components/ForceSection';
 import DashboardSection from './components/DashboardSection';
 import OfficerCardModal from './components/OfficerCardModal';
-import OperationsSection from './components/OperationsSection';
-import DetaineesSection from './components/DetaineesSection';
 import LeavesSection from './components/LeavesSection';
-import PenaltiesSection from './components/PenaltiesSection';
-import FuelSection from './components/FuelSection';
-import InventorySection from './components/InventorySection';
-import PatrolsSection from './components/PatrolsSection';
-import StationLogsSection from './components/StationLogsSection';
-import PayrollSection from './components/PayrollSection';
-import MaintenanceSection from './components/MaintenanceSection';
-import DecisionsSection from './components/DecisionsSection';
-import ArchiveSection from './components/ArchiveSection';
-import StrategicReportsSection from './components/StrategicReportsSection';
-import AdministrativeReportsSection from './components/AdministrativeReportsSection';
-import SettingsSection from './components/SettingsSection';
-import AuditLogSection from './components/AuditLogSection';
-import AttendanceSection from './components/AttendanceSection';
-import ReferredMailSection from './components/ReferredMailSection';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
 import CommandPaletteModal from './components/CommandPaletteModal';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
-
-// Normalize Arabic text for accurate search matching regardless of diacritics, alef forms, and taa marbuta
-
 // Official Sections of Ubari Security Directorate (مديرية أمن أوباري)
-const SECTIONS = [
-  { id: 'dashboard', name: 'لوحة التحكم', icon: LayoutDashboard },
-  { id: 'profile', name: 'الملف الشخصي للضابط', icon: User },
-  { id: 'operations', name: 'غرفة العمليات', icon: Radio },
+export const SECTIONS = [
+  { id: 'dashboard', name: 'لوحة التحكم والمتابعة', icon: LayoutDashboard },
   { id: 'force', name: 'القوة العمومية', icon: Users },
-  { id: 'attendance', name: 'الحضور والانصراف', icon: Clock },
-  { id: 'leaves', name: 'سجل الإجازات', icon: Plane },
-  { id: 'salaries', name: 'منظومة المرتبات', icon: CreditCard },
   { id: 'vehicles', name: 'الآليات والمركبات', icon: Car },
-  { id: 'maintenance', name: 'ورشة الصيانة', icon: Wrench },
-  { id: 'fuel', name: 'إدارة المحروقات', icon: Fuel },
-  { id: 'inventory', name: 'المخازن والعهد', icon: Package },
-  { id: 'shifts', name: 'الخطة والمناوبات', icon: ClipboardList },
-  { id: 'records', name: 'رقابة المحاضر', icon: FileCheck },
-  { id: 'detainees', name: 'رادار الموقوفين', icon: Lock },
-  { id: 'discipline', name: 'العقوبات والانضباط', icon: Scale },
-  { id: 'decrees', name: 'القرارات والأوامر', icon: Scroll },
-  { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
-  { id: 'referred', name: 'البريد المحال (تأشيرات)', icon: Share2 },
-  { id: 'letters', name: 'النماذج والرسائل', icon: Send },
-  { id: 'archive', name: 'الأرشيف الإلكتروني', icon: Archive },
-  { id: 'general_reports', name: 'التقارير الشاملة', icon: BarChart3 },
-  { id: 'command_reports', name: 'التقارير القيادية', icon: Award },
-  { id: 'user_management', name: 'إدارة المستخدمين والصلاحيات', icon: UserCheck },
-  { id: 'general_settings', name: 'الإعدادات العامة', icon: Settings },
-  { id: 'audit_log', name: 'سجل التتبع', icon: History }
+  { id: 'leaves', name: 'سجل الإجازات', icon: Plane }
 ];
-
-
 
 const DEFAULT_SYSTEM_USERS = [
   {
     id: 1,
     username: 'admin',
-    email: 'mousa.albedin@moi.gov.ly',
+    email: 'admin@moi.gov.ly',
     full_name: 'سيادة اللواء / موسى سعد محمد البدين',
     badge_number: 'MOI-10492',
-    rank_title: 'لواء شرطة / رئيس مركز العمليات والتحكم',
-    department: 'غرفة العمليات المركزية والتحكم',
+    rank_title: 'لواء شرطة / مدير أمن أوباري',
+    department: 'ديوان مديرية أمن أوباري',
     role: 'super_admin',
     role_label: 'مدير عام المنظومة (صلاحيات سيادية كاملة)',
     allowed_sections: ['all'],
-    phone: '091-2345678',
-    status: 'active',
-    avatar: '',
-    last_login: 'الآن (متصل)'
-  },
-  {
-    id: 2,
-    username: 'ali.ahmed',
-    email: 'ali.ahmed@ubari.moi.gov.ly',
-    full_name: 'عقيد شرطة / علي محمد أحمد',
-    badge_number: 'MOI-10488',
-    rank_title: 'عقيد شرطة / نائب مدير المديرية',
-    department: 'إدارة الأمن الداخلي والسيطرة',
-    role: 'admin',
-    role_label: 'نائب مدير (صلاحيات إدارية شاملة)',
-    allowed_sections: ['dashboard', 'operations', 'force', 'attendance', 'shifts', 'records'],
-    phone: '092-8765432',
-    status: 'active',
-    avatar: '',
-    last_login: 'منذ 4 ساعات'
-  },
-  {
-    id: 3,
-    username: 'omar.fassi',
-    email: 'omar.fassi@ubari.moi.gov.ly',
-    full_name: 'رائد شرطة / عمر مصطفى الفاسي',
-    badge_number: 'MOI-10502',
-    rank_title: 'رائد شرطة / مدير شؤون القوة والذاتية',
-    department: 'إدارة القوة العمومية والذاتية',
-    role: 'force_manager',
-    role_label: 'مسؤول القوة العمومية والبيانات',
-    allowed_sections: ['dashboard', 'force', 'attendance', 'leaves'],
-    phone: '091-5544332',
-    status: 'active',
-    avatar: '',
-    last_login: 'منذ 12 ساعة'
-  },
-  {
-    id: 4,
-    username: 'khalil.tareqi',
-    email: 'khalil.tareqi@ubari.moi.gov.ly',
-    full_name: 'نقيب شرطة / خليل إبراهيم التارقي',
-    badge_number: 'MOI-10515',
-    rank_title: 'نقيب شرطة / رئيس قسم البلاغات والمناوبات',
-    department: 'غرفة العمليات اللاسلكية',
-    role: 'operations_lead',
-    role_label: 'ضابط عمليات وسيطرة لاسلكية',
-    allowed_sections: ['dashboard', 'operations', 'shifts', 'records'],
-    phone: '092-1122334',
-    status: 'active',
-    avatar: '',
-    last_login: 'منذ ساعتين'
-  },
-  {
-    id: 5,
-    username: 'tareq.barasi',
-    email: 'tareq.barasi@ubari.moi.gov.ly',
-    full_name: 'ملازم أول / طارق مفتاح البرعصي',
-    badge_number: 'MOI-10530',
-    rank_title: 'ملازم أول / مسؤول الشؤون المالية والمرتبات',
-    department: 'الشؤون المالية والإمداد',
-    role: 'finance_officer',
-    role_label: 'مسؤول المالية والمرتبات',
-    allowed_sections: ['dashboard', 'salaries', 'inventory', 'fuel'],
-    phone: '091-9988776',
-    status: 'active',
-    avatar: '',
-    last_login: 'منذ يوم'
-  },
-  {
-    id: 6,
-    username: 'fatima.warfalli',
-    email: 'fatima.warfalli@ubari.moi.gov.ly',
-    full_name: 'مدني / فاطمة سالم الورفلي',
-    badge_number: 'MOI-C402',
-    rank_title: 'رئيس وحدة إدخال البيانات والأرشيف',
-    department: 'الأرشيف الإلكتروني والتوثيق',
-    role: 'data_entry',
-    role_label: 'مدخل بيانات ومسؤول أرشيف',
-    allowed_sections: ['dashboard', 'force', 'archive'],
-    phone: '094-3322110',
-    status: 'active',
-    avatar: '',
-    last_login: 'منذ يومين'
-  },
-  {
-    id: 7,
-    username: 'abdulsamad',
-    email: 'abdulsamad@ubari.moi.gov.ly',
-    full_name: 'عبدالصمد موسى محمد الشيخ الانصارى',
-    badge_number: 'MOI-3043754',
-    rank_title: 'مدني',
-    department: 'مديرية أمن أوباري',
-    role: 'force_manager',
-    role_label: 'مسؤول القوة العمومية والصلاحيات',
-    allowed_sections: ['dashboard', 'force', 'user_management', 'mail', 'letters'],
-    phone: '091-3043754',
+    phone: '',
     status: 'active',
     avatar: '',
     last_login: 'الآن (متصل)'
@@ -305,7 +164,7 @@ export default function App() {
           }
 
           if (isAbdulSamad) {
-            parsed.allowed_sections = ['dashboard', 'force', 'user_management', 'mail', 'letters'];
+            parsed.allowed_sections = ['dashboard', 'force', 'vehicles', 'leaves'];
           }
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
@@ -411,7 +270,7 @@ export default function App() {
         (updated.full_name && updated.full_name.includes('عبدالصمد'));
 
       if (isAbdulSamad) {
-        updated.allowed_sections = ['dashboard', 'force', 'user_management', 'mail', 'letters'];
+        updated.allowed_sections = ['dashboard', 'force', 'vehicles', 'leaves'];
         if (updated.avatar === generalAvatar) {
           updated.avatar = '';
         }
@@ -595,10 +454,10 @@ export default function App() {
           (data.user.full_name && data.user.full_name.includes('عبدالصمد'));
 
         const userSections = isAbdulSamad
-          ? ['force', 'user_management', 'mail', 'letters']
+          ? ['dashboard', 'force', 'vehicles', 'leaves']
           : ((Array.isArray(data.user.allowed_sections) && data.user.allowed_sections.length > 0)
               ? data.user.allowed_sections
-              : ['force']);
+              : ['dashboard', 'force']);
 
         const loggedUser = {
           ...data.user,
@@ -688,7 +547,7 @@ export default function App() {
           (foundUser.full_name && foundUser.full_name.includes('عبدالصمد'));
 
         const rawSections = isAbdulSamad
-          ? ['dashboard', 'force', 'user_management', 'mail', 'letters']
+          ? ['dashboard', 'force', 'vehicles', 'leaves']
           : ((Array.isArray(foundUser.allowed_sections) && foundUser.allowed_sections.length > 0)
               ? foundUser.allowed_sections
               : ['dashboard', 'force']);
@@ -1701,6 +1560,14 @@ export default function App() {
       );
     }
 
+    if (activeSection === 'vehicles') {
+      return <VehiclesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'leaves') {
+      return <LeavesSection forceMembers={forceMembers} setForceMembers={setForceMembers} user={user} />;
+    }
+
     if (activeSection === 'user_management') {
       return (
         <div className="users-management-view">
@@ -1999,196 +1866,15 @@ export default function App() {
       );
     }
 
-    if (activeSection === 'mail') {
-      return <MailSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'referred') {
-      return <ReferredMailSection user={user} />;
-    }
-
-    if (activeSection === 'letters') {
-      return <TemplatesSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'vehicles') {
-      return <VehiclesSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'operations') {
-      return <OperationsSection forceMembers={forceMembers} user={user} />;
-    }
-
-    if (activeSection === 'detainees') {
-      return <DetaineesSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'attendance') {
-      return <AttendanceSection forceMembers={forceMembers} user={user} />;
-    }
-
-    if (activeSection === 'leaves') {
-      return <LeavesSection forceMembers={forceMembers} setForceMembers={setForceMembers} user={user} />;
-    }
-
-    if (activeSection === 'discipline') {
-      return <PenaltiesSection forceMembers={forceMembers} user={user} />;
-    }
-
-    if (activeSection === 'fuel') {
-      return <FuelSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'inventory') {
-      return <InventorySection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'shifts') {
-      return <PatrolsSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'records') {
-      return <StationLogsSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'salaries') {
-      return <PayrollSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'maintenance') {
-      return <MaintenanceSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'decrees') {
-      return <DecisionsSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'archive') {
-      return <ArchiveSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'general_reports') {
-      return <AdministrativeReportsSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'command_reports') {
-      return <StrategicReportsSection user={user} forceMembers={forceMembers} />;
-    }
-
-    if (activeSection === 'general_settings') {
-      return <SettingsSection user={user} />;
-    }
-
-    if (activeSection === 'audit_log') {
-      return <AuditLogSection user={user} />;
-    }
-
-    // Generic View for other sections
-    const currentSectionObj = SECTIONS.find(s => s.id === activeSection) || SECTIONS[0];
-    const IconComponent = currentSectionObj.icon;
-
+    // Default fallback to Dashboard
     return (
-      <div>
-        <div className="module-view-header">
-          <div className="module-title-box">
-            <div className="title-gold-bar" />
-            <div>
-              <h1>{currentSectionObj.name}</h1>
-              <span>مديرية أمن أوباري | النظام المركزي الموحد</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={() => window.print()}
-              className="btn-official-secondary"
-            >
-              <Printer size={16} />
-              <span>طباعة تقرير</span>
-            </button>
-            <button
-              onClick={() => setActiveSection('force')}
-              className="btn-official-primary"
-            >
-              <Users size={16} />
-              <span>الانتقال للقوة العمومية</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="table-panel-card" style={{ padding: '36px 28px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '20px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid #edf2f7'
-          }}>
-            <div style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '12px',
-              background: '#eff6ff',
-              color: '#1e3a8a',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <IconComponent size={28} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#0a192f' }}>
-                قسم {currentSectionObj.name}
-              </h2>
-              <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-                السجلات والبيانات الرسمية التابعة لمديرية أمن أوباري
-              </p>
-            </div>
-          </div>
-
-          <div className="stats-summary-grid">
-            <div className="stat-box-card">
-              <div className="stat-box-icon"><CheckCircle2 size={22} /></div>
-              <div className="stat-box-content">
-                <h3>جاهز ومفعل</h3>
-                <p>الحالة التشغيلية</p>
-              </div>
-            </div>
-            <div className="stat-box-card">
-              <div className="stat-box-icon" style={{ background: '#f8fafc', color: '#0f172a' }}>
-                <FileCheck size={22} />
-              </div>
-              <div className="stat-box-content">
-                <h3>قيد المتابعة</h3>
-                <p>السجلات والقيود</p>
-              </div>
-            </div>
-            <div className="stat-box-card">
-              <div className="stat-box-icon" style={{ background: '#eff6ff', color: '#1e3a8a' }}>
-                <Shield size={22} />
-              </div>
-              <div className="stat-box-content">
-                <h3>مديرية أمن أوباري</h3>
-                <p>التبعية والقيادة</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={{
-            background: '#f8fafc',
-            border: '1px dashed #cbd5e1',
-            borderRadius: '12px',
-            padding: '24px',
-            textAlign: 'center',
-            color: '#475569'
-          }}>
-            <p style={{ fontSize: '14px', fontWeight: 600 }}>
-              قسم <strong>{currentSectionObj.name}</strong> مبرمج ومربوط بالمنظومة، ويمكن إضافة وتعديل السجلات الخاصة به بحسب محاضر العمل والتعليمات الصادرة عن سيادة اللواء / موسى سعد محمد البدين.
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardSection
+        user={user}
+        forceMembers={forceMembers}
+        setForceMembers={setForceMembers}
+        setActiveSection={setActiveSection}
+        onTriggerImport={handleTriggerForceImport}
+      />
     );
   };
 
@@ -2642,22 +2328,22 @@ export default function App() {
                         value={newUserFormData.role}
                         onChange={(e) => {
                           const val = e.target.value;
-                          let label = 'ضابط عمليات';
-                          let sections = ['dashboard', 'operations'];
+                          let label = 'مدخل بيانات';
+                          let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'نائب مدير (صلاحيات إدارية)'; sections = ['dashboard', 'operations', 'force', 'shifts']; }
-                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'attendance', 'leaves']; }
-                          else if (val === 'operations_lead') { label = 'ضابط عمليات وسيطرة'; sections = ['dashboard', 'operations', 'shifts', 'records']; }
-                          else if (val === 'finance_officer') { label = 'مسؤول المالية والمرتبات'; sections = ['dashboard', 'salaries', 'inventory', 'fuel']; }
-                          else if (val === 'data_entry') { label = 'مدخل بيانات ومسؤول أرشيف'; sections = ['dashboard', 'force', 'archive']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'force', 'vehicles', 'leaves']; }
+                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force']; }
+                          else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles']; }
+                          else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
+                          else if (val === 'data_entry') { label = 'مدخل بيانات'; sections = ['dashboard', 'force']; }
                           setNewUserFormData({ ...newUserFormData, role: val, role_label: label, allowed_sections: sections });
                         }}
                       >
                         <option value="force_manager">مسؤول القوة العمومية</option>
-                        <option value="operations_lead">ضابط عمليات وسيطرة</option>
-                        <option value="finance_officer">مسؤول المالية والمرتبات</option>
-                        <option value="data_entry">مدخل بيانات وأرشيف</option>
-                        <option value="admin">نائب مدير (إداري شامل)</option>
+                        <option value="vehicles_manager">مسؤول الآليات والمركبات</option>
+                        <option value="leaves_manager">مسؤول سجل الإجازات</option>
+                        <option value="data_entry">مدخل بيانات</option>
+                        <option value="admin">مدير نظام (صلاحيات شاملة)</option>
                         <option value="super_admin">مدير عام (صلاحيات كاملة)</option>
                       </select>
                     </div>
@@ -2810,22 +2496,22 @@ export default function App() {
                         value={editingUserData.role}
                         onChange={(e) => {
                           const val = e.target.value;
-                          let label = 'ضابط عمليات';
-                          let sections = ['dashboard', 'operations'];
+                          let label = 'مدخل بيانات';
+                          let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'نائب مدير (صلاحيات إدارية)'; sections = ['dashboard', 'operations', 'force', 'shifts']; }
-                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'attendance', 'leaves']; }
-                          else if (val === 'operations_lead') { label = 'ضابط عمليات وسيطرة'; sections = ['dashboard', 'operations', 'shifts', 'records']; }
-                          else if (val === 'finance_officer') { label = 'مسؤول المالية والمرتبات'; sections = ['dashboard', 'salaries', 'inventory', 'fuel']; }
-                          else if (val === 'data_entry') { label = 'مدخل بيانات ومسؤول أرشيف'; sections = ['dashboard', 'force', 'archive']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'force', 'vehicles', 'leaves']; }
+                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force']; }
+                          else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles']; }
+                          else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
+                          else if (val === 'data_entry') { label = 'مدخل بيانات'; sections = ['dashboard', 'force']; }
                           setEditingUserData({ ...editingUserData, role: val, role_label: label, allowed_sections: sections });
                         }}
                       >
                         <option value="force_manager">مسؤول القوة العمومية</option>
-                        <option value="operations_lead">ضابط عمليات وسيطرة</option>
-                        <option value="finance_officer">مسؤول المالية والمرتبات</option>
-                        <option value="data_entry">مدخل بيانات وأرشيف</option>
-                        <option value="admin">نائب مدير (إداري شامل)</option>
+                        <option value="vehicles_manager">مسؤول الآليات والمركبات</option>
+                        <option value="leaves_manager">مسؤول سجل الإجازات</option>
+                        <option value="data_entry">مدخل بيانات</option>
+                        <option value="admin">مدير نظام (صلاحيات شاملة)</option>
                         <option value="super_admin">مدير عام (صلاحيات كاملة)</option>
                       </select>
                     </div>

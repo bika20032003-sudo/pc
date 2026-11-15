@@ -6,60 +6,35 @@ import {
   ChevronLeft,
   Shield,
   Users,
-  Radio,
-  Package,
-  Mail,
-  BarChart3,
+  Car,
   Camera,
-  Settings,
-  Sparkles
+  Settings
 } from 'lucide-react';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
-// 6 Official Directorate Operational Divisions
+// Official Directorate Operational Divisions
 export const SECTION_DIVISIONS = [
   {
     id: 'command',
-    title: 'القيادة والعمليات المركزية',
+    title: 'المتابعة والتحليل الإحصائي',
     icon: Shield,
     color: '#1e3a8a',
-    itemIds: ['dashboard', 'profile', 'operations']
+    itemIds: ['dashboard']
   },
   {
     id: 'hr_force',
     title: 'شؤون القوة والذاتية',
     icon: Users,
     color: '#047857',
-    itemIds: ['force', 'attendance', 'leaves', 'salaries']
+    itemIds: ['force', 'leaves']
   },
   {
     id: 'field_ops',
-    title: 'الانتشار الميداني والسيطرة',
-    icon: Radio,
+    title: 'الأسطول والآليات',
+    icon: Car,
     color: '#b91c1c',
-    itemIds: ['vehicles', 'shifts', 'records', 'detainees', 'discipline', 'decrees']
-  },
-  {
-    id: 'logistics',
-    title: 'الدعم اللوجستي والإمداد',
-    icon: Package,
-    color: '#d97706',
-    itemIds: ['maintenance', 'fuel', 'inventory']
-  },
-  {
-    id: 'comms',
-    title: 'البريد والتوثيق الرسمي',
-    icon: Mail,
-    color: '#4f46e5',
-    itemIds: ['mail', 'referred', 'letters', 'archive']
-  },
-  {
-    id: 'governance',
-    title: 'الإدارة والتقارير والرقابة',
-    icon: BarChart3,
-    color: '#7c3aed',
-    itemIds: ['general_reports', 'command_reports', 'user_management', 'general_settings', 'audit_log']
+    itemIds: ['vehicles']
   }
 ];
 

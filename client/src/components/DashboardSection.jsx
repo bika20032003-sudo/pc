@@ -656,10 +656,10 @@ export default function DashboardSection({
               type="button"
               className="btn-dash-action outline"
               style={{ padding: '4px 10px', fontSize: '11.5px' }}
-              onClick={() => setActiveSection && setActiveSection('salaries')}
+              onClick={() => setActiveSection && setActiveSection('force')}
             >
-              <DollarSign size={13} />
-              <span>منظومة المرتبات</span>
+              <Users size={13} />
+              <span>عرض كشف القوة</span>
             </button>
           </div>
 
@@ -705,12 +705,9 @@ export default function DashboardSection({
           <div className="moi-card-body">
             <div className="moi-shortcuts-grid">
               {[
-                { id: 'force', name: 'سجل القوة العمومية', desc: 'بطاقات 2,211 منتسب', icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
-                { id: 'leaves', name: 'شؤون الإجازات', desc: 'أذونات وإجازات رسمية', icon: Clock, bg: '#fef3c7', clr: '#d97706' },
-                { id: 'vehicles', name: 'حركة الآليات', desc: 'أسطول الدوريات والمركبات', icon: Car, bg: '#ecfdf5', clr: '#059669' },
-                { id: 'operations', name: 'غرفة العمليات', desc: 'تسجيل البلاغات والإشارات', icon: Radio, bg: '#fee2e2', clr: '#dc2626' },
-                { id: 'salaries', name: 'الشؤون المالية', desc: 'المرتبات والحسابات', icon: DollarSign, bg: '#f3e8ff', clr: '#7c3aed' },
-                { id: 'archive', name: 'الأرشيف والقرارات', desc: 'الأوامر والوثائق الرسمية', icon: FileText, bg: '#e0f2fe', clr: '#0284c7' }
+                { id: 'force', name: 'سجل القوة العمومية', desc: 'إدارة وفحص بيانات 2,211 منتسب', icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
+                { id: 'vehicles', name: 'الآليات والمركبات', desc: 'متابعة 92 آلية ومركبة أمنية', icon: Car, bg: '#ecfdf5', clr: '#059669' },
+                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' }
               ].map(shortcut => {
                 const IconComponent = shortcut.icon;
                 return (
