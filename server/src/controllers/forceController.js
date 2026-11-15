@@ -1,22 +1,52 @@
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const jsonPath = path.resolve(__dirname, '../data/force_data.json');
-let memoryForce = [];
+export let memoryForce = [];
 
+// Load initial data
 try {
-  if (fs.existsSync(jsonPath)) {
-    memoryForce = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    console.log(`✅ تم تحميل ${memoryForce.length} سجل للقوة العمومية في ذاكرة المخدم`);
-  }
+  memoryForce = safeReadJson(jsonPath, []);
+  console.log(`✅ تم تحميل ${memoryForce.length} سجل للقوة العمومية في ذاكرة المخدم`);
 } catch (e) {
   console.error('Error loading force json:', e);
+}
+
+function persistForce() {
+  return safeWriteJson(jsonPath, memoryForce);
+}
+
+/**
+ * تحديث حالة منتسب في الذاكرة والملف بشكل متزامن لمنع سباق البيانات (Race Condition)
+ */
+export function updateForceMemberStatusDirect(identifier, newStatus) {
+  if (!identifier || identifier === '---') return false;
+  const cleanId = String(identifier).trim();
+  let updated = false;
+
+  for (let m of memoryForce) {
+    if (
+      (m.national_id && String(m.national_id).trim() === cleanId) ||
+      (m.job_number && String(m.job_number).trim() === cleanId) ||
+      (m.financial_number && String(m.financial_number).trim() === cleanId) ||
+      (m.id && String(m.id).trim() === cleanId)
+    ) {
+      m.job_status = newStatus;
+      updated = true;
+      break;
+    }
+  }
+
+  if (updated) {
+    persistForce();
+    console.log(`🔄 تم مزامنة حالة المنتسب [${cleanId}] في القوة العمومية إلى: ${newStatus}`);
+  }
+  return updated;
 }
 
 export async function getForceList(req, res) {
@@ -31,12 +61,12 @@ export async function getForceList(req, res) {
     if (search && search.trim()) {
       const q = normalizeArabicText(search);
       list = list.filter(item =>
-        normalizeArabicText(item.name).includes(q) ||
-        normalizeArabicText(item.financial_number).includes(q) ||
-        normalizeArabicText(item.national_id).includes(q) ||
-        normalizeArabicText(item.job_title).includes(q) ||
-        normalizeArabicText(item.department).includes(q) ||
-        normalizeArabicText(item.bank_name).includes(q)
+        normalizeArabicText(item.name || '').includes(q) ||
+        normalizeArabicText(item.financial_number || '').includes(q) ||
+        normalizeArabicText(item.national_id || '').includes(q) ||
+        normalizeArabicText(item.job_title || '').includes(q) ||
+        normalizeArabicText(item.department || '').includes(q) ||
+        normalizeArabicText(item.bank_name || '').includes(q)
       );
     }
 
@@ -73,16 +103,17 @@ export async function getForceList(req, res) {
 
 export async function createForceMember(req, res) {
   try {
+    const maxId = memoryForce.reduce((max, m) => (m.id > max ? m.id : max), 0);
     const newMember = {
-      id: Date.now(),
+      id: maxId + 1,
       ...req.body
     };
     memoryForce.unshift(newMember);
 
-    // Save to file
-    try {
-      fs.writeFileSync(jsonPath, JSON.stringify(memoryForce, null, 2), 'utf8');
-    } catch (e) {}
+    const saved = persistForce();
+    if (!saved) {
+      return res.status(500).json({ success: false, message: 'فشل حفظ سجل المنتسب على القرص' });
+    }
 
     return res.status(201).json({
       success: true,
@@ -109,10 +140,10 @@ export async function updateForceMember(req, res) {
       id
     };
 
-    // Save to file
-    try {
-      fs.writeFileSync(jsonPath, JSON.stringify(memoryForce, null, 2), 'utf8');
-    } catch (e) {}
+    const saved = persistForce();
+    if (!saved) {
+      return res.status(500).json({ success: false, message: 'فشل تحديث بيانات المنتسب على القرص' });
+    }
 
     return res.json({
       success: true,
@@ -127,11 +158,13 @@ export async function updateForceMember(req, res) {
 export async function deleteForceMember(req, res) {
   try {
     const id = Number(req.params.id);
-    memoryForce = memoryForce.filter(m => m.id !== id);
+    const index = memoryForce.findIndex(m => m.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+    }
 
-    try {
-      fs.writeFileSync(jsonPath, JSON.stringify(memoryForce, null, 2), 'utf8');
-    } catch (e) {}
+    memoryForce = memoryForce.filter(m => m.id !== id);
+    persistForce();
 
     return res.json({
       success: true,
@@ -149,16 +182,20 @@ export async function replaceForceList(req, res) {
       return res.status(400).json({ success: false, message: 'قائمة الأفراد غير صالحة أو فارغة' });
     }
 
+    // Never accept replacement that decimates over 50% of the dataset unless explicitly confirmed
+    if (memoryForce.length > 1000 && members.length < 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'تم رفض العملية: حجم القائمة المستبدلة يقل كثيراً عن الحجم المعتمد للقوة العمومية (حماية البيانات)'
+      });
+    }
+
     memoryForce = members.map((m, idx) => ({
       ...m,
       id: m.id || idx + 1
     }));
 
-    try {
-      fs.writeFileSync(jsonPath, JSON.stringify(memoryForce, null, 2), 'utf8');
-    } catch (e) {
-      console.error('Error saving force json:', e);
-    }
+    persistForce();
 
     console.log(`✅ تم استبدال القوة العمومية بنجاح: ${memoryForce.length} عضو`);
 
@@ -172,4 +209,3 @@ export async function replaceForceList(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
-

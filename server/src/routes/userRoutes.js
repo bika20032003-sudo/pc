@@ -6,13 +6,14 @@ import {
   deleteUser,
   updateProfile
 } from '../controllers/userController.js';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
 router.get('/', getAllUsers);
-router.post('/', createUser);
-router.put('/profile', updateProfile);
-router.put('/:id', updateUser);
-router.delete('/:id', deleteUser);
+router.post('/', optionalAuth, createUser);
+router.put('/profile', optionalAuth, updateProfile);
+router.put('/:id', optionalAuth, updateUser);
+router.delete('/:id', optionalAuth, deleteUser);
 
 export default router;

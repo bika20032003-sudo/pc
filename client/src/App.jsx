@@ -81,6 +81,9 @@ import SettingsSection from './components/SettingsSection';
 import AuditLogSection from './components/AuditLogSection';
 import AttendanceSection from './components/AttendanceSection';
 import ReferredMailSection from './components/ReferredMailSection';
+import SidebarNav from './components/SidebarNav';
+import GlobalToast from './components/GlobalToast';
+import CommandPaletteModal from './components/CommandPaletteModal';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
@@ -328,6 +331,21 @@ export default function App() {
 
   // Mobile Drawer State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Command Palette & Quick Switcher State (Ctrl + K)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Keyboard Shortcut for Command Palette
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Carousel Slide State
   const [activeSlide, setActiveSlide] = useState(0);
@@ -1167,8 +1185,14 @@ export default function App() {
     try {
       await fetch('/api/users/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileFormData)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          ...profileFormData,
+          userId: user.id
+        })
       });
     } catch (err) {}
 
@@ -2181,84 +2205,20 @@ export default function App() {
           onChange={handleForceFileChange}
         />
 
-        {/* Backdrop for Mobile */}
-        <div
-          className={`sidebar-backdrop ${isMobileMenuOpen ? 'active' : ''}`}
-          onClick={() => setIsMobileMenuOpen(false)}
-          aria-hidden="true"
+        {/* Categorized Sidebar Navigation */}
+        <SidebarNav
+          sections={userAllowedSections}
+          activeSection={activeSection}
+          onSelectSection={setActiveSection}
+          user={user}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+          onOpenProfileModal={handleOpenProfileModal}
         />
-
-        {/* Sidebar Navigation */}
-        <aside className={`dashboard-sidebar ${isMobileMenuOpen ? 'sidebar-open' : ''}`}>
-          <div className="sidebar-header">
-            <div className="sidebar-brand">
-              <div className="sidebar-logo">
-                <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }} alt="وزارة الداخلية" />
-              </div>
-              <div className="sidebar-title">
-                <h2>وزارة الداخلية</h2>
-                <span>مديرية أمن أوباري</span>
-              </div>
-            </div>
-            <button
-              className="sidebar-close-btn"
-              onClick={() => setIsMobileMenuOpen(false)}
-              aria-label="إغلاق القائمة"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <nav className="sidebar-nav">
-            {userAllowedSections.map((sec) => {
-              const IconComp = sec.icon;
-              const isActive = activeSection === sec.id;
-              return (
-                <div
-                  key={sec.id}
-                  id={`nav-item-${sec.id}`}
-                  data-section={sec.id}
-                  className={`nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveSection(sec.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <IconComp size={17} />
-                  <span>{sec.name}</span>
-                </div>
-              );
-            })}
-          </nav>
-
-          <div
-            className="sidebar-user"
-            onClick={handleOpenProfileModal}
-            title="انقر لفتح إعدادات المستخدم وتعديل البيانات ورفع الصورة"
-          >
-            <div className="sidebar-user-avatar">
-              {user.avatar ? (
-                <img src={user.avatar} alt="صورة المستخدم" className="user-avatar-img" />
-              ) : (
-                <span>{user.full_name ? user.full_name.charAt(0) : 'م'}</span>
-              )}
-              <div className="avatar-edit-badge" title="تغيير الصورة">
-                <Camera size={10} />
-              </div>
-            </div>
-            <div className="sidebar-user-info">
-              <h4>{user.full_name || 'سيادة اللواء / موسى سعد محمد البدين'}</h4>
-              <p>{user.badge_number || 'MOI-10492'} | {user.rank_title || 'لواء شرطة'}</p>
-            </div>
-            <div className="sidebar-user-settings-icon" title="إعدادات الحساب">
-              <Settings size={15} />
-            </div>
-          </div>
-        </aside>
 
         {/* Main View Area */}
         <main className="dashboard-main">
-          {/* Top Navigation Bar */}
+          {/* Enhanced Top Navigation Bar */}
           <header className="dashboard-topbar">
             <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
@@ -2268,9 +2228,42 @@ export default function App() {
               >
                 <Menu size={20} />
               </button>
+
+              {/* Active Section Breadcrumb */}
+              {(() => {
+                const currentSec = SECTIONS.find(s => s.id === activeSection) || SECTIONS[0];
+                const IconComp = currentSec.icon;
+                return (
+                  <div className="topbar-breadcrumb-box">
+                    <div className="topbar-breadcrumb-icon">
+                      <IconComp size={16} />
+                    </div>
+                    <span className="topbar-breadcrumb-title">{currentSec.name}</span>
+                    <span className="topbar-breadcrumb-badge">مديرية أمن أوباري</span>
+                  </div>
+                );
+              })()}
+
+              {/* Quick Command Palette Button */}
+              <button
+                type="button"
+                className="topbar-cmd-btn"
+                onClick={() => setIsCommandPaletteOpen(true)}
+                title="انقر أو اضغط Ctrl + K للبحث السريع والانتقال الفوري"
+              >
+                <Search size={14} />
+                <span>بحث سريع أو انتقال...</span>
+                <kbd>Ctrl + K</kbd>
+              </button>
             </div>
 
-            <div className="topbar-left">
+            <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Live Server / System Status */}
+              <div className="topbar-live-status" title="حالة الخادم المباشر">
+                <span className="pulse-dot-green" />
+                <span>الخادم نشط</span>
+              </div>
+
               {/* Officer Profile Quick Button */}
               <button
                 type="button"
@@ -3319,6 +3312,29 @@ export default function App() {
             onUpdatePhoto={handleUpdateMemberPhoto}
           />
         )}
+
+        {/* Global Command Palette / Quick Search (Ctrl + K) */}
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          sections={userAllowedSections}
+          forceMembers={forceMembers}
+          onSelectSection={(secId) => {
+            setActiveSection(secId);
+            setIsCommandPaletteOpen(false);
+          }}
+          onViewOfficer={(member) => {
+            setPreviewMember(member);
+            setShowPreviewModal(true);
+            setIsCommandPaletteOpen(false);
+          }}
+        />
+
+        {/* Global Sovereign Toast Notification */}
+        <GlobalToast
+          message={notificationMsg}
+          onClose={() => setNotificationMsg('')}
+        />
       </div>
     );
   }
@@ -3465,6 +3481,39 @@ export default function App() {
                   </>
                 )}
               </button>
+
+              {/* Quick Login Presets for Training & Official Demo */}
+              <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0' }}>
+                <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
+                  حسابات الدخول المعتمدة للمنظومة:
+                </span>
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('admin'); setPassword('admin123'); }}
+                    style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#1e3a8a', cursor: 'pointer' }}
+                    title="مدير عام المنظومة (صلاحيات كاملة)"
+                  >
+                    👑 سيادة اللواء (admin)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('ali.ahmed'); setPassword('123456'); }}
+                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#334155', cursor: 'pointer' }}
+                    title="نائب مدير المديرية"
+                  >
+                    👮‍♂️ نائب المدير
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('abdulsamad'); setPassword('123456'); }}
+                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#334155', cursor: 'pointer' }}
+                    title="مسؤول القوة العمومية"
+                  >
+                    📋 شؤون القوة
+                  </button>
+                </div>
+              </div>
             </form>
 
             {/* Links and Directorate Social */}

@@ -1,56 +1,30 @@
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { updateForceMemberStatusDirect } from './forceController.js';
+import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const jsonPath = path.resolve(__dirname, '../data/leaves_data.json');
-const forceJsonPath = path.resolve(__dirname, '../data/force_data.json');
-
 let memoryLeaves = [];
 
 try {
-  if (fs.existsSync(jsonPath)) {
-    memoryLeaves = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    console.log(`✅ تم تحميل سجل الإجازات المركزي (${memoryLeaves.length} إجازة)`);
-  }
+  memoryLeaves = safeReadJson(jsonPath, []);
+  console.log(`✅ تم تحميل سجل الإجازات المركزي (${memoryLeaves.length} إجازة)`);
 } catch (e) {
   console.error('خطأ في تحميل سجل الإجازات:', e);
 }
 
 function persistLeaves() {
-  try {
-    fs.writeFileSync(jsonPath, JSON.stringify(memoryLeaves, null, 2), 'utf8');
-  } catch (e) {
-    console.error('فشل في حفظ سجل الإجازات:', e);
-  }
+  return safeWriteJson(jsonPath, memoryLeaves);
 }
 
-// تحديث حالة المنتسب في قاعدة بيانات القوة العمومية المركزية
-function updateForceMemberStatus(nationalNumber, newStatus) {
-  try {
-    if (!fs.existsSync(forceJsonPath)) return;
-    const forceList = JSON.parse(fs.readFileSync(forceJsonPath, 'utf8'));
-    let updated = false;
-    for (let m of forceList) {
-      if (
-        (m.national_id && m.national_id === nationalNumber) ||
-        (m.job_number && m.job_number === nationalNumber) ||
-        (m.financial_number && m.financial_number === nationalNumber)
-      ) {
-        m.job_status = newStatus;
-        updated = true;
-        break;
-      }
-    }
-    if (updated) {
-      fs.writeFileSync(forceJsonPath, JSON.stringify(forceList, null, 2), 'utf8');
-      console.log(`🔄 تم تحديث حالة المنتسب [${nationalNumber}] في القوة العمومية إلى: ${newStatus}`);
-    }
-  } catch (err) {
-    console.error('فشل تحديث حالة المنتسب في ملف القوة:', err);
-  }
+// دالة مساعدة للتحقق من صحة وصلاحية التاريخ
+function parseValidDate(dateInput) {
+  if (!dateInput) return null;
+  const d = new Date(dateInput);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 export async function getLeaves(req, res) {
@@ -60,7 +34,7 @@ export async function getLeaves(req, res) {
 
     // احتساب الأيام المتبقية وحالة الإجازة لكل قيد
     const enrichedLeaves = memoryLeaves.map(leave => {
-      const end = new Date(leave.EndDate);
+      const end = parseValidDate(leave.EndDate) || today;
       end.setHours(0, 0, 0, 0);
       const diffTime = end.getTime() - today.getTime();
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -116,15 +90,22 @@ export async function createLeave(req, res) {
       return res.status(400).json({ success: false, message: 'البيانات غير مكتملة (الاسم وتواريخ الإجازة إلزامية)' });
     }
 
+    const validStart = parseValidDate(StartDate);
+    const validEnd = parseValidDate(EndDate);
+
+    if (!validStart || !validEnd) {
+      return res.status(400).json({ success: false, message: 'صيغة تاريخ البداية أو النهاية غير صحيحة' });
+    }
+
     const newLeave = {
       LeaveID: Date.now(),
       NationalNumber: NationalNumber || '---',
-      FullName,
+      FullName: FullName.trim(),
       Rank: Rank || 'شرطي',
       DepartmentName: DepartmentName || 'ديوان المديرية',
       LeaveType: LeaveType || 'اجازة سنوية',
-      StartDate: new Date(StartDate).toISOString(),
-      EndDate: new Date(EndDate).toISOString(),
+      StartDate: validStart.toISOString(),
+      EndDate: validEnd.toISOString(),
       TotalDays: Number(TotalDays) || 1,
       Notes: Notes || 'داخل ليبيا',
       Status: 'سارية',
@@ -134,9 +115,9 @@ export async function createLeave(req, res) {
     memoryLeaves.unshift(newLeave);
     persistLeaves();
 
-    // تحديث حالة المنتسب في القوة العمومية إلى إجازة رسمية
+    // تحديث حالة المنتسب في القوة العمومية إلى إجازة رسمية عبر وحدة القوة مباشرة
     if (NationalNumber && NationalNumber !== '---') {
-      updateForceMemberStatus(NationalNumber, 'إجازة رسمية');
+      updateForceMemberStatusDirect(NationalNumber, 'إجازة رسمية');
     }
 
     return res.status(201).json({
@@ -197,9 +178,9 @@ export async function resumeDuty(req, res) {
 
     persistLeaves();
 
-    // إعادة حالة المنتسب في القوة العمومية إلى على رأس العمل
+    // إعادة حالة المنتسب في القوة العمومية إلى على رأس العمل عبر وحدة القوة المشتركة
     if (leave.NationalNumber && leave.NationalNumber !== '---') {
-      updateForceMemberStatus(leave.NationalNumber, 'على رأس العمل');
+      updateForceMemberStatusDirect(leave.NationalNumber, 'على رأس العمل');
     }
 
     return res.json({
@@ -234,4 +215,3 @@ export async function deleteLeave(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
-

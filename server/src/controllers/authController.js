@@ -4,7 +4,7 @@ import { getDb } from '../config/db.js';
 import { inMemoryUsers } from './userController.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'interior_ministry_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'interior_ministry_super_secure_jwt_secret_key_2026';
 
 export async function login(req, res) {
   try {
@@ -19,15 +19,15 @@ export async function login(req, res) {
 
     const { pool, isMySqlConnected, memoryUsers } = getDb();
     let user = null;
-    const cleanId = identifier.trim();
+    const cleanId = String(identifier).trim();
     const normId = normalizeArabicText(cleanId);
 
     // 1. Check MySQL if connected
     if (isMySqlConnected && pool) {
       try {
         const [rows] = await pool.query(
-          'SELECT * FROM users WHERE (username = ? OR email = ? OR badge_number = ? OR full_name LIKE ?) AND status = ? LIMIT 1',
-          [cleanId, cleanId, cleanId, `%${cleanId}%`, 'active']
+          'SELECT * FROM users WHERE (username = ? OR email = ? OR badge_number = ? OR full_name = ?) AND status = ? LIMIT 1',
+          [cleanId, cleanId, cleanId, cleanId, 'active']
         );
         if (rows.length > 0) {
           user = rows[0];
@@ -37,23 +37,21 @@ export async function login(req, res) {
       }
     }
 
-    // 2. Search inMemoryUsers and memoryUsers
+    // 2. Search inMemoryUsers and memoryUsers (precise matching only)
     if (!user) {
       const allPool = [...(inMemoryUsers || []), ...(memoryUsers || [])];
       user = allPool.find((u) => {
         if (u.status && u.status !== 'active') return false;
         const uUser = normalizeArabicText(u.username || '');
-        const uEmail = normalizeArabicText(u.email || '');
-        const uBadge = normalizeArabicText(u.badge_number || '');
+        const uEmail = (u.email || '').toLowerCase().trim();
+        const uBadge = (u.badge_number || '').trim();
         const uName = normalizeArabicText(u.full_name || '');
 
         return (
           uUser === normId ||
-          uEmail === normId ||
-          uBadge === normId ||
-          uName === normId ||
-          uName.includes(normId) ||
-          normId.includes(uName)
+          uEmail === cleanId.toLowerCase() ||
+          uBadge === cleanId ||
+          uName === normId
         );
       });
     }
@@ -65,7 +63,7 @@ export async function login(req, res) {
       });
     }
 
-    // Verify password securely using bcrypt
+    // Verify password strictly using bcrypt (never plaintext comparison)
     let passwordMatches = false;
     if (user.password_hash) {
       try {
@@ -73,9 +71,6 @@ export async function login(req, res) {
       } catch (e) {
         console.error('Password hash comparison error:', e);
       }
-    } else if (user.password) {
-      // Legacy unhashed fallback only if hash not set yet
-      passwordMatches = (user.password === password);
     }
 
     if (!passwordMatches) {
@@ -100,6 +95,10 @@ export async function login(req, res) {
     // Update last login
     if (isMySqlConnected && pool) {
       pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]).catch(() => {});
+      pool.query(
+        'INSERT INTO audit_logs (user_id, username, action, ip_address, status, details) VALUES (?, ?, ?, ?, ?, ?)',
+        [user.id, user.username, 'تسجيل دخول', req.ip || '127.0.0.1', 'success', 'تم تسجيل الدخول بنجاح']
+      ).catch(() => {});
     }
 
     return res.status(200).json({
@@ -150,20 +149,28 @@ export async function getProfile(req, res) {
         [decoded.id]
       );
       if (rows.length > 0) user = rows[0];
-    } else {
-      user = memoryUsers.find((u) => u.id === decoded.id) || memoryUsers[0];
+    }
+    
+    // Check in-memory fallback without unsafe defaulting to admin
+    if (!user) {
+      const allPool = [...(inMemoryUsers || []), ...(memoryUsers || [])];
+      user = allPool.find((u) => u.id === decoded.id || u.username === decoded.username);
     }
 
+    // Never default to memoryUsers[0]
     if (!user) {
       return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
     }
 
+    // Strip any password fields
+    const { password, password_raw, password_hash, ...safeUser } = user;
+
     return res.status(200).json({
       success: true,
-      user: { ...user, isMySqlConnected }
+      user: { ...safeUser, isMySqlConnected }
     });
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'انتهت صلاحية الجلسة' });
+    return res.status(401).json({ success: false, message: 'انتهت صلاحية الجلسة أو أن التوكن غير صالح' });
   }
 }
 

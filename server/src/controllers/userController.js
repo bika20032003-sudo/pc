@@ -4,6 +4,13 @@ import { getDb } from '../config/db.js';
 const defaultAdminHash = bcrypt.hashSync('admin123', 10);
 const defaultUserHash = bcrypt.hashSync('123456', 10);
 
+// Helper to strip sensitive password data from any user object
+function sanitizeUser(u) {
+  if (!u) return null;
+  const { password, password_raw, password_hash, ...safe } = u;
+  return safe;
+}
+
 // Pre-configured official system users
 export let inMemoryUsers = [
   {
@@ -132,7 +139,9 @@ export async function getAllUsers(req, res) {
     const { pool, isMySqlConnected } = getDb();
     if (isMySqlConnected && pool) {
       try {
-        const [rows] = await pool.query('SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login, created_at FROM users ORDER BY id ASC');
+        const [rows] = await pool.query(
+          'SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login, created_at FROM users ORDER BY id ASC'
+        );
         if (rows && rows.length > 0) {
           return res.json({ success: true, count: rows.length, data: rows });
         }
@@ -140,7 +149,8 @@ export async function getAllUsers(req, res) {
         console.warn('Falling back to memory users:', e.message);
       }
     }
-    return res.json({ success: true, count: inMemoryUsers.length, data: inMemoryUsers });
+    const safeUsers = inMemoryUsers.map(sanitizeUser);
+    return res.json({ success: true, count: safeUsers.length, data: safeUsers });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -153,15 +163,23 @@ export async function createUser(req, res) {
       return res.status(400).json({ success: false, message: 'اسم المستخدم والاسم الكامل مطلوبان' });
     }
 
+    const cleanUsername = username.trim();
+    // Check if username already exists
+    if (inMemoryUsers.some(u => u.username.toLowerCase() === cleanUsername.toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'اسم المستخدم مسجل مسبقاً' });
+    }
+
     const rawPassword = password || '123456';
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
+    // Compute a safe numeric ID
+    const maxId = inMemoryUsers.reduce((max, u) => (u.id > max ? u.id : max), 0);
+    const newId = maxId + 1;
+
     const newUser = {
-      id: Date.now(),
-      username: username.trim(),
-      email: email ? email.trim() : `${username.trim()}@ubari.moi.gov.ly`,
-      password: rawPassword,
-      password_raw: rawPassword,
+      id: newId,
+      username: cleanUsername,
+      email: email ? email.trim() : `${cleanUsername}@ubari.moi.gov.ly`,
       password_hash: hashedPassword,
       full_name: full_name.trim(),
       badge_number: badge_number ? badge_number.trim() : `MOI-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -177,7 +195,7 @@ export async function createUser(req, res) {
       created_at: new Date().toISOString()
     };
 
-    inMemoryUsers.unshift(newUser);
+    inMemoryUsers.push(newUser);
 
     // Also persist in MySQL if connected
     const { pool, isMySqlConnected } = getDb();
@@ -193,7 +211,11 @@ export async function createUser(req, res) {
       }
     }
 
-    return res.status(201).json({ success: true, message: 'تم إنشاء المستخدم ومنحه الصلاحيات بنجاح', data: newUser });
+    return res.status(201).json({
+      success: true,
+      message: 'تم إنشاء المستخدم ومنحه الصلاحيات بنجاح',
+      data: sanitizeUser(newUser)
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -208,13 +230,45 @@ export async function updateUser(req, res) {
       return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
     }
 
+    const { password, new_password, password_hash, ...updates } = req.body;
+
+    // Handle password update if provided
+    let newHash = inMemoryUsers[index].password_hash;
+    const pwdToSet = new_password || password;
+    if (pwdToSet && typeof pwdToSet === 'string' && pwdToSet.trim().length >= 4) {
+      newHash = await bcrypt.hash(pwdToSet.trim(), 10);
+    }
+
     inMemoryUsers[index] = {
       ...inMemoryUsers[index],
-      ...req.body,
+      ...updates,
+      password_hash: newHash,
       id: numId
     };
 
-    return res.json({ success: true, message: 'تم تحديث بيانات وصلاحيات المستخدم بنجاح', data: inMemoryUsers[index] });
+    // Remove legacy unhashed properties if any
+    delete inMemoryUsers[index].password;
+    delete inMemoryUsers[index].password_raw;
+
+    // Persist in MySQL if connected
+    const { pool, isMySqlConnected } = getDb();
+    if (isMySqlConnected && pool) {
+      try {
+        const u = inMemoryUsers[index];
+        await pool.query(
+          `UPDATE users SET full_name = ?, badge_number = ?, rank_title = ?, department = ?, role = ?, status = ?, password_hash = ? WHERE id = ? OR username = ?`,
+          [u.full_name, u.badge_number, u.rank_title, u.department, u.role === 'super_admin' ? 'super_admin' : 'officer', u.status, u.password_hash, numId, u.username]
+        );
+      } catch (dbErr) {
+        console.warn('MySQL update user notice:', dbErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'تم تحديث بيانات وصلاحيات المستخدم بنجاح',
+      data: sanitizeUser(inMemoryUsers[index])
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -227,7 +281,24 @@ export async function deleteUser(req, res) {
     if (numId === 1) {
       return res.status(403).json({ success: false, message: 'لا يمكن حذف الحساب القيادي الرئيسي للمنظومة' });
     }
+
+    const targetUser = inMemoryUsers.find(u => u.id === numId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
     inMemoryUsers = inMemoryUsers.filter(u => u.id !== numId);
+
+    // Delete from MySQL if connected
+    const { pool, isMySqlConnected } = getDb();
+    if (isMySqlConnected && pool) {
+      try {
+        await pool.query('DELETE FROM users WHERE id = ? OR username = ?', [numId, targetUser.username]);
+      } catch (dbErr) {
+        console.warn('MySQL delete user notice:', dbErr.message);
+      }
+    }
+
     return res.json({ success: true, message: 'تم حذف المستخدم بنجاح' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -236,27 +307,60 @@ export async function deleteUser(req, res) {
 
 export async function updateProfile(req, res) {
   try {
-    const { full_name, badge_number, rank_title, department, phone, email, avatar, current_password, new_password } = req.body;
-    
-    // Update the main admin user in memory
-    const adminIndex = inMemoryUsers.findIndex(u => u.id === 1);
-    if (adminIndex !== -1) {
-      inMemoryUsers[adminIndex] = {
-        ...inMemoryUsers[adminIndex],
-        full_name: full_name || inMemoryUsers[adminIndex].full_name,
-        badge_number: badge_number || inMemoryUsers[adminIndex].badge_number,
-        rank_title: rank_title || inMemoryUsers[adminIndex].rank_title,
-        department: department || inMemoryUsers[adminIndex].department,
-        phone: phone !== undefined ? phone : inMemoryUsers[adminIndex].phone,
-        email: email || inMemoryUsers[adminIndex].email,
-        avatar: avatar !== undefined ? avatar : inMemoryUsers[adminIndex].avatar
-      };
+    const { full_name, badge_number, rank_title, department, phone, email, avatar, current_password, new_password, userId, id } = req.body;
+
+    // Identify target user: from authenticated session (req.user), or explicit userId / id, defaulting to 1
+    const targetId = Number(req.user?.id || userId || id || 1);
+
+    const userIndex = inMemoryUsers.findIndex(u => u.id === targetId);
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    const targetUser = inMemoryUsers[userIndex];
+
+    // Password change validation if requested
+    if (new_password) {
+      if (!current_password) {
+        return res.status(400).json({ success: false, message: 'يرجى إدخال كلمة المرور الحالية لتأكيد التغيير' });
+      }
+      const isMatch = await bcrypt.compare(current_password, targetUser.password_hash);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'كلمة المرور الحالية غير صحيحة' });
+      }
+      targetUser.password_hash = await bcrypt.hash(new_password, 10);
+    }
+
+    // Update profile fields
+    if (full_name) targetUser.full_name = full_name.trim();
+    if (badge_number) targetUser.badge_number = badge_number.trim();
+    if (rank_title) targetUser.rank_title = rank_title.trim();
+    if (department) targetUser.department = department.trim();
+    if (phone !== undefined) targetUser.phone = phone;
+    if (email) targetUser.email = email.trim();
+    if (avatar !== undefined) targetUser.avatar = avatar;
+
+    // Delete legacy plaintext passwords if lingering
+    delete targetUser.password;
+    delete targetUser.password_raw;
+
+    // Update in MySQL if connected
+    const { pool, isMySqlConnected } = getDb();
+    if (isMySqlConnected && pool) {
+      try {
+        await pool.query(
+          `UPDATE users SET full_name = ?, badge_number = ?, rank_title = ?, department = ?, email = ?, avatar = ?, password_hash = ? WHERE id = ? OR username = ?`,
+          [targetUser.full_name, targetUser.badge_number, targetUser.rank_title, targetUser.department, targetUser.email, targetUser.avatar, targetUser.password_hash, targetId, targetUser.username]
+        );
+      } catch (dbErr) {
+        console.warn('MySQL update profile notice:', dbErr.message);
+      }
     }
 
     return res.json({
       success: true,
-      message: 'تم تحديث البيانات الشخصية والصورة بنجاح',
-      data: inMemoryUsers[adminIndex]
+      message: 'تم تحديث البيانات الشخصية بنجاح',
+      data: sanitizeUser(targetUser)
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

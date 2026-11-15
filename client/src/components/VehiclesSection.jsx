@@ -35,7 +35,7 @@ import {
 import initialVehiclesData from '../data/vehicles_data.json';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 
-const API_BASE_URL = 'http://localhost:5050/api/vehicles';
+const API_BASE_URL = '/api/vehicles';
 
 export default function VehiclesSection({ user, forceMembers = [] }) {
   const [vehicles, setVehicles] = useState(initialVehiclesData || []);

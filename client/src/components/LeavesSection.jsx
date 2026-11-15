@@ -135,7 +135,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
   const fetchLeavesFromApi = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:5050/api/leaves');
+      const res = await fetch('/api/leaves');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.leaves)) {
@@ -340,7 +340,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
     // إرسال للخادم
     try {
-      await fetch('http://localhost:5050/api/leaves', {
+      await fetch('/api/leaves', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLeave)
@@ -390,7 +390,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
     // إرسال للخادم
     try {
-      await fetch(`http://localhost:5050/api/leaves/${leaveId}/resume`, {
+      await fetch(`/api/leaves/${leaveId}/resume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -411,7 +411,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     if (window.confirm('هل أنت متأكد من حذف هذا القيد من سجل الإجازات المركزي؟')) {
       setLeaves(prev => prev.filter(l => l.LeaveID !== id));
       try {
-        await fetch(`http://localhost:5050/api/leaves/${id}`, { method: 'DELETE' });
+        await fetch(`/api/leaves/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('تم الحذف محلياً:', err.message);
       }

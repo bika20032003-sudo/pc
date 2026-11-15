@@ -2,6 +2,7 @@ import xlsx from 'xlsx';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { safeWriteJson } from '../utils/fileUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +12,7 @@ export function loadExcelData() {
   const files = fs.readdirSync(rootDir).filter(f => f.includes('2222') && f.endsWith('.xlsx'));
   
   if (files.length === 0) {
-    console.warn('⚠️ لم يتم العثور على ملف إكسل قوة 2222');
+    console.warn('⚠️ لم يتم العثور على ملف إكسل قوة 2222 في المجلد الجذري');
     return [];
   }
 
@@ -83,13 +84,16 @@ export function loadExcelData() {
   return cleanRecords;
 }
 
-// Write to json cache file for lightning fast startup
+// Write to json cache file only if real records exist to prevent wiping central data
 try {
   const data = loadExcelData();
   const outputPath = path.resolve(__dirname, '../data/force_data.json');
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, JSON.stringify(data, null, 2), 'utf8');
-  console.log(`💾 تم حفظ بيانات ${data.length} منتسب في: ${outputPath}`);
+  if (data && data.length > 0) {
+    safeWriteJson(outputPath, data);
+    console.log(`💾 تم حفظ بيانات ${data.length} منتسب بأمان في: ${outputPath}`);
+  } else {
+    console.log('🛡️ تم الحفاظ على ملف بيانات القوة العمومية الحالي دون أي تصفير (Data Preservation).');
+  }
 } catch (e) {
   console.error('Error in importForce.js:', e);
 }

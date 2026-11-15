@@ -1,6 +1,6 @@
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,20 +9,14 @@ const jsonPath = path.resolve(__dirname, '../data/attendance_data.json');
 let memoryAttendance = {}; // { [date]: { [memberId]: { status, time_in, time_out, notes, recorded_by } } }
 
 try {
-  if (fs.existsSync(jsonPath)) {
-    memoryAttendance = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    console.log(`✅ تم تحميل سجلات الحضور والانصراف (${Object.keys(memoryAttendance).length} يوم)`);
-  }
+  memoryAttendance = safeReadJson(jsonPath, {});
+  console.log(`✅ تم تحميل سجلات الحضور والانصراف (${Object.keys(memoryAttendance).length} يوم)`);
 } catch (e) {
   console.error('Error loading attendance json:', e);
 }
 
 function persistAttendance() {
-  try {
-    fs.writeFileSync(jsonPath, JSON.stringify(memoryAttendance, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Failed to persist attendance:', e);
-  }
+  return safeWriteJson(jsonPath, memoryAttendance);
 }
 
 export async function getAttendance(req, res) {
@@ -100,4 +94,3 @@ export async function bulkRecordAttendance(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
-

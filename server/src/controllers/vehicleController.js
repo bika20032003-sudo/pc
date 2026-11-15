@@ -1,7 +1,7 @@
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,25 +10,14 @@ const jsonPath = path.resolve(__dirname, '../data/vehicles_data.json');
 let memoryVehicles = [];
 
 try {
-  if (fs.existsSync(jsonPath)) {
-    memoryVehicles = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    console.log(`✅ تم تحميل ${memoryVehicles.length} آلية ومركبة في ذاكرة المخدم`);
-  }
+  memoryVehicles = safeReadJson(jsonPath, []);
+  console.log(`✅ تم تحميل ${memoryVehicles.length} آلية ومركبة في ذاكرة المخدم`);
 } catch (e) {
   console.error('Error loading vehicles json:', e);
 }
 
 function persistVehicles() {
-  try {
-    fs.writeFileSync(jsonPath, JSON.stringify(memoryVehicles, null, 2), 'utf8');
-    // Also sync to client if exists
-    const clientPath = path.resolve(__dirname, '../../../client/src/data/vehicles_data.json');
-    if (fs.existsSync(path.dirname(clientPath))) {
-      fs.writeFileSync(clientPath, JSON.stringify(memoryVehicles, null, 2), 'utf8');
-    }
-  } catch (e) {
-    console.error('Failed to persist vehicles:', e);
-  }
+  return safeWriteJson(jsonPath, memoryVehicles);
 }
 
 export async function getVehicleList(req, res) {
@@ -37,26 +26,29 @@ export async function getVehicleList(req, res) {
     let list = [...memoryVehicles];
 
     if (category && category !== 'الكل') {
-      list = list.filter(item => item.category === category);
+      const normCat = normalizeArabicText(category);
+      list = list.filter(item => normalizeArabicText(item.category || '') === normCat);
     }
 
     if (status && status !== 'الكل') {
-      list = list.filter(item => item.status === status);
+      const normStatus = normalizeArabicText(status);
+      list = list.filter(item => normalizeArabicText(item.status || '') === normStatus);
     }
 
     if (department && department !== 'الكل') {
-      list = list.filter(item => item.department === department);
+      const normDept = normalizeArabicText(department);
+      list = list.filter(item => normalizeArabicText(item.department || '') === normDept);
     }
 
     if (search && search.trim()) {
       const q = normalizeArabicText(search);
       list = list.filter(item =>
-        normalizeArabicText(item.plate_number).includes(q) ||
-        normalizeArabicText(item.chassis_number).includes(q) ||
-        normalizeArabicText(item.vehicle_type).includes(q) ||
-        normalizeArabicText(item.custodian_name).includes(q) ||
-        normalizeArabicText(item.department).includes(q) ||
-        normalizeArabicText(item.notes).includes(q)
+        normalizeArabicText(item.plate_number || '').includes(q) ||
+        normalizeArabicText(item.chassis_number || '').includes(q) ||
+        normalizeArabicText(item.vehicle_type || '').includes(q) ||
+        normalizeArabicText(item.custodian_name || '').includes(q) ||
+        normalizeArabicText(item.department || '').includes(q) ||
+        normalizeArabicText(item.notes || '').includes(q)
       );
     }
 
@@ -103,8 +95,9 @@ export async function getVehicleList(req, res) {
 
 export async function createVehicle(req, res) {
   try {
+    const maxId = memoryVehicles.reduce((max, v) => (v.id > max ? v.id : max), 0);
     const newVehicle = {
-      id: Date.now(),
+      id: maxId + 1,
       record_no: memoryVehicles.length + 1,
       created_at: new Date().toISOString(),
       status: 'جاهزة للعمل',
@@ -178,8 +171,8 @@ export async function deleteVehicle(req, res) {
 export async function replaceVehicleList(req, res) {
   try {
     const { vehicles } = req.body;
-    if (!Array.isArray(vehicles)) {
-      return res.status(400).json({ success: false, message: 'بيانات غير صالحة' });
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+      return res.status(400).json({ success: false, message: 'بيانات غير صالحة أو مصفوفة فارغة' });
     }
 
     memoryVehicles = vehicles;
@@ -194,4 +187,3 @@ export async function replaceVehicleList(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
-

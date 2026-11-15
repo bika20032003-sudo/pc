@@ -24,16 +24,34 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, server-to-server) or matching allowed list
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.ts.net') || origin.includes('localhost')) {
+    // Allow non-browser requests (curl, server-to-server, Electron, mobile)
+    if (!origin) return callback(null, true);
+
+    // Check against explicit allowed list or local patterns
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.ts.net') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(null, true); // Fallback gracefully while logging
+      console.warn(`[CORS Blocked] Origin not allowed: ${origin}`);
+      callback(new Error('غير مصرح بهذا النطاق للوصول إلى خوادم وزارة الداخلية'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Basic Security Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
@@ -52,6 +70,24 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     ministry: 'وزارة الداخلية - Libya Ministry of Interior',
     serverTime: new Date().toISOString()
+  });
+});
+
+// 404 Route handler for API
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'المسار المطلوب غير موجود في خوادم المنظومة'
+  });
+});
+
+// Centralized Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  const status = err.status || 500;
+  res.status(status).json({
+    success: false,
+    message: err.message || 'حدث خطأ داخلي في مخدم المنظومة'
   });
 });
 
