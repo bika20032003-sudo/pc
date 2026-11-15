@@ -68,15 +68,13 @@ if not exist "%~dp0client\node_modules\" (
 echo       - مكتبات الواجهة الأمامية: جاهزة ومثبتة.
 
 echo.
-echo   [3/4] فحص حالة الاتصال بقاعدة بيانات MySQL...
+echo   [3/4] فحص حالة قاعدة بيانات SQLite السيادية المعتمدة (WAL High-Concurrency)...
 
-:: فحص منفذ MySQL 3306
-netstat -ano | findstr ":3306" | findstr "LISTENING" >nul 2>nul
-if %errorlevel% equ 0 (
-    echo       [+] خادم MySQL: نشط ويعمل على المنفذ 3306.
+if exist "%~dp0server\src\data\moi_system.db" (
+    echo       [+] محرك SQLite: جاهز ونشط (الملف: server\src\data\moi_system.db).
+    echo       [+] نظام التزامن الفوري (WAL Mode): مفعل لخدمة كافة مدخلي البيانات بالتوازي.
 ) else (
-    echo       [i] تنبيه: خادم MySQL المباشر غير متصل حالياً.
-    echo           تم تفعيل نظام المحاكاة الآمن (Safe Fallback) لتعمل المنظومة فوراً.
+    echo       [*] محرك SQLite: سيتم إنشاء وتهيئة قاعدة البيانات وترحيل السجلات تلقائياً.
 )
 
 echo.

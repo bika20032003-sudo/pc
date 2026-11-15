@@ -1,119 +1,142 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const jsonPath = path.resolve(__dirname, '../data/vehicles_data.json');
-let memoryVehicles = [];
-
-try {
-  memoryVehicles = safeReadJson(jsonPath, []);
-  console.log(`✅ تم تحميل ${memoryVehicles.length} آلية ومركبة في ذاكرة المخدم`);
-} catch (e) {
-  console.error('Error loading vehicles json:', e);
-}
-
-function persistVehicles() {
-  return safeWriteJson(jsonPath, memoryVehicles);
-}
 
 export async function getVehicleList(req, res) {
   try {
     const { search, category, status, department, limit, page } = req.query;
-    let list = [...memoryVehicles];
+    const { db } = getDb();
+
+    let whereClauses = [];
+    let params = [];
 
     if (category && category !== 'الكل') {
-      const normCat = normalizeArabicText(category);
-      list = list.filter(item => normalizeArabicText(item.category || '') === normCat);
+      whereClauses.push('category = ?');
+      params.push(category);
     }
 
     if (status && status !== 'الكل') {
-      const normStatus = normalizeArabicText(status);
-      list = list.filter(item => normalizeArabicText(item.status || '') === normStatus);
+      whereClauses.push('status = ?');
+      params.push(status);
     }
 
     if (department && department !== 'الكل') {
-      const normDept = normalizeArabicText(department);
-      list = list.filter(item => normalizeArabicText(item.department || '') === normDept);
+      whereClauses.push('department = ?');
+      params.push(department);
     }
 
     if (search && search.trim()) {
-      const q = normalizeArabicText(search);
-      list = list.filter(item =>
-        normalizeArabicText(item.plate_number || '').includes(q) ||
-        normalizeArabicText(item.chassis_number || '').includes(q) ||
-        normalizeArabicText(item.vehicle_type || '').includes(q) ||
-        normalizeArabicText(item.custodian_name || '').includes(q) ||
-        normalizeArabicText(item.department || '').includes(q) ||
-        normalizeArabicText(item.notes || '').includes(q)
-      );
+      const q = `%${search.trim()}%`;
+      whereClauses.push(`(
+        plate_number LIKE ? OR
+        chassis_number LIKE ? OR
+        make_model LIKE ? OR
+        vehicle_type LIKE ? OR
+        custodian_name LIKE ? OR
+        department LIKE ? OR
+        notes LIKE ?
+      )`);
+      params.push(q, q, q, q, q, q, q);
     }
 
-    const total = memoryVehicles.length;
-    const activeCount = memoryVehicles.filter(v => v.status === 'جاهزة للعمل').length;
-    const custodyCount = memoryVehicles.filter(v => v.category === 'سيارة عهدة شخصية').length;
-    const departmentCount = memoryVehicles.filter(v => v.category === 'سيارة مراكز وأقسام').length;
-    const motorcycleCount = memoryVehicles.filter(v => v.category === 'دراجة نارية شرطية').length;
-    const outOfServiceCount = memoryVehicles.filter(v => v.status !== 'جاهزة للعمل').length;
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    let paginated = list;
+    const countRow = await db.get(`SELECT COUNT(*) as total FROM vehicles ${whereSql}`, params);
+    const filteredTotal = countRow ? countRow.total : 0;
+
+    // Aggregate overall vehicle fleet statistics
+    const totalRow = await db.get('SELECT COUNT(*) as c FROM vehicles');
+    const total = totalRow ? totalRow.c : 0;
+
+    const activeRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE status = 'جاهزة للعمل'");
+    const custodyRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'سيارة عهدة شخصية'");
+    const deptRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'سيارة مراكز وأقسام'");
+    const motoRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'دراجة نارية شرطية'");
+    const outRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE status != 'جاهزة للعمل'");
+
+    let data = [];
     let currentPage = 1;
     let totalPages = 1;
 
     if (limit) {
       const parsedLimit = Math.max(1, parseInt(limit, 10));
       currentPage = Math.max(1, parseInt(page || '1', 10));
-      totalPages = Math.ceil(list.length / parsedLimit) || 1;
+      totalPages = Math.ceil(filteredTotal / parsedLimit) || 1;
       const offset = (currentPage - 1) * parsedLimit;
-      paginated = list.slice(offset, offset + parsedLimit);
+
+      data = await db.all(
+        `SELECT * FROM vehicles ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
+        [...params, parsedLimit, offset]
+      );
+    } else {
+      data = await db.all(`SELECT * FROM vehicles ${whereSql} ORDER BY id ASC`, params);
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       total,
-      filteredTotal: list.length,
+      filteredTotal,
       page: limit ? currentPage : 1,
       totalPages: limit ? totalPages : 1,
-      limit: limit ? parseInt(limit, 10) : list.length,
+      limit: limit ? parseInt(limit, 10) : total,
       stats: {
         total,
-        activeCount,
-        custodyCount,
-        departmentCount,
-        motorcycleCount,
-        outOfServiceCount
+        activeCount: activeRow ? activeRow.c : 0,
+        custodyCount: custodyRow ? custodyRow.c : 0,
+        departmentCount: deptRow ? deptRow.c : 0,
+        motorcycleCount: motoRow ? motoRow.c : 0,
+        outOfServiceCount: outRow ? outRow.c : 0
       },
-      data: paginated
+      data
     });
   } catch (error) {
+    console.error('Error fetching vehicles from SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
 
 export async function createVehicle(req, res) {
   try {
-    const maxId = memoryVehicles.reduce((max, v) => (v.id > max ? v.id : max), 0);
-    const newVehicle = {
-      id: maxId + 1,
-      record_no: memoryVehicles.length + 1,
-      created_at: new Date().toISOString(),
-      status: 'جاهزة للعمل',
-      fuel_type: 'بنزين',
-      ...req.body
-    };
+    const { db } = getDb();
+    const v = req.body;
 
-    memoryVehicles.unshift(newVehicle);
-    persistVehicles();
+    const maxIdRow = await db.get('SELECT MAX(id) as maxId FROM vehicles');
+    const newId = (maxIdRow && maxIdRow.maxId ? maxIdRow.maxId : 0) + 1;
+
+    await db.run(`
+      INSERT INTO vehicles (
+        id, plate_number, plate_type, make_model, vehicle_type, model_year,
+        chassis_number, engine_number, color, category, department,
+        status, fuel_type, odometer, custodian_name, custodian_id, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      newId,
+      v.plate_number ? String(v.plate_number) : '',
+      v.plate_type || 'شرطة',
+      v.make_model || v.vehicle_type || '',
+      v.vehicle_type || v.make_model || '',
+      v.model_year ? String(v.model_year) : '',
+      v.chassis_number || '',
+      v.engine_number || '',
+      v.color || '',
+      v.category || 'سيارة مراكز وأقسام',
+      v.department || 'مديرية أمن أوباري',
+      v.status || 'جاهزة للعمل',
+      v.fuel_type || 'بنزين',
+      v.odometer ? String(v.odometer) : '0',
+      v.custodian_name || '',
+      v.custodian_id ? String(v.custodian_id) : '',
+      v.notes || ''
+    ]);
+
+    const created = await db.get('SELECT * FROM vehicles WHERE id = ?', [newId]);
 
     return res.status(201).json({
       success: true,
-      message: 'تم إضافة الآلية إلى المنظومة بنجاح',
-      data: newVehicle
+      message: 'تم إضافة الآلية بنجاح وتوثيقها في SQLite',
+      data: created
     });
   } catch (error) {
+    console.error('Error creating vehicle in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -121,27 +144,63 @@ export async function createVehicle(req, res) {
 export async function updateVehicle(req, res) {
   try {
     const id = Number(req.params.id);
-    const index = memoryVehicles.findIndex(v => v.id === id);
+    const { db } = getDb();
+    const v = req.body;
 
-    if (index === -1) {
+    const existing = await db.get('SELECT id FROM vehicles WHERE id = ?', [id]);
+    if (!existing) {
       return res.status(404).json({ success: false, message: 'الآلية غير موجودة' });
     }
 
-    memoryVehicles[index] = {
-      ...memoryVehicles[index],
-      ...req.body,
-      id,
-      updated_at: new Date().toISOString()
-    };
+    await db.run(`
+      UPDATE vehicles SET
+        plate_number = COALESCE(?, plate_number),
+        plate_type = COALESCE(?, plate_type),
+        make_model = COALESCE(?, make_model),
+        vehicle_type = COALESCE(?, vehicle_type),
+        model_year = COALESCE(?, model_year),
+        chassis_number = COALESCE(?, chassis_number),
+        engine_number = COALESCE(?, engine_number),
+        color = COALESCE(?, color),
+        category = COALESCE(?, category),
+        department = COALESCE(?, department),
+        status = COALESCE(?, status),
+        fuel_type = COALESCE(?, fuel_type),
+        odometer = COALESCE(?, odometer),
+        custodian_name = COALESCE(?, custodian_name),
+        custodian_id = COALESCE(?, custodian_id),
+        notes = COALESCE(?, notes),
+        updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [
+      v.plate_number ? String(v.plate_number) : undefined,
+      v.plate_type,
+      v.make_model,
+      v.vehicle_type,
+      v.model_year ? String(v.model_year) : undefined,
+      v.chassis_number,
+      v.engine_number,
+      v.color,
+      v.category,
+      v.department,
+      v.status,
+      v.fuel_type,
+      v.odometer ? String(v.odometer) : undefined,
+      v.custodian_name,
+      v.custodian_id ? String(v.custodian_id) : undefined,
+      v.notes,
+      id
+    ]);
 
-    persistVehicles();
+    const updated = await db.get('SELECT * FROM vehicles WHERE id = ?', [id]);
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: 'تم تحديث بيانات الآلية بنجاح',
-      data: memoryVehicles[index]
+      message: 'تم تحديث بيانات الآلية بنجاح في SQLite',
+      data: updated
     });
   } catch (error) {
+    console.error('Error updating vehicle in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -149,21 +208,19 @@ export async function updateVehicle(req, res) {
 export async function deleteVehicle(req, res) {
   try {
     const id = Number(req.params.id);
-    const index = memoryVehicles.findIndex(v => v.id === id);
+    const { db } = getDb();
 
-    if (index === -1) {
+    const result = await db.run('DELETE FROM vehicles WHERE id = ?', [id]);
+    if (result.changes === 0) {
       return res.status(404).json({ success: false, message: 'الآلية غير موجودة' });
     }
 
-    const deleted = memoryVehicles.splice(index, 1)[0];
-    persistVehicles();
-
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: 'تم حذف الآلية من السجل بنجاح',
-      data: deleted
+      message: 'تم حذف الآلية من SQLite بنجاح'
     });
   } catch (error) {
+    console.error('Error deleting vehicle from SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -172,18 +229,59 @@ export async function replaceVehicleList(req, res) {
   try {
     const { vehicles } = req.body;
     if (!Array.isArray(vehicles) || vehicles.length === 0) {
-      return res.status(400).json({ success: false, message: 'بيانات غير صالحة أو مصفوفة فارغة' });
+      return res.status(400).json({ success: false, message: 'قائمة الآليات غير صالحة' });
     }
 
-    memoryVehicles = vehicles;
-    persistVehicles();
+    const { db } = getDb();
 
-    return res.json({
+    await db.run('BEGIN TRANSACTION;');
+    await db.run('DELETE FROM vehicles;');
+
+    const stmt = await db.prepare(`
+      INSERT INTO vehicles (
+        id, plate_number, plate_type, make_model, vehicle_type, model_year,
+        chassis_number, engine_number, color, category, department,
+        status, fuel_type, odometer, custodian_name, custodian_id, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (let idx = 0; idx < vehicles.length; idx++) {
+      const v = vehicles[idx];
+      await stmt.run([
+        v.id || idx + 1,
+        v.plate_number ? String(v.plate_number) : '',
+        v.plate_type || 'شرطة',
+        v.make_model || v.vehicle_type || '',
+        v.vehicle_type || v.make_model || '',
+        v.model_year ? String(v.model_year) : '',
+        v.chassis_number || '',
+        v.engine_number || '',
+        v.color || '',
+        v.category || 'سيارة مراكز وأقسام',
+        v.department || 'مديرية أمن أوباري',
+        v.status || 'جاهزة للعمل',
+        v.fuel_type || 'بنزين',
+        v.odometer ? String(v.odometer) : '0',
+        v.custodian_name || '',
+        v.custodian_id ? String(v.custodian_id) : '',
+        v.notes || ''
+      ]);
+    }
+
+    await stmt.finalize();
+    await db.run('COMMIT;');
+
+    console.log(`✅ تم استبدال أسطول الآليات في SQLite بنجاح (${vehicles.length} مركبة)`);
+
+    return res.status(200).json({
       success: true,
-      message: 'تم استبدال وحفظ سجل الآليات بنجاح',
-      count: memoryVehicles.length
+      message: `تم استبدال وتحديث أسطول الآليات بنجاح (${vehicles.length} آلية)`,
+      total: vehicles.length
     });
   } catch (error) {
+    const { db } = getDb();
+    await db.run('ROLLBACK;');
+    console.error('Error replacing vehicles in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }

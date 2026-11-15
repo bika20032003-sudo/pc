@@ -1,26 +1,6 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../config/db.js';
 import { updateForceMemberStatusDirect } from './forceController.js';
-import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const jsonPath = path.resolve(__dirname, '../data/leaves_data.json');
-let memoryLeaves = [];
-
-try {
-  memoryLeaves = safeReadJson(jsonPath, []);
-  console.log(`✅ تم تحميل سجل الإجازات المركزي (${memoryLeaves.length} إجازة)`);
-} catch (e) {
-  console.error('خطأ في تحميل سجل الإجازات:', e);
-}
-
-function persistLeaves() {
-  return safeWriteJson(jsonPath, memoryLeaves);
-}
-
-// دالة مساعدة للتحقق من صحة وصلاحية التاريخ
 function parseValidDate(dateInput) {
   if (!dateInput) return null;
   const d = new Date(dateInput);
@@ -29,11 +9,13 @@ function parseValidDate(dateInput) {
 
 export async function getLeaves(req, res) {
   try {
+    const { db } = getDb();
+    const rows = await db.all('SELECT * FROM leaves ORDER BY id DESC');
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // احتساب الأيام المتبقية وحالة الإجازة لكل قيد
-    const enrichedLeaves = memoryLeaves.map(leave => {
+    const enrichedLeaves = rows.map(leave => {
       const end = parseValidDate(leave.EndDate) || today;
       end.setHours(0, 0, 0, 0);
       const diffTime = end.getTime() - today.getTime();
@@ -62,12 +44,13 @@ export async function getLeaves(req, res) {
       };
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       count: enrichedLeaves.length,
       leaves: enrichedLeaves
     });
   } catch (error) {
+    console.error('Error fetching leaves from SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -83,7 +66,8 @@ export async function createLeave(req, res) {
       EndDate,
       TotalDays,
       Notes,
-      Rank
+      Rank,
+      JobNumber
     } = req.body;
 
     if (!FullName || !StartDate || !EndDate) {
@@ -97,121 +81,190 @@ export async function createLeave(req, res) {
       return res.status(400).json({ success: false, message: 'صيغة تاريخ البداية أو النهاية غير صحيحة' });
     }
 
-    const newLeave = {
-      LeaveID: Date.now(),
-      NationalNumber: NationalNumber || '---',
-      FullName: FullName.trim(),
-      Rank: Rank || 'شرطي',
-      DepartmentName: DepartmentName || 'ديوان المديرية',
-      LeaveType: LeaveType || 'اجازة سنوية',
-      StartDate: validStart.toISOString(),
-      EndDate: validEnd.toISOString(),
-      TotalDays: Number(TotalDays) || 1,
-      Notes: Notes || 'داخل ليبيا',
-      Status: 'سارية',
-      CreatedAt: new Date().toISOString()
-    };
+    const { db } = getDb();
 
-    memoryLeaves.unshift(newLeave);
-    persistLeaves();
+    // Transaction to atomically insert leave and update member status in SQLite
+    await db.run('BEGIN TRANSACTION;');
 
-    // تحديث حالة المنتسب في القوة العمومية إلى إجازة رسمية عبر وحدة القوة مباشرة
-    if (NationalNumber && NationalNumber !== '---') {
-      updateForceMemberStatusDirect(NationalNumber, 'إجازة رسمية');
+    const result = await db.run(`
+      INSERT INTO leaves (
+        FullName, NationalNumber, JobNumber, DepartmentName, Rank,
+        LeaveType, StartDate, EndDate, TotalDays, Reason, Status, Notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      FullName.trim(),
+      NationalNumber ? String(NationalNumber).trim() : '',
+      JobNumber ? String(JobNumber).trim() : '',
+      DepartmentName || '',
+      Rank || '',
+      LeaveType || 'إجازة اعتيادية',
+      StartDate,
+      EndDate,
+      TotalDays || 1,
+      req.body.Reason || '',
+      'سارية',
+      Notes || ''
+    ]);
+
+    // Atomic sync of force member status
+    if (NationalNumber) {
+      await db.run(`
+        UPDATE force_members
+        SET job_status = 'في إجازة رسمية',
+            updated_at = datetime('now', 'localtime')
+        WHERE national_id = ? OR job_number = ?
+      `, [String(NationalNumber).trim(), String(NationalNumber).trim()]);
+    } else {
+      await db.run(`
+        UPDATE force_members
+        SET job_status = 'في إجازة رسمية',
+            updated_at = datetime('now', 'localtime')
+        WHERE name = ?
+      `, [FullName.trim()]);
     }
+
+    await db.run('COMMIT;');
+
+    const created = await db.get('SELECT * FROM leaves WHERE id = ?', [result.lastID]);
 
     return res.status(201).json({
       success: true,
-      message: 'تم تسجيل الإجازة واعتمادها بنجاح',
-      leave: newLeave
+      message: 'تم تسجيل الإجازة ومزامنة حالة المنتسب في SQLite بنجاح',
+      leave: created
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}
-
-export async function updateLeave(req, res) {
-  try {
-    const { id } = req.params;
-    const leaveId = Number(id);
-    const index = memoryLeaves.findIndex(l => l.LeaveID === leaveId);
-
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: 'سجل الإجازة غير موجود' });
-    }
-
-    const updatedData = req.body;
-    memoryLeaves[index] = {
-      ...memoryLeaves[index],
-      ...updatedData,
-      LeaveID: leaveId // تأكيد ثبات المعرف
-    };
-
-    persistLeaves();
-
-    return res.json({
-      success: true,
-      message: 'تم تحديث بيانات الإجازة بنجاح',
-      leave: memoryLeaves[index]
-    });
-  } catch (error) {
+    const { db } = getDb();
+    await db.run('ROLLBACK;').catch(() => {});
+    console.error('Error creating leave in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
 
 export async function resumeDuty(req, res) {
   try {
-    const { id } = req.params;
-    const { resumptionDate, resumptionNotes } = req.body;
-    const leaveId = Number(id);
-    const index = memoryLeaves.findIndex(l => l.LeaveID === leaveId);
+    const leaveId = Number(req.params.id);
+    const { db } = getDb();
 
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: 'سجل الإجازة غير موجود' });
+    const leave = await db.get('SELECT * FROM leaves WHERE id = ?', [leaveId]);
+    if (!leave) {
+      return res.status(404).json({ success: false, message: 'الإجازة غير موجودة' });
     }
 
-    const leave = memoryLeaves[index];
-    leave.Status = 'باشر العمل';
-    leave.ActualResumptionDate = resumptionDate || new Date().toISOString().slice(0, 10);
-    leave.ResumptionNotes = resumptionNotes || 'تمت مباشرة العمل بالموعد واستلام المهام';
-    leave.ResumedAt = new Date().toISOString();
+    await db.run('BEGIN TRANSACTION;');
 
-    persistLeaves();
+    await db.run(`
+      UPDATE leaves
+      SET Status = 'باشر العمل',
+          updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [leaveId]);
 
-    // إعادة حالة المنتسب في القوة العمومية إلى على رأس العمل عبر وحدة القوة المشتركة
-    if (leave.NationalNumber && leave.NationalNumber !== '---') {
-      updateForceMemberStatusDirect(leave.NationalNumber, 'على رأس العمل');
+    // Atomic sync to return member to duty in force_members
+    if (leave.NationalNumber) {
+      await db.run(`
+        UPDATE force_members
+        SET job_status = 'على رأس العمل',
+            updated_at = datetime('now', 'localtime')
+        WHERE national_id = ? OR job_number = ?
+      `, [String(leave.NationalNumber).trim(), String(leave.NationalNumber).trim()]);
+    } else if (leave.FullName) {
+      await db.run(`
+        UPDATE force_members
+        SET job_status = 'على رأس العمل',
+            updated_at = datetime('now', 'localtime')
+        WHERE name = ?
+      `, [leave.FullName.trim()]);
     }
 
-    return res.json({
+    await db.run('COMMIT;');
+
+    const updated = await db.get('SELECT * FROM leaves WHERE id = ?', [leaveId]);
+
+    return res.status(200).json({
       success: true,
-      message: 'تم تسجيل مباشرة العمل وإعادة حالة المنتسب إلى (على رأس العمل) بنجاح',
-      leave
+      message: 'تم تسجيل مباشرة العمل بنجاح وتحديث جاهزية المنتسب في SQLite',
+      leave: updated
     });
   } catch (error) {
+    const { db } = getDb();
+    await db.run('ROLLBACK;').catch(() => {});
+    console.error('Error resuming duty in SQLite:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+export async function updateLeave(req, res) {
+  try {
+    const leaveId = Number(req.params.id);
+    const { db } = getDb();
+    const l = req.body;
+
+    const existing = await db.get('SELECT id FROM leaves WHERE id = ?', [leaveId]);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'الإجازة غير موجودة' });
+    }
+
+    await db.run(`
+      UPDATE leaves SET
+        FullName = COALESCE(?, FullName),
+        NationalNumber = COALESCE(?, NationalNumber),
+        JobNumber = COALESCE(?, JobNumber),
+        DepartmentName = COALESCE(?, DepartmentName),
+        Rank = COALESCE(?, Rank),
+        LeaveType = COALESCE(?, LeaveType),
+        StartDate = COALESCE(?, StartDate),
+        EndDate = COALESCE(?, EndDate),
+        TotalDays = COALESCE(?, TotalDays),
+        Reason = COALESCE(?, Reason),
+        Status = COALESCE(?, Status),
+        Notes = COALESCE(?, Notes),
+        updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [
+      l.FullName,
+      l.NationalNumber ? String(l.NationalNumber) : undefined,
+      l.JobNumber ? String(l.JobNumber) : undefined,
+      l.DepartmentName,
+      l.Rank,
+      l.LeaveType,
+      l.StartDate,
+      l.EndDate,
+      l.TotalDays,
+      l.Reason,
+      l.Status,
+      l.Notes,
+      leaveId
+    ]);
+
+    const updated = await db.get('SELECT * FROM leaves WHERE id = ?', [leaveId]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم تحديث بيانات الإجازة في SQLite بنجاح',
+      leave: updated
+    });
+  } catch (error) {
+    console.error('Error updating leave in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
 
 export async function deleteLeave(req, res) {
   try {
-    const { id } = req.params;
-    const leaveId = Number(id);
-    const index = memoryLeaves.findIndex(l => l.LeaveID === leaveId);
+    const leaveId = Number(req.params.id);
+    const { db } = getDb();
 
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: 'سجل الإجازة غير موجود' });
+    const result = await db.run('DELETE FROM leaves WHERE id = ?', [leaveId]);
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, message: 'الإجازة غير موجودة' });
     }
 
-    const deleted = memoryLeaves.splice(index, 1)[0];
-    persistLeaves();
-
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: 'تم حذف قيد الإجازة بنجاح',
-      leave: deleted
+      message: 'تم حذف قيد الإجازة من SQLite بنجاح'
     });
   } catch (error) {
+    console.error('Error deleting leave from SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }

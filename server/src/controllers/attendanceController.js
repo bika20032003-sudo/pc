@@ -1,40 +1,53 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { safeReadJson, safeWriteJson } from '../utils/fileUtils.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const jsonPath = path.resolve(__dirname, '../data/attendance_data.json');
-let memoryAttendance = {}; // { [date]: { [memberId]: { status, time_in, time_out, notes, recorded_by } } }
-
-try {
-  memoryAttendance = safeReadJson(jsonPath, {});
-  console.log(`✅ تم تحميل سجلات الحضور والانصراف (${Object.keys(memoryAttendance).length} يوم)`);
-} catch (e) {
-  console.error('Error loading attendance json:', e);
-}
-
-function persistAttendance() {
-  return safeWriteJson(jsonPath, memoryAttendance);
-}
+import { getDb } from '../config/db.js';
 
 export async function getAttendance(req, res) {
   try {
     const { date } = req.query;
+    const { db } = getDb();
+
     if (date) {
-      return res.json({
+      const rows = await db.all('SELECT * FROM attendance WHERE date = ?', [date]);
+      const records = {};
+      rows.forEach(r => {
+        records[r.member_id] = {
+          status: r.status,
+          time_in: r.time_in || '',
+          time_out: r.time_out || '',
+          notes: r.notes || '',
+          recorded_by: r.recorded_by || 'الضابط المناوب',
+          updated_at: r.updated_at
+        };
+      });
+
+      return res.status(200).json({
         success: true,
         date,
-        records: memoryAttendance[date] || {}
+        records
       });
     }
 
-    return res.json({
+    const allRows = await db.all('SELECT * FROM attendance ORDER BY date DESC');
+    const allAttendance = {};
+    allRows.forEach(r => {
+      if (!allAttendance[r.date]) {
+        allAttendance[r.date] = {};
+      }
+      allAttendance[r.date][r.member_id] = {
+        status: r.status,
+        time_in: r.time_in || '',
+        time_out: r.time_out || '',
+        notes: r.notes || '',
+        recorded_by: r.recorded_by || 'الضابط المناوب',
+        updated_at: r.updated_at
+      };
+    });
+
+    return res.status(200).json({
       success: true,
-      allAttendance: memoryAttendance
+      allAttendance
     });
   } catch (error) {
+    console.error('Error fetching attendance from SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -46,27 +59,43 @@ export async function recordAttendance(req, res) {
       return res.status(400).json({ success: false, message: 'التاريخ ورقم المنتسب مطلوبان' });
     }
 
-    if (!memoryAttendance[date]) {
-      memoryAttendance[date] = {};
-    }
+    const { db } = getDb();
 
-    memoryAttendance[date][member_id] = {
-      status: status || 'حاضر',
-      time_in: time_in || '',
-      time_out: time_out || '',
-      notes: notes || '',
-      recorded_by: recorded_by || 'الضابط المناوب',
-      updated_at: new Date().toISOString()
-    };
+    await db.run(`
+      INSERT INTO attendance (date, member_id, status, time_in, time_out, notes, recorded_by, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+      ON CONFLICT(date, member_id) DO UPDATE SET
+        status = excluded.status,
+        time_in = excluded.time_in,
+        time_out = excluded.time_out,
+        notes = excluded.notes,
+        recorded_by = excluded.recorded_by,
+        updated_at = datetime('now', 'localtime')
+    `, [
+      date,
+      String(member_id),
+      status || 'حاضر',
+      time_in || '',
+      time_out || '',
+      notes || '',
+      recorded_by || 'الضابط المناوب'
+    ]);
 
-    persistAttendance();
-
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: 'تم تسجيل التمام بنجاح',
-      data: memoryAttendance[date][member_id]
+      message: 'تم تسجيل تمام الحضور في SQLite بنجاح',
+      data: {
+        date,
+        member_id,
+        status: status || 'حاضر',
+        time_in,
+        time_out,
+        notes,
+        recorded_by
+      }
     });
   } catch (error) {
+    console.error('Error recording attendance in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -78,19 +107,46 @@ export async function bulkRecordAttendance(req, res) {
       return res.status(400).json({ success: false, message: 'بيانات غير صالحة' });
     }
 
-    if (!memoryAttendance[date]) {
-      memoryAttendance[date] = {};
+    const { db } = getDb();
+
+    await db.run('BEGIN TRANSACTION;');
+
+    const stmt = await db.prepare(`
+      INSERT INTO attendance (date, member_id, status, time_in, time_out, notes, recorded_by, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+      ON CONFLICT(date, member_id) DO UPDATE SET
+        status = excluded.status,
+        time_in = excluded.time_in,
+        time_out = excluded.time_out,
+        notes = excluded.notes,
+        recorded_by = excluded.recorded_by,
+        updated_at = datetime('now', 'localtime')
+    `);
+
+    for (const [memberId, rec] of Object.entries(records)) {
+      await stmt.run([
+        date,
+        String(memberId),
+        rec.status || 'حاضر',
+        rec.time_in || '',
+        rec.time_out || '',
+        rec.notes || '',
+        rec.recorded_by || 'الضابط المناوب'
+      ]);
     }
 
-    Object.assign(memoryAttendance[date], records);
-    persistAttendance();
+    await stmt.finalize();
+    await db.run('COMMIT;');
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: 'تم حفظ سجل التمام الجماعي بنجاح',
-      totalRecords: Object.keys(memoryAttendance[date]).length
+      message: 'تم حفظ سجل التمام الميداني الجماعي في SQLite بنجاح',
+      totalRecords: Object.keys(records).length
     });
   } catch (error) {
+    const { db } = getDb();
+    await db.run('ROLLBACK;').catch(() => {});
+    console.error('Error bulk recording attendance in SQLite:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }

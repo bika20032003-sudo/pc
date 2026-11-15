@@ -18,5 +18,9 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# SQLite Temporary WAL Files
+*.db-shm
+*.db-wal
+
 # Environment (keep example)
 # server/.env

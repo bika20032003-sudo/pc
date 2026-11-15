@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getDb } from '../config/db.js';
-import { inMemoryUsers } from './userController.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'interior_ministry_super_secure_jwt_secret_key_2026';
@@ -17,42 +16,25 @@ export async function login(req, res) {
       });
     }
 
-    const { pool, isMySqlConnected, memoryUsers } = getDb();
-    let user = null;
+    const { db } = getDb();
     const cleanId = String(identifier).trim();
     const normId = normalizeArabicText(cleanId);
 
-    // 1. Check MySQL if connected
-    if (isMySqlConnected && pool) {
-      try {
-        const [rows] = await pool.query(
-          'SELECT * FROM users WHERE (username = ? OR email = ? OR badge_number = ? OR full_name = ?) AND status = ? LIMIT 1',
-          [cleanId, cleanId, cleanId, cleanId, 'active']
-        );
-        if (rows.length > 0) {
-          user = rows[0];
-        }
-      } catch (err) {
-        console.warn('MySQL login query notice:', err.message);
-      }
-    }
+    // Search user in SQLite
+    let user = await db.get(
+      'SELECT * FROM users WHERE (username = ? OR email = ? OR badge_number = ? OR full_name = ?) AND status = ? LIMIT 1',
+      [cleanId, cleanId, cleanId, cleanId, 'active']
+    );
 
-    // 2. Search inMemoryUsers and memoryUsers (precise matching only)
+    // Secondary Arabic normalized search
     if (!user) {
-      const allPool = [...(inMemoryUsers || []), ...(memoryUsers || [])];
-      user = allPool.find((u) => {
-        if (u.status && u.status !== 'active') return false;
+      const allUsers = await db.all('SELECT * FROM users WHERE status = ?', ['active']);
+      user = allUsers.find(u => {
         const uUser = normalizeArabicText(u.username || '');
         const uEmail = (u.email || '').toLowerCase().trim();
         const uBadge = (u.badge_number || '').trim();
         const uName = normalizeArabicText(u.full_name || '');
-
-        return (
-          uUser === normId ||
-          uEmail === cleanId.toLowerCase() ||
-          uBadge === cleanId ||
-          uName === normId
-        );
+        return uUser === normId || uEmail === cleanId.toLowerCase() || uBadge === cleanId || uName === normId;
       });
     }
 
@@ -63,7 +45,7 @@ export async function login(req, res) {
       });
     }
 
-    // Verify password strictly using bcrypt (never plaintext comparison)
+    // Verify password strictly with bcrypt
     let passwordMatches = false;
     if (user.password_hash) {
       try {
@@ -92,14 +74,13 @@ export async function login(req, res) {
       { expiresIn: '12h' }
     );
 
-    // Update last login
-    if (isMySqlConnected && pool) {
-      pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]).catch(() => {});
-      pool.query(
-        'INSERT INTO audit_logs (user_id, username, action, ip_address, status, details) VALUES (?, ?, ?, ?, ?, ?)',
-        [user.id, user.username, 'تسجيل دخول', req.ip || '127.0.0.1', 'success', 'تم تسجيل الدخول بنجاح']
-      ).catch(() => {});
-    }
+    // Update last login and insert audit log in SQLite
+    const nowIso = new Date().toISOString();
+    await db.run('UPDATE users SET last_login = ? WHERE id = ?', [nowIso, user.id]);
+    await db.run(
+      'INSERT INTO audit_logs (user_id, username, action, ip_address, status, details) VALUES (?, ?, ?, ?, ?, ?)',
+      [user.id, user.username, 'تسجيل دخول', req.ip || '127.0.0.1', 'success', 'تم تسجيل الدخول بنجاح إلى منظومة أوباري']
+    );
 
     return res.status(200).json({
       success: true,
@@ -114,10 +95,8 @@ export async function login(req, res) {
         rank_title: user.rank_title,
         department: user.department,
         role: user.role,
-        role_label: user.role_label,
-        allowed_sections: user.allowed_sections || ['dashboard', 'force'],
         avatar: user.avatar || '',
-        isMySqlConnected
+        databaseEngine: 'SQLite WAL Mode'
       }
     });
   } catch (error) {
@@ -140,34 +119,22 @@ export async function getProfile(req, res) {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    const { pool, isMySqlConnected, memoryUsers } = getDb();
-    let user = null;
+    const { db } = getDb();
+    const user = await db.get(
+      'SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login FROM users WHERE id = ? LIMIT 1',
+      [decoded.id]
+    );
 
-    if (isMySqlConnected && pool) {
-      const [rows] = await pool.query(
-        'SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, last_login FROM users WHERE id = ? LIMIT 1',
-        [decoded.id]
-      );
-      if (rows.length > 0) user = rows[0];
-    }
-    
-    // Check in-memory fallback without unsafe defaulting to admin
-    if (!user) {
-      const allPool = [...(inMemoryUsers || []), ...(memoryUsers || [])];
-      user = allPool.find((u) => u.id === decoded.id || u.username === decoded.username);
-    }
-
-    // Never default to memoryUsers[0]
     if (!user) {
       return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
     }
 
-    // Strip any password fields
-    const { password, password_raw, password_hash, ...safeUser } = user;
-
     return res.status(200).json({
       success: true,
-      user: { ...safeUser, isMySqlConnected }
+      user: {
+        ...user,
+        databaseEngine: 'SQLite WAL Mode'
+      }
     });
   } catch (error) {
     return res.status(401).json({ success: false, message: 'انتهت صلاحية الجلسة أو أن التوكن غير صالح' });
@@ -175,12 +142,12 @@ export async function getProfile(req, res) {
 }
 
 export function getSystemStatus(req, res) {
-  const { isMySqlConnected } = getDb();
+  const { isSqliteConnected } = getDb();
   res.json({
     status: 'online',
-    systemName: 'منظومة وزارة الداخلية الموحدة',
-    databaseType: 'MySQL',
-    databaseStatus: isMySqlConnected ? 'متصل بقاعدة البيانات' : 'وضع المعاينة النشط (قيد انتظار خادم MySQL)',
+    systemName: 'منظومة مديرية أمن أوباري | وزارة الداخلية',
+    databaseType: 'SQLite (WAL Mode High Concurrency)',
+    databaseStatus: isSqliteConnected ? 'قاعدة بيانات SQLite المعتمدة متصلة وتعمل بكفاءة' : 'غير متصل',
     timestamp: new Date().toISOString()
   });
 }
