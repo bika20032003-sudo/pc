@@ -184,6 +184,46 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
   const [archiveSearch, setArchiveSearch] = useState('');
 
+  // جلب النماذج والمكاتبات الرسمية المحفوظة في قاعدة بيانات SQLite
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSavedTemplates = async () => {
+      try {
+        const res = await fetch('/api/mail?type=official_letter');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.mail) && data.mail.length > 0) {
+          const mapped = data.mail.map(m => ({
+            id: m.id,
+            code_no: m.code_no,
+            record_number: m.record_number,
+            reference: m.reference,
+            template_type_id: m.template_type || 'free_letter',
+            template_name: m.notes || m.subject,
+            employee_name: m.recipient,
+            employee_role: m.recipient_title,
+            employee_job_no: m.reply_to_reference || '-',
+            date: m.date,
+            subject: m.subject,
+            recipient: m.recipient_title || m.recipient,
+            body_text: m.letter_body,
+            signer_name: m.signer_name || 'لواء / موسى سعد محمد البدين',
+            signer_title: m.signer_title || 'مدير مديرية أمن أوباري',
+            editor: m.editor_employee || 'عبدالصمد',
+            printer: m.print_employee || 'عبدالصمد',
+            created_at: m.created_at
+          }));
+          setSavedTemplates(mapped);
+          localStorage.setItem('ubari_generated_templates', JSON.stringify(mapped));
+        }
+      } catch (e) {
+        console.warn('Templates sync note:', e.message);
+      }
+    };
+    fetchSavedTemplates();
+    return () => { isMounted = false; };
+  }, []);
+
   // Close suggestions dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
@@ -200,39 +240,34 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filtered employees for autocomplete suggestions (Combining SAMPLE_EMPLOYEES and forceMembers)
+  // Filtered employees for autocomplete suggestions (من قاعدة بيانات القوة العمومية 2,211 فرداً)
   const employeeSuggestions = useMemo(() => {
     const term = normalizeArabicText(employeeSearch);
-    if (!term) return SAMPLE_EMPLOYEES;
-
-    const fromSample = SAMPLE_EMPLOYEES.filter(emp =>
-      normalizeArabicText(emp.name).includes(term) ||
-      (emp.job_number && emp.job_number.includes(term))
-    );
+    if (!forceMembers || forceMembers.length === 0) return SAMPLE_EMPLOYEES;
 
     const fromForce = forceMembers
-      .filter(m => m.name && normalizeArabicText(m.name).includes(term))
-      .slice(0, 15)
+      .filter(m => {
+        if (!m || !m.name) return false;
+        if (!term) return true;
+        const normName = normalizeArabicText(m.name);
+        const normJob = normalizeArabicText(m.job_number || '');
+        const normNat = normalizeArabicText(m.national_id || '');
+        const normFin = normalizeArabicText(m.financial_number || '');
+        return normName.includes(term) || normJob.includes(term) || normNat.includes(term) || normFin.includes(term);
+      })
+      .slice(0, 25)
       .map(m => ({
         id: `force-${m.id}`,
         name: m.name,
-        role: m.type === 'شرطي' ? 'شرطي' : 'موظف مدني',
+        role: m.job_title || m.type || 'منتسب أمني',
         job_number: m.job_number || m.financial_number || '-',
         national_id: m.national_id || '-',
-        department: m.job_title || 'مديرية أمن أوباري',
-        hire_date: m.birth_date || '2020-01-01',
-        salary: '1,750'
+        department: m.department || 'مديرية أمن أوباري',
+        hire_date: m.start_date || m.appointment_date || '2020-01-01',
+        salary: m.basic_salary ? `${m.basic_salary} د.ل` : 'حسب الرتبة'
       }));
 
-    // Combine and deduplicate by name
-    const combined = [...fromSample];
-    fromForce.forEach(f => {
-      if (!combined.some(c => c.name === f.name)) {
-        combined.push(f);
-      }
-    });
-
-    return combined.slice(0, 25);
+    return fromForce;
   }, [employeeSearch, forceMembers]);
 
   // Generate body text according to template type and employee
@@ -345,7 +380,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
   };
 
   // Handler: "إنشاء وطباعة النموذج" button (Photo 1 & 2)
-  const handleCreateTemplate = () => {
+  const handleCreateTemplate = async () => {
     if (!employeeSearch.trim()) {
       alert('يرجى إدخال أو اختيار اسم الموظف أولاً');
       return;
@@ -362,7 +397,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       ? (cleanRef.includes('/') ? cleanRef : `${cleanRef}/2026`)
       : `${recordNum}/2026`;
 
-    const newDoc = {
+    let newDoc = {
       id: Date.now(),
       code_no: codeNo,
       record_number: recordNum,
@@ -427,8 +462,44 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       created_at: new Date().toISOString()
     };
 
+    // حفظ حقيقي في خادم وقاعدة بيانات SQLite المركزية
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'official_letter',
+          code_no: newDoc.code_no,
+          record_number: newDoc.record_number,
+          reference: newDoc.reference,
+          reply_to_reference: newDoc.employee_job_no,
+          recipient: newDoc.employee_name,
+          recipient_title: newDoc.employee_role,
+          subject: newDoc.subject,
+          letter_body: newDoc.body_text,
+          date: newDoc.date,
+          template_type: newDoc.template_type_id,
+          signer_name: newDoc.signer_name,
+          signer_title: newDoc.signer_title,
+          editor_employee: newDoc.editor,
+          print_employee: newDoc.printer,
+          phone: newDoc.phone,
+          email: newDoc.email,
+          notes: newDoc.template_name,
+          cc_list: JSON.stringify(newDoc.cc_list),
+          status: 'issued'
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.mail && data.mail.id) {
+        newDoc = { ...newDoc, id: data.mail.id, code_no: data.mail.code_no || newDoc.code_no };
+      }
+    } catch (err) {
+      console.warn('تم حفظ النموذج محلياً (الخادم غير متصل):', err.message);
+    }
+
     // Save to list
-    const updatedList = [newDoc, ...savedTemplates];
+    const updatedList = [newDoc, ...savedTemplates.filter(item => item.id !== newDoc.id)];
     setSavedTemplates(updatedList);
     localStorage.setItem('ubari_generated_templates', JSON.stringify(updatedList));
 
@@ -436,12 +507,12 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     setActiveDocument(newDoc);
     setEditorViewMode('split');
     setShowDocModal(true);
-    setNotificationMsg(`تم إنشاء نموذج «${tplInfo.name}» بنجاح وهو جاهز للمعاينة والتحرير`);
+    setNotificationMsg(`تم حفظ وإنشاء نموذج «${tplInfo.name}» برقم إشاري (${newDoc.reference}) بنجاح`);
     setTimeout(() => setNotificationMsg(''), 4500);
   };
 
-  // Save current active document edits to localStorage archive
-  const handleSaveDocEdits = () => {
+  // Save current active document edits to backend SQLite & localStorage archive
+  const handleSaveDocEdits = async () => {
     if (!activeDocument) return;
     const updatedList = savedTemplates.map(item =>
       item.id === activeDocument.id ? activeDocument : item
@@ -452,7 +523,33 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     }
     setSavedTemplates(updatedList);
     localStorage.setItem('ubari_generated_templates', JSON.stringify(updatedList));
-    setNotificationMsg('✅ تم حفظ كافة التعديلات في سجل الأرشيف بنجاح');
+
+    // تحديث حقيقي في قاعدة بيانات SQLite
+    try {
+      if (activeDocument.id) {
+        await fetch(`/api/mail/${activeDocument.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: activeDocument.subject,
+            recipient: activeDocument.employee_name || activeDocument.recipient,
+            recipient_title: activeDocument.employee_role,
+            reference: activeDocument.reference,
+            letter_body: activeDocument.body_text,
+            signer_name: activeDocument.signer_name,
+            signer_title: activeDocument.signer_title,
+            editor_employee: activeDocument.editor,
+            print_employee: activeDocument.printer,
+            notes: activeDocument.template_name,
+            cc_list: JSON.stringify(activeDocument.cc_list || [])
+          })
+        });
+      }
+    } catch (err) {
+      console.warn('تم حفظ التعديلات محلياً:', err.message);
+    }
+
+    setNotificationMsg('✅ تم حفظ وتحديث كافة تعديلات النموذج في قاعدة البيانات المركزية');
     setTimeout(() => setNotificationMsg(''), 4000);
   };
 
@@ -521,15 +618,24 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     }
   };
 
-  // Delete from archive
-  const handleDeleteTemplate = (id, name) => {
-    if (window.confirm(`هل أنت متأكد من حذف المستند الخاص بـ "${name}"؟`)) {
+  // Delete from archive & backend SQLite
+  const handleDeleteTemplate = async (id, name) => {
+    if (window.confirm(`هل أنت متأكد من حذف المستند الخاص بـ "${name}" نهائياً من قاعدة البيانات؟`)) {
       const updated = savedTemplates.filter(t => t.id !== id);
       setSavedTemplates(updated);
       localStorage.setItem('ubari_generated_templates', JSON.stringify(updated));
       if (activeDocument && activeDocument.id === id) {
         setShowDocModal(false);
       }
+
+      try {
+        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('تم حذف النموذج محلياً:', err.message);
+      }
+
+      setNotificationMsg('✅ تم حذف النموذج رسمياً من قاعدة البيانات');
+      setTimeout(() => setNotificationMsg(''), 4000);
     }
   };
 

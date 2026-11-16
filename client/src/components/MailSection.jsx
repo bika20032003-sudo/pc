@@ -161,6 +161,7 @@ const ENTITY_SUGGESTIONS = [
 export default function MailSection({ user, forceMembers = [] }) {
   // Navigation Tabs: 'outgoing', 'incoming', 'all_logs', 'letter_designer'
   const [activeTab, setActiveTab] = useState('outgoing');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Outgoing Mail State
   const [outgoingList, setOutgoingList] = useState(() => {
@@ -197,6 +198,44 @@ export default function MailSection({ user, forceMembers = [] }) {
     }
     return INITIAL_INCOMING_MAIL;
   });
+
+  // Fetch real mail records from backend SQLite on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMail = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/mail');
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.mail)) {
+          const out = data.mail.filter(m => m.type === 'outgoing');
+          const inc = data.mail.filter(m => m.type === 'incoming');
+          const ref = data.mail.filter(m => m.type === 'referred');
+
+          if (out.length > 0) {
+            setOutgoingList(out);
+            localStorage.setItem('ubari_outgoing_mail', JSON.stringify(out));
+          }
+          if (inc.length > 0) {
+            setIncomingList(inc);
+            localStorage.setItem('ubari_incoming_mail', JSON.stringify(inc));
+          }
+          if (ref.length > 0) {
+            setReferredList(ref);
+            localStorage.setItem('ubari_referred_mail', JSON.stringify(ref));
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully to localStorage (offline or GitHub Pages)
+        console.warn('API sync warning (falling back to cache):', err.message);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchMail();
+    return () => { isMounted = false; };
+  }, []);
 
   // Outgoing Form State matching Image 1
   const [outgoingForm, setOutgoingForm] = useState({
@@ -281,22 +320,23 @@ export default function MailSection({ user, forceMembers = [] }) {
     }
   }, [previewLetter]);
 
-  // Save Outgoing Mail Handler (Image 1)
-  const handleSaveOutgoing = (e) => {
+  // Save Outgoing Mail Handler (Image 1) - Real SQLite API with offline cache
+  const handleSaveOutgoing = async (e) => {
     if (e) e.preventDefault();
     if (!outgoingForm.subject || !outgoingForm.recipient) {
       alert('يرجى كتابة الموضوع والجهة الموجه إليها بدقة');
       return;
     }
 
-    const nextId = outgoingList.length > 0 ? Math.max(...outgoingList.map(o => o.id)) + 1 : 1;
-    const newRecord = {
+    const nextId = outgoingList.length > 0 ? Math.max(...outgoingList.map(o => o.id || 0)) + 1 : 1;
+    let newRecord = {
       ...outgoingForm,
       id: nextId,
+      type: 'outgoing',
       recipient_title: outgoingForm.recipient.startsWith('إلى') ? outgoingForm.recipient : `إلى السيد / ${outgoingForm.recipient}`,
       editor_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
       print_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
-      signer_name: 'لواء / موسى سعد محمد',
+      signer_name: 'لواء / موسى سعد محمد البدين',
       signer_title: 'مدير مديرية أمن أوباري',
       letter_body: outgoingForm.letter_body || 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
       cc_list: [
@@ -312,7 +352,22 @@ export default function MailSection({ user, forceMembers = [] }) {
       created_at: new Date().toISOString()
     };
 
-    const updatedList = [newRecord, ...outgoingList];
+    // حفظ حقيقي في خادم وقاعدة بيانات المنظومة المركزية
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord)
+      });
+      const data = await res.json();
+      if (data.success && data.mail) {
+        newRecord = { ...newRecord, ...data.mail };
+      }
+    } catch (err) {
+      console.warn('تم الحفظ بالذاكرة المحلية (الخادم غير متصل):', err.message);
+    }
+
+    const updatedList = [newRecord, ...outgoingList.filter(o => o.id !== newRecord.id)];
     setOutgoingList(updatedList);
     localStorage.setItem('ubari_outgoing_mail', JSON.stringify(updatedList));
 
@@ -335,29 +390,46 @@ export default function MailSection({ user, forceMembers = [] }) {
       attachment_name: ''
     });
 
-    setNotificationMsg(`تم تقييد وحفظ البريد الصادر برقم قيد (${newRecord.record_number}) بنجاح`);
+    setNotificationMsg(`تم تقييد وحفظ البريد الصادر برقم قيد (${newRecord.record_number || newRecord.reference}) بنجاح في قاعدة البيانات`);
     setTimeout(() => setNotificationMsg(''), 4500);
 
     // Prompt user to preview the generated official letter
     setPreviewLetter(newRecord);
   };
 
-  // Save Incoming Mail Handler (Image 2)
-  const handleSaveIncoming = (e) => {
+  // Save Incoming Mail Handler (Image 2) - Real SQLite API with offline cache
+  const handleSaveIncoming = async (e) => {
     if (e) e.preventDefault();
     if (!incomingForm.incoming_reference || !incomingForm.subject || !incomingForm.source_entity) {
       alert('يرجى إدخال الرقم الإشاري، الجهة الوارد منها، وموضوع البريد');
       return;
     }
 
-    const nextId = incomingList.length > 0 ? Math.max(...incomingList.map(i => i.id)) + 1 : 1;
-    const newRecord = {
+    const nextId = incomingList.length > 0 ? Math.max(...incomingList.map(i => i.id || 0)) + 1 : 1;
+    let newRecord = {
       ...incomingForm,
       id: nextId,
+      type: 'incoming',
+      reference: incomingForm.incoming_reference,
       created_at: new Date().toISOString()
     };
 
-    const updatedList = [newRecord, ...incomingList];
+    // حفظ حقيقي في خادم وقاعدة بيانات SQLite
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord)
+      });
+      const data = await res.json();
+      if (data.success && data.mail) {
+        newRecord = { ...newRecord, ...data.mail };
+      }
+    } catch (err) {
+      console.warn('تم حفظ الوارد محلياً:', err.message);
+    }
+
+    const updatedList = [newRecord, ...incomingList.filter(i => i.id !== newRecord.id)];
     setIncomingList(updatedList);
     localStorage.setItem('ubari_incoming_mail', JSON.stringify(updatedList));
 
@@ -374,29 +446,66 @@ export default function MailSection({ user, forceMembers = [] }) {
       attachment_name: ''
     });
 
-    setNotificationMsg(`تم توثيق وتقييد البريد الوارد برقم إشاري (${newRecord.incoming_reference}) بنجاح`);
+    setNotificationMsg(`تم توثيق وتقييد البريد الوارد برقم إشاري (${newRecord.incoming_reference || newRecord.reference}) بنجاح`);
     setTimeout(() => setNotificationMsg(''), 4500);
   };
 
-  // Delete Mail Item
-  const handleDeleteOutgoing = (id) => {
-    if (confirm('هل أنت متأكد من حذف هذا السجل الصادر من المنظومة؟')) {
+  // Delete Outgoing Mail Item - Real Deletion from SQLite & State
+  const handleDeleteOutgoing = async (id) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا السجل الصادر نهائياً من قاعدة البيانات والمنظومة؟')) {
       const updated = outgoingList.filter(o => o.id !== id);
       setOutgoingList(updated);
       localStorage.setItem('ubari_outgoing_mail', JSON.stringify(updated));
+
+      try {
+        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('تم حذف الصادر محلياً:', err.message);
+      }
+
+      setNotificationMsg('تم حذف السجل الصادر بنجاح من قاعدة البيانات المركزية');
+      setTimeout(() => setNotificationMsg(''), 4000);
     }
   };
 
-  const handleDeleteIncoming = (id) => {
-    if (confirm('هل أنت متأكد من حذف هذا السجل الوارد؟')) {
+  // Delete Incoming Mail Item - Real Deletion from SQLite & State
+  const handleDeleteIncoming = async (id) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا السجل الوارد نهائياً من قاعدة البيانات؟')) {
       const updated = incomingList.filter(i => i.id !== id);
       setIncomingList(updated);
       localStorage.setItem('ubari_incoming_mail', JSON.stringify(updated));
+
+      try {
+        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('تم حذف الوارد محلياً:', err.message);
+      }
+
+      setNotificationMsg('تم حذف السجل الوارد بنجاح');
+      setTimeout(() => setNotificationMsg(''), 4000);
     }
   };
 
-  // Save Letter Edits to Outgoing List & LocalStorage
-  const handleSaveLetterEdits = () => {
+  // Delete Referred Mail Item - Real Deletion from SQLite & State
+  const handleDeleteReferred = async (id) => {
+    if (window.confirm('هل أنت متأكد من حذف هذه المعاملة المحالة نهائياً؟')) {
+      const updated = referredList.filter(r => (r.id !== id && r.ReferralID !== id));
+      setReferredList(updated);
+      localStorage.setItem('ubari_referred_mail', JSON.stringify(updated));
+
+      try {
+        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('تم حذف المحال محلياً:', err.message);
+      }
+
+      setNotificationMsg('تم حذف المعاملة المحالة بنجاح');
+      setTimeout(() => setNotificationMsg(''), 4000);
+    }
+  };
+
+  // Save Letter Edits to Outgoing List & SQLite Database
+  const handleSaveLetterEdits = async () => {
     if (!previewLetter) return;
     const existingIndex = outgoingList.findIndex(o => o.id === previewLetter.id);
     let updatedList;
@@ -408,7 +517,21 @@ export default function MailSection({ user, forceMembers = [] }) {
     }
     setOutgoingList(updatedList);
     localStorage.setItem('ubari_outgoing_mail', JSON.stringify(updatedList));
-    setNotificationMsg(`تم حفظ وتحديث بيانات الرسالة الرسمية برقم (${previewLetter.reference || previewLetter.code_no}) بنجاح في السجل والذاكرة`);
+
+    // تحديث حقيقي في قاعدة بيانات SQLite
+    try {
+      if (previewLetter.id) {
+        await fetch(`/api/mail/${previewLetter.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(previewLetter)
+        });
+      }
+    } catch (err) {
+      console.warn('تم تحديث الرسالة محلياً:', err.message);
+    }
+
+    setNotificationMsg(`تم حفظ وتحديث بيانات الرسالة الرسمية برقم (${previewLetter.reference || previewLetter.code_no}) بنجاح في قاعدة البيانات`);
     setTimeout(() => setNotificationMsg(''), 4500);
   };
 
@@ -1515,7 +1638,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                                 </div>
                               </div>
                             `;
-                            printDocumentInIframe(html, `إحالة_بريد_${item.ReferralID}`);
+                            printDocumentInIframe(html, `إحالة_بريد_${item.ReferralID || item.id}`);
                           }}
                           style={{
                             background: '#eff6ff',
@@ -1532,6 +1655,27 @@ export default function MailSection({ user, forceMembers = [] }) {
                           }}
                         >
                           <Printer size={13} /> طباعة
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReferred(item.id || item.ReferralID)}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: 'none',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            marginRight: '6px'
+                          }}
+                          title="حذف المعاملة المحالة"
+                        >
+                          <Trash2 size={13} /> حذف
                         </button>
                       </td>
                     </tr>

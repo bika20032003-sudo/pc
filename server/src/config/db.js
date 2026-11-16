@@ -185,7 +185,47 @@ export async function initDatabase() {
       );
     `);
 
-    // 7. إنشاء الفهارس الذكية لسرعة البحث الفوري بالاسم والرقم الوطني
+    // 7. جدول البريد والمراسلات والرسائل الرسمية (الصادر، الوارد، المحال، النماذج)
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS mail_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL DEFAULT 'outgoing',
+        code_no TEXT,
+        record_number TEXT,
+        reference TEXT,
+        reply_to_reference TEXT,
+        reply_date TEXT,
+        recipient TEXT,
+        recipient_title TEXT,
+        source_entity TEXT,
+        date TEXT,
+        time TEXT,
+        subject TEXT NOT NULL,
+        delivery_method TEXT,
+        sender_employee TEXT,
+        editor_employee TEXT,
+        receiver_employee TEXT,
+        print_employee TEXT,
+        status TEXT DEFAULT 'delivered',
+        attachment_name TEXT,
+        attachment_data TEXT,
+        letter_body TEXT,
+        cc_list TEXT,
+        signer_name TEXT DEFAULT 'لواء / موسى سعد محمد',
+        signer_title TEXT DEFAULT 'مدير مديرية أمن أوباري',
+        phone TEXT,
+        email TEXT,
+        template_type TEXT,
+        force_member_id INTEGER,
+        director_notes TEXT,
+        target_dept TEXT,
+        notes TEXT,
+        created_at TEXT DEFAULT (datetime('now', 'localtime')),
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+    `);
+
+    // 8. إنشاء الفهارس الذكية لسرعة البحث الفوري بالاسم والرقم الوطني
     await dbInstance.exec(`
       CREATE INDEX IF NOT EXISTS idx_force_national_id ON force_members(national_id);
       CREATE INDEX IF NOT EXISTS idx_force_job_number ON force_members(job_number);
@@ -199,6 +239,10 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_leaves_nat_id ON leaves(NationalNumber);
       CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+      CREATE INDEX IF NOT EXISTS idx_mail_type ON mail_records(type);
+      CREATE INDEX IF NOT EXISTS idx_mail_ref ON mail_records(reference);
+      CREATE INDEX IF NOT EXISTS idx_mail_status ON mail_records(status);
+      CREATE INDEX IF NOT EXISTS idx_mail_created_at ON mail_records(created_at);
     `);
 
     // 8. التحقق من وجود مستخدم المسؤول الافتراضي
@@ -402,6 +446,156 @@ export async function initDatabase() {
       }
     } else {
       console.log(`✅ قاعدة بيانات الإجازات جاهزة (${leaveCountRow.c} إجازة)`);
+    }
+
+    // 12. ترحيل سجلات البريد والمراسلات إذا كان الجدول فارغاً
+    const mailCountRow = await dbInstance.get('SELECT COUNT(*) as c FROM mail_records');
+    if (!mailCountRow || mailCountRow.c === 0) {
+      console.log('📬 جارٍ تهيئة سجلات البريد والمراسلات الرسمية في SQLite...');
+      await dbInstance.run('BEGIN TRANSACTION;');
+      const mStmt = await dbInstance.prepare(`
+        INSERT INTO mail_records (
+          type, code_no, record_number, reference, reply_to_reference, reply_date,
+          recipient, recipient_title, source_entity, date, time, subject,
+          delivery_method, sender_employee, editor_employee, receiver_employee,
+          print_employee, status, attachment_name, letter_body, cc_list,
+          signer_name, signer_title, phone, email, director_notes, target_dept, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      // 12.1 الصادر المعتمد
+      const initialOutgoing = [
+        {
+          code_no: '2026-002',
+          record_number: '1',
+          reference: '12/2026',
+          reply_to_reference: '1.2/2026',
+          reply_date: '10/10/2026',
+          recipient: 'آمر المنطقة العسكرية الجنوبية',
+          recipient_title: 'إلى السيد / آمر المنطقة العسكرية الجنوبية',
+          date: '11/10/2026',
+          subject: 'التنسيق الأمني وتسيير الدوريات بالمنطقة الجنوبية وتأمين مداخل مدينة أوباري',
+          delivery_method: 'إلكتروني (منظومة/إيميل)',
+          sender_employee: 'عبدالصمد',
+          editor_employee: 'عبدالصمد',
+          print_employee: 'عبدالصمد',
+          status: 'delivered',
+          attachment_name: 'مذكرة_تنسيق_رسمية.pdf',
+          letter_body: 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
+          cc_list: JSON.stringify([
+            'السيد / وكيل وزارة الداخلية',
+            'معالي / وزير الداخلية',
+            'آمر المنطقة العسكرية الجنوبية',
+            'المساعد للشؤون الأمنية',
+            'الغرفة الأمنية المشتركة',
+            'الإدارة العامة للتفتيش والمتابعة'
+          ])
+        },
+        {
+          code_no: '2026-001',
+          record_number: '150',
+          reference: '10/2026',
+          reply_to_reference: '',
+          reply_date: '',
+          recipient: 'مدير الإدارة العامة للتفتيش والمتابعة',
+          recipient_title: 'إلى السيد / مدير الإدارة العامة للتفتيش والمتابعة',
+          date: '08/10/2026',
+          subject: 'إحالة التقرير الشهري لضبطيات الدوريات ومراكز الشرطة بالمديرية',
+          delivery_method: 'يدوي / ورقي',
+          sender_employee: 'عبدالصمد',
+          editor_employee: 'عبدالصمد',
+          print_employee: 'عبدالصمد',
+          status: 'delivered',
+          attachment_name: 'تقرير_شهري_أكتوبر.pdf',
+          letter_body: 'نحيل إليكم طيه كشف التقرير الأمني الدوري لمديرية أمن أوباري، المتضمن كافة المحاضر والضبطيات ومناوبات الأجهزة الأمنية لشهر أكتوبر 2026م للتفضل بالاطلاع.',
+          cc_list: JSON.stringify([
+            'السيد / وكيل وزارة الداخلية',
+            'المساعد للشؤون الأمنية'
+          ])
+        }
+      ];
+
+      for (const o of initialOutgoing) {
+        await mStmt.run([
+          'outgoing', o.code_no, o.record_number, o.reference, o.reply_to_reference, o.reply_date,
+          o.recipient, o.recipient_title, '', o.date, '', o.subject,
+          o.delivery_method, o.sender_employee, o.editor_employee, '',
+          o.print_employee, o.status, o.attachment_name, o.letter_body, o.cc_list,
+          'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '0915938137', 'Info@ubari-security.ly',
+          '', '', ''
+        ]);
+      }
+
+      // 12.2 الوارد المعتمد
+      const initialIncoming = [
+        {
+          reference: '1.2/2026',
+          reply_to_reference: '12/2026',
+          source_entity: 'آمر المنطقة العسكرية الجنوبية',
+          date: '10/10/2026',
+          time: '11:45',
+          subject: 'طلب تنسيق مشترك بخصوص تأمين النقاط والمراكز الحيوية',
+          delivery_method: 'مناولة باليد (مراسل)',
+          receiver_employee: 'عبدالصمد',
+          status: 'replied',
+          attachment_name: 'كتاب_عسكري_وارد_1_2.pdf'
+        },
+        {
+          reference: '77/م.و/2026',
+          reply_to_reference: '',
+          source_entity: 'مكتب وكيل وزارة الداخلية للشؤون الفنية',
+          date: '05/10/2026',
+          time: '09:30',
+          subject: 'تعليمات عاجلة بشأن جاهزية الاتصالات اللاسلكية والغرف المشتركة',
+          delivery_method: 'بريد إلكتروني رسمي',
+          receiver_employee: 'عبدالصمد',
+          status: 'in_progress',
+          attachment_name: 'تعليمات_وكيل_الوزارة.pdf'
+        }
+      ];
+
+      for (const inc of initialIncoming) {
+        await mStmt.run([
+          'incoming', '', '', inc.reference, inc.reply_to_reference, '',
+          'مديرية أمن أوباري', 'إلى السيد / مدير مديرية أمن أوباري', inc.source_entity, inc.date, inc.time, inc.subject,
+          inc.delivery_method, '', '', inc.receiver_employee,
+          '', inc.status, inc.attachment_name, '', '[]',
+          'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '', '',
+          '', '', ''
+        ]);
+      }
+
+      // 12.3 البريد المحال المعتمد (من ملف referred_mail_data.json)
+      let referredJsonPath = path.resolve(__dirname, '../data/referred_mail_data.json');
+      if (!fs.existsSync(referredJsonPath)) {
+        referredJsonPath = path.resolve(__dirname, '../../client/src/data/referred_mail_data.json');
+      }
+      if (fs.existsSync(referredJsonPath)) {
+        try {
+          const rawRef = fs.readFileSync(referredJsonPath, 'utf8');
+          const refList = JSON.parse(rawRef);
+          if (Array.isArray(refList)) {
+            for (const r of refList) {
+              await mStmt.run([
+                'referred', '', String(r.MailID || ''), String(r.MailNumber || ''), '', '',
+                r.TargetDept || '', '', 'ديوان المديرية', (r.ReferralDate || '').slice(0, 10), '', r.Subject || '',
+                'إحالة رسمية', 'عبدالصمد', 'عبدالصمد', '',
+                '', r.Status || 'تحت الإجراء', r.FilePath || '', '', '[]',
+                'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '', '',
+                r.DirectorNotes || '', r.TargetDept || '', ''
+              ]);
+            }
+          }
+        } catch (e) {
+          console.error('تنبيه: تعذر قراءة referred_mail_data:', e.message);
+        }
+      }
+
+      await mStmt.finalize();
+      await dbInstance.run('COMMIT;');
+      console.log('✅ تم تهيئة وترحيل سجلات البريد الصادر والوارد والمحال إلى SQLite بنجاح.');
+    } else {
+      console.log(`✅ قاعدة بيانات البريد والمراسلات جاهزة (${mailCountRow.c} سجلاً)`);
     }
 
     isConnected = true;

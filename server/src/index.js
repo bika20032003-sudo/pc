@@ -8,6 +8,7 @@ import userRoutes from './routes/userRoutes.js';
 import vehicleRoutes from './routes/vehicleRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
+import mailRoutes from './routes/mailRoutes.js';
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
+app.use('/api/mail', mailRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

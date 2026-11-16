@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Share2, Search, Plus, Calendar, Building2, CheckCircle2, Clock, Printer, Eye, FileText, ArrowRight } from 'lucide-react';
+import { Share2, Search, Plus, Calendar, Building2, CheckCircle2, Clock, Printer, Eye, FileText, ArrowRight, Trash2 } from 'lucide-react';
 import initialReferred from '../data/referred_mail_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
@@ -13,6 +13,37 @@ export default function ReferredMailSection({ user = {} }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // مزامنة البريد المحال مع خادم وقاعدة بيانات SQLite
+  useEffect(() => {
+    let isMounted = true;
+    const fetchReferred = async () => {
+      try {
+        const res = await fetch('/api/mail?type=referred');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.mail) && data.mail.length > 0) {
+          const mapped = data.mail.map(m => ({
+            ReferralID: m.id,
+            id: m.id,
+            MailID: m.id,
+            MailNumber: m.code_no || m.record_number || m.reference || `${m.id}`,
+            Subject: m.subject,
+            TargetDept: m.target_dept || m.recipient || 'الشؤون العامة',
+            DirectorNotes: m.director_notes || m.notes || 'للإجراء اللازم والعرض',
+            ReferralDate: m.date || m.created_at,
+            Status: m.status || 'تحت الإجراء'
+          }));
+          setReferredList(mapped);
+          localStorage.setItem('ubari_referred_mail', JSON.stringify(mapped));
+        }
+      } catch (e) {
+        console.warn('Referred sync note:', e.message);
+      }
+    };
+    fetchReferred();
+    return () => { isMounted = false; };
+  }, []);
 
   // New Referral Form
   const [form, setForm] = useState({
@@ -50,16 +81,43 @@ export default function ReferredMailSection({ user = {} }) {
     });
   }, [referredList, selectedDept, searchTerm]);
 
-  // Add Referral
-  const handleAddReferral = (e) => {
+  // Add Referral with real SQLite API
+  const handleAddReferral = async (e) => {
     e.preventDefault();
     if (!form.Subject) return;
-    const newEntry = {
+    let newEntry = {
       ReferralID: Date.now(),
       MailID: Date.now(),
       ...form,
       ReferralDate: new Date().toISOString()
     };
+
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'referred',
+          code_no: form.MailNumber,
+          record_number: form.MailNumber,
+          reference: `REF-${form.MailNumber}`,
+          subject: form.Subject,
+          target_dept: form.TargetDept,
+          director_notes: form.DirectorNotes,
+          status: form.Status,
+          recipient: form.TargetDept,
+          date: new Date().toLocaleDateString('ar-LY')
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.mail) {
+        newEntry.ReferralID = data.mail.id;
+        newEntry.id = data.mail.id;
+      }
+    } catch (err) {
+      console.warn('Referred add offline note:', err.message);
+    }
+
     setReferredList([newEntry, ...referredList]);
     setIsAddModalOpen(false);
     setForm({
@@ -69,6 +127,18 @@ export default function ReferredMailSection({ user = {} }) {
       DirectorNotes: 'للإجراء اللازم والعرض',
       Status: 'تحت الإجراء'
     });
+  };
+
+  // Delete Referral from SQLite & State
+  const handleDeleteReferral = async (id) => {
+    if (window.confirm('هل أنت متأكد من حذف هذه المعاملة المحالة نهائياً؟')) {
+      setReferredList(prev => prev.filter(r => r.ReferralID !== id && r.id !== id));
+      try {
+        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Referred delete offline note:', err.message);
+      }
+    }
   };
 
   // Print Referral Card A4
@@ -314,7 +384,7 @@ export default function ReferredMailSection({ user = {} }) {
                     {item.Status || 'تحت الإجراء'}
                   </span>
                 </td>
-                <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                <td style={{ padding: '14px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button
                     onClick={() => handlePrintReferral(item)}
                     style={{
@@ -328,10 +398,30 @@ export default function ReferredMailSection({ user = {} }) {
                       alignItems: 'center',
                       gap: '4px',
                       fontSize: '12px',
-                      fontWeight: 700
+                      fontWeight: 700,
+                      marginLeft: '6px'
                     }}
                   >
                     <Printer size={13} /> طباعة التأشيرة
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReferral(item.id || item.ReferralID)}
+                    style={{
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      border: 'none',
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                    title="حذف الإحالة نهائياً"
+                  >
+                    <Trash2 size={13} /> حذف
                   </button>
                 </td>
               </tr>
