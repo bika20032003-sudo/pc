@@ -10,30 +10,24 @@ import {
   Wrench,
   Fuel,
   Users,
+  UserCheck,
   Award,
   Clock,
   Printer,
   ChevronLeft,
-  ChevronDown,
+  Briefcase,
   Activity,
   MapPin,
+  TrendingUp,
   RefreshCw,
-  ArrowUpRight,
-  Plus,
-  Send,
-  Mic,
-  Moon,
-  Sun,
-  Bell,
-  Calendar,
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
+  ExternalLink,
   FileText,
-  X,
-  Target
+  DollarSign,
+  AlertTriangle,
+  Layers,
+  Mail,
+  Send
 } from 'lucide-react';
-import './ExecutiveModernDashboard.css';
 import './FinanceDashboard.css';
 
 // ============================================================================
@@ -86,7 +80,7 @@ export function resolveMemberDepartment(member) {
 }
 
 export default function DashboardSection({
-  user = {},
+  user,
   forceMembers = [],
   setForceMembers,
   setActiveSection,
@@ -94,14 +88,6 @@ export default function DashboardSection({
 }) {
   const [rankTab, setRankTab] = useState('all');
   const [rankSearchQuery, setRankSearchQuery] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [chartRange, setChartRange] = useState('last7');
-  const [showRankDetails, setShowRankDetails] = useState(false);
-
-  // AI Assistant States
-  const [aiQuestion, setAiQuestion] = useState('');
-  const [aiAnswer, setAiAnswer] = useState(null);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // ==========================================================================
   // REAL FORCE COMPUTATIONS (100% Dynamic from forceMembers)
@@ -154,17 +140,17 @@ export default function DashboardSection({
         }
       });
     } else {
-      onDuty = 2140;
-      onLeave = 48;
-      onSuspended = 23;
+      onDuty = totalCount;
     }
 
-    const readinessPct = totalCount > 0 ? ((onDuty / totalCount) * 100).toFixed(1) : '98.4';
+    const readinessPct = totalCount > 0 ? ((onDuty / totalCount) * 100).toFixed(1) : '100';
     const policePct = totalCount > 0 ? ((policeCount / totalCount) * 100).toFixed(1) : '76.6';
     const civilPct = totalCount > 0 ? ((civilCount / totalCount) * 100).toFixed(1) : '23.4';
 
+    // Bank list sorted
     const bankList = Object.values(bankMap).sort((a, b) => b.count - a.count);
 
+    // Official Police Rank Structure Hierarchy
     const cleanRankList = [
       { id: 'liwa', label: 'لواء', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['لواء'] || 4, color: '#1e3a8a' },
       { id: 'ameed', label: 'عميد', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['عميــد'] || rawRankMap['عميد'] || 14, color: '#1e3a8a' },
@@ -190,6 +176,7 @@ export default function DashboardSection({
     const ncoCount = cleanRankList.filter(r => r.tier === 'nco').reduce((acc, r) => acc + r.count, 0);
     const constablesCount = cleanRankList.filter(r => r.tier === 'constables').reduce((acc, r) => acc + r.count, 0);
 
+    // Operational units list for matrix
     const keyUnits = [
       { name: 'مركز شرطة أوباري المدينة', count: deptMap['مركز شرطة أوباري المدينة']?.count || 440, color: '#2563eb' },
       { name: 'وحدة النجدة والدوريات', count: deptMap['وحدة النجدة والدوريات']?.count || 352, color: '#059669' },
@@ -222,581 +209,531 @@ export default function DashboardSection({
     };
   }, [forceMembers]);
 
-  // Mini Bar Chart Days (Habit Score - 9 Bars)
-  const miniChartBars = [
-    { label: 'السبت', height: '60%' },
-    { label: 'الأحد', height: '75%' },
-    { label: 'الإثنين', height: '82%' },
-    { label: 'الثلاثاء', height: '85%' },
-    { label: 'الأربعاء', height: '90%' },
-    { label: 'الخميس', height: '94%' },
-    { label: 'الجمعة', height: '98%' },
-    { label: 'دوريات', height: '100%' },
-    { label: 'مراكز', height: '88%' }
-  ];
+  // Filtered ranks based on selected tab and search
+  const displayedRanks = useMemo(() => {
+    return stats.cleanRankList.filter(r => {
+      const matchTab = rankTab === 'all' || r.tier === rankTab;
+      const matchSearch = !rankSearchQuery || r.label.includes(rankSearchQuery) || r.tierLabel.includes(rankSearchQuery);
+      return matchTab && matchSearch;
+    });
+  }, [stats.cleanRankList, rankTab, rankSearchQuery]);
 
-  // 7-Day Activity / Consistency Bars Data (Matching Reference Chart)
-  const weeklyConsistencyDays = [
-    { date: '11 نوفمبر', day: 'السبت', height: '72%', hours: '7.2h', present: 2120, leaves: 45, missions: 46 },
-    { date: '12 نوفمبر', day: 'الأحد', height: '84%', hours: '8.4h', present: 2135, leaves: 48, missions: 28 },
-    { date: '13 نوفمبر', day: 'الإثنين', height: '45%', hours: '4.5h', present: 2090, leaves: 52, missions: 69 },
-    { date: '14 نوفمبر', day: 'الثلاثاء', height: '95%', hours: '9.5h', present: 2160, leaves: 38, missions: 13 },
-    { date: '15 نوفمبر', day: 'الأربعاء', height: '91%', hours: '9.1h', present: 2145, leaves: 42, missions: 24 },
-    { date: '16 نوفمبر', day: 'الخميس', height: '78%', hours: '7.8h', present: 2130, leaves: 49, missions: 32 },
-    { date: '17 نوفمبر', day: 'اليوم', height: '58%', hours: '5.8h', present: stats.onDuty, leaves: stats.onLeave, missions: 21 }
-  ];
-
-  // AI Security Assistant Queries Handler
-  const handleAiQuery = (queryText) => {
-    setIsAiLoading(true);
-    setAiQuestion(queryText);
-    
-    setTimeout(() => {
-      let res = {};
-      const q = queryText.toLowerCase();
-
-      if (q.includes('قوة') || q.includes('غياب') || q.includes('حضور') || q.includes('انضباط')) {
-        res = {
-          title: 'تقرير الموقف الفوري للقوة والجاهزية',
-          icon: Users,
-          text: `قوام المديرية المقيد يبلغ ${stats.totalCount.toLocaleString('ar-LY')} عضواً. القوة الحاضرة على رأس العمل المباشر الآن: ${stats.onDuty.toLocaleString('ar-LY')} فرداً بنسبة جاهزية ${stats.readinessPct}%. الإجازات المسجلة: ${stats.onLeave} حالة، والموقوفون رهن المتابعة: ${stats.onSuspended} حالة.`,
-          actionLabel: 'معاينة سجل القوة العمومية',
-          actionSection: 'force'
-        };
-      } else if (q.includes('بريد') || q.includes('مراسلات') || q.includes('صادر') || q.includes('وارد')) {
-        res = {
-          title: 'موقف البريد والقيود الرسمية المعلقة',
-          icon: FileText,
-          text: `البريد الصادر المعتمد: 3 قيود رسمية مكتملة التسليم والأرشفة الإلكترونية. البريد المحال: جميع التأشيرات القيادية الصادرة عن سيادتكم محالة للوحدات التنفيذية دون وجود تأخيرات.`,
-          actionLabel: 'الانتقال إلى البريد والمراسلات',
-          actionSection: 'mail'
-        };
-      } else if (q.includes('آليات') || q.includes('مركبات') || q.includes('دوريات') || q.includes('سيارات')) {
-        res = {
-          title: 'كشف جاهزية الآليات والمركبات الميدانية',
-          icon: Car,
-          text: `أسطول المديرية يضم 92 آلية ومركبة أمنية مقيدة. الجاهزية الفنية: 100% جاهزة للعمليات وتسيير الدوريات. استهلاك الوقود ضمن المعدلات المعتمدة بالتنسيق مع إدارة المحروقات والتموين.`,
-          actionLabel: 'فتح سجل الآليات والمركبات',
-          actionSection: 'vehicles'
-        };
-      } else {
-        res = {
-          title: 'الموقف العملياتي والأمني العام للمديرية',
-          icon: ShieldCheck,
-          text: `الحالة الأمنية العامة بنطاق بلدية أوباري والمراكز التابعة (بنت بيه، الغريفة، أوباري المدينة) مستقرة وتحت السيطرة الكاملة. الدوريات الأمنية ووحدة النجدة في حالة انتشار 24/7 مع تأمين المنشآت الحيوية والمسارات الصحراوية.`,
-          actionLabel: 'غرفة العمليات المركزية',
-          actionSection: 'operations'
-        };
-      }
-      setAiAnswer(res);
-      setIsAiLoading(false);
-    }, 450);
-  };
+  const maxRankCount = useMemo(() => {
+    return Math.max(...stats.cleanRankList.map(r => r.count), 1);
+  }, [stats.cleanRankList]);
 
   const handlePrint = () => {
     window.print();
   };
 
   return (
-    <div className="exec-dashboard-wrapper">
+    <div className="moi-executive-dashboard">
 
-      {/* ──────────────────────────────────────────────────────────────────────
-         1. TOP GREETING & CONTROLS HEADER (Matching Reference)
-         ────────────────────────────────────────────────────────────────────── */}
-      <header className="exec-header-row">
-        <div className="exec-greeting-box">
-          <h1 className="exec-greeting-title">
-            <span>صباح الخير، سيادة اللواء</span>
-            <span className="exec-greeting-wave">👋</span>
-          </h1>
-          <p className="exec-greeting-subtitle">
-            متابعة شؤون القوة والانتشار الأمني والبريد والعمليات المركزية مع توصيات المساعد الذكي
-          </p>
-        </div>
-
-        <div className="exec-controls-group">
-          {/* Dark Mode Toggle */}
-          <button
-            type="button"
-            className="exec-ctrl-icon-btn"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            title={isDarkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
-          >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          {/* Notifications Bell */}
-          <button
-            type="button"
-            className="exec-ctrl-icon-btn"
-            title="الإشعارات والتنبيهات العملياتية"
-          >
-            <Bell size={18} />
-            <span className="exec-ctrl-badge-dot" />
-          </button>
-
-          {/* Date Range Pill */}
-          <div className="exec-date-range-pill" title="نطاق التاريخ المعتمد">
-            <Calendar size={15} style={{ color: '#2563eb' }} />
-            <span>تاريخ اليوم: {new Date().toLocaleDateString('ar-LY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-          </div>
-        </div>
-      </header>
-
-      {/* ──────────────────────────────────────────────────────────────────────
-         2. GRID ROW 1: (Hero Gradient Card + Enhancements Strip + Habit Score)
-         ────────────────────────────────────────────────────────────────────── */}
-      <div className="exec-grid-row-1">
-        
-        {/* Card 1: Hero Metric Card (Vivid Royal Blue Gradient) */}
-        <div className="exec-hero-metric-card">
-          <div className="exec-hero-header">
-            <span className="exec-hero-title">معدل الجاهزية العملياتية</span>
-            <button
-              type="button"
-              className="exec-hero-add-btn"
-              onClick={() => setActiveSection && setActiveSection('operations')}
-              title="إضافة بلاغ أو أمر عملياتي"
-            >
-              <Plus size={16} />
-            </button>
+      {/* ── 1. SOVEREIGN HEADER BANNER ── */}
+      <section className="moi-dash-banner">
+        <div className="moi-ribbon-bar" />
+        <div className="moi-dash-banner-inner">
+          <div className="moi-banner-brand">
+            <div className="moi-banner-logo-box">
+              <ShieldCheck size={30} />
+            </div>
+            <div>
+              <div className="moi-banner-badge">
+                <Shield size={13} />
+                <span>وزارة الداخلية • دولة ليبيا | قاعدة البيانات المعتمدة</span>
+              </div>
+              <h1 className="moi-banner-title">مركز القيادة والمعلومات والتحليل الإحصائي</h1>
+              <p className="moi-banner-subtitle">
+                مديرية أمن أوباري | رصد وتحليل بيانات {stats.totalCount.toLocaleString('ar-LY')} منتسباً بالسجلات الرسمية المعتمدة
+              </p>
+            </div>
           </div>
 
-          <div className="exec-hero-value">{stats.readinessPct}%</div>
-
-          <div className="exec-hero-actions">
-            {/* White Action Pill */}
+          <div className="moi-banner-actions">
             <button
               type="button"
-              className="exec-hero-action-pill-white"
-              onClick={() => setActiveSection && setActiveSection('force')}
-              title="استعراض كشف القوة والجاهزية"
-            >
-              <Users size={14} />
-              <span>كشف القوة</span>
-            </button>
-
-            {/* Translucent Action Pill */}
-            <button
-              type="button"
-              className="exec-hero-action-pill-translucent"
+              className="btn-dash-action outline"
               onClick={handlePrint}
-              title="طباعة التقرير العملياتي المباشر"
+              title="طباعة التقرير الإحصائي العام"
             >
-              <ArrowUpRight size={14} />
-              <span>طباعة الموقف</span>
+              <Printer size={15} />
+              <span>طباعة التقرير</span>
             </button>
-          </div>
-        </div>
 
-        {/* Card 2: AI Enhancements / Operational Status Strip */}
-        <div className="exec-enhancements-card">
-          <div className="exec-card-header-row">
-            <h3 className="exec-card-title">
-              <Sparkles size={18} style={{ color: '#2563eb' }} />
-              <span>المؤشرات والجاهزية الميدانية</span>
-            </h3>
+            {onTriggerImport && (
+              <button
+                type="button"
+                className="btn-dash-action gold"
+                onClick={onTriggerImport}
+                title="تحديث واستيراد بيانات القوة المركزية"
+              >
+                <RefreshCw size={15} />
+                <span>تحديث البيانات</span>
+              </button>
+            )}
+
             <button
               type="button"
-              className="exec-card-action-link"
-              onClick={() => setActiveSection && setActiveSection('operations')}
+              className="btn-dash-action primary"
+              onClick={() => setActiveSection && setActiveSection('force')}
+              title="الانتقال إلى سجل القوة العمومية"
             >
-              <Plus size={13} />
-              <span>قيد عملياتي</span>
+              <Users size={15} />
+              <span>سجل القوة العمومية</span>
             </button>
           </div>
+        </div>
+      </section>
 
-          <div className="exec-capsules-strip">
-            {/* Capsule 1: Field Presence Hours */}
-            <div className="exec-capsule-item">
-              <div className="exec-capsule-top">
-                <Clock size={15} style={{ color: '#0284c7' }} />
-                <span>التواجد الميداني</span>
-              </div>
-              <div className="exec-capsule-body">
-                <span className="exec-capsule-num">24/7</span>
-                <span className="exec-capsule-badge-pill exec-badge-green">+12% نشط</span>
-              </div>
+      {/* ── 2. TOP 4 SOVEREIGN KPI CARDS ── */}
+      <section className="moi-kpi-grid">
+        {/* Card 1: Total Force */}
+        <div className="moi-kpi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-kpi-body">
+            <div className="moi-kpi-icon-wrap" style={{ background: '#eff6ff', color: '#1e3a8a' }}>
+              <Users size={26} />
             </div>
-
-            {/* Capsule 2: Discipline & Attendance */}
-            <div className="exec-capsule-item">
-              <div className="exec-capsule-top">
-                <RefreshCw size={15} style={{ color: '#16a34a' }} />
-                <span>نسبة الانضباط</span>
+            <div className="moi-kpi-content">
+              <div className="moi-kpi-label">إجمالي القوة المقيدة</div>
+              <div className="moi-kpi-value">
+                {stats.totalCount.toLocaleString('ar-LY')}
+                <span className="moi-kpi-unit">عضواً</span>
               </div>
-              <div className="exec-capsule-body">
-                <span className="exec-capsule-num">{stats.readinessPct}%</span>
-                <span className="exec-capsule-badge-pill exec-badge-blue">منضبط</span>
-              </div>
-            </div>
-
-            {/* Capsule 3: Vehicles Readiness */}
-            <div className="exec-capsule-item">
-              <div className="exec-capsule-top">
-                <Car size={15} style={{ color: '#d97706' }} />
-                <span>جاهزية الآليات</span>
-              </div>
-              <div className="exec-capsule-body">
-                <span className="exec-capsule-num">92/92</span>
-                <span className="exec-capsule-badge-pill exec-badge-green">100%</span>
+              <div className="moi-kpi-sub" style={{ color: '#059669' }}>
+                100% موثق بالسجلات المركزية المعتمدة
               </div>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Habit Score / Mini Bar Chart */}
-        <div className="exec-habit-score-card">
-          <div className="exec-card-header-row">
-            <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>معدل الانضباط الأسبوعي</span>
-            <span style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>98%</span>
-          </div>
-
-          <div className="exec-mini-bars-container">
-            {miniChartBars.map((b, i) => (
-              <div key={i} className="exec-mini-bar-track" title={`${b.label}: ${b.height}`}>
-                <div className="exec-mini-bar-fill" style={{ height: b.height }} />
+        {/* Card 2: Police Personnel */}
+        <div className="moi-kpi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-kpi-body">
+            <div className="moi-kpi-icon-wrap" style={{ background: '#ecfdf5', color: '#059669' }}>
+              <ShieldCheck size={26} />
+            </div>
+            <div className="moi-kpi-content">
+              <div className="moi-kpi-label">الكوادر الشرطية والأمنية</div>
+              <div className="moi-kpi-value">
+                {stats.policeCount.toLocaleString('ar-LY')}
+                <span className="moi-kpi-unit">شرطي وضابط</span>
               </div>
-            ))}
-          </div>
-
-          <div className="exec-mini-bar-legend">
-            <span>
-              <span className="exec-legend-dot" style={{ background: '#2563eb' }} />
-              الفعلي
-            </span>
-            <span>
-              <span className="exec-legend-dot" style={{ background: '#cbd5e1' }} />
-              المستهدف
-            </span>
+              <div className="moi-kpi-sub" style={{ color: '#0284c7' }}>
+                {stats.policePct}% من إجمالي قوام المديرية
+              </div>
+            </div>
           </div>
         </div>
 
-      </div>
+        {/* Card 3: Civilian Staff */}
+        <div className="moi-kpi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-kpi-body">
+            <div className="moi-kpi-icon-wrap" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+              <Briefcase size={26} />
+            </div>
+            <div className="moi-kpi-content">
+              <div className="moi-kpi-label">الكوادر المدنية والإسناد</div>
+              <div className="moi-kpi-value">
+                {stats.civilCount.toLocaleString('ar-LY')}
+                <span className="moi-kpi-unit">موظف مدني</span>
+              </div>
+              <div className="moi-kpi-sub" style={{ color: '#7c3aed' }}>
+                {stats.civilPct}% إسناد إداري وقانوني وفني
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* ──────────────────────────────────────────────────────────────────────
-         3. GRID ROW 2: (Large Consistency Stacked Bar Chart + AI Assistant Card)
-         ────────────────────────────────────────────────────────────────────── */}
-      <div className="exec-grid-row-2">
+        {/* Card 4: Field Readiness */}
+        <div className="moi-kpi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-kpi-body">
+            <div className="moi-kpi-icon-wrap" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+              <Activity size={26} />
+            </div>
+            <div className="moi-kpi-content">
+              <div className="moi-kpi-label">الجاهزية الميدانية الفعلية</div>
+              <div className="moi-kpi-value">
+                {stats.readinessPct}%
+                <span className="moi-kpi-unit">جاهزية</span>
+              </div>
+              <div className="moi-kpi-sub" style={{ color: '#059669' }}>
+                {stats.onDuty.toLocaleString('ar-LY')} عنصراً على رأس العمل
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        {/* Card 4: Habit Streak & Consistency / Weekly Activity Chart */}
-        <div className="exec-main-chart-card">
-          <div className="exec-card-header-row">
-            <h3 className="exec-card-title">
-              <Activity size={18} style={{ color: '#2563eb' }} />
-              <span>حركة القوة والانتشار الأمني الأسبوعي</span>
-            </h3>
-
-            <select
-              className="exec-chart-filter-select"
-              value={chartRange}
-              onChange={(e) => setChartRange(e.target.value)}
-            >
-              <option value="last7">آخر 7 أيام</option>
-              <option value="last30">آخر 30 يوماً</option>
-              <option value="month">الشهر الحالي</option>
-            </select>
+      {/* ── 3. MAIN COMMAND ROW: READINESS + TERRITORIAL DEPLOYMENT ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', marginBottom: '22px' }}>
+        
+        {/* COMMAND CARD: Real Readiness Dial & Status Breakdown */}
+        <div className="moi-command-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-command-header">
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 900 }}>مركز القيادة والجاهزية</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                الانضباط والتواجد الميداني الفعلي
+              </div>
+            </div>
+            <span className="moi-command-badge">جاهزية أمنية</span>
           </div>
 
-          <div className="exec-chart-legends-row">
-            <span>
-              <span className="exec-legend-dot" style={{ background: '#2563eb' }} />
-              القوة الحاضرة (Streak)
-            </span>
-            <span>
-              <span className="exec-legend-dot" style={{ background: '#93c5fd' }} />
-              في إجازة (Missed)
-            </span>
-            <span>
-              <span className="exec-legend-dot" style={{ border: '2px solid #cbd5e1', background: 'transparent' }} />
-              في مأمورية (Goal)
-            </span>
-          </div>
-
-          {/* Stacked Vertical Capsule Bars */}
-          <div className="exec-bars-grid">
-            {weeklyConsistencyDays.map((d, index) => (
-              <div key={index} className="exec-bar-col">
-                <div
-                  className="exec-pill-track"
-                  title={`${d.day} (${d.date}): ${d.present} حاضرين | ${d.leaves} إجازات | ساعات التشغيل: ${d.hours}`}
-                >
-                  <div
-                    className="exec-pill-fill-primary"
-                    style={{ height: d.height }}
+          <div className="moi-command-body">
+            {/* SVG Readiness Gauge Dial */}
+            <div className="moi-readiness-dial-wrap">
+              <div className="moi-readiness-gauge">
+                <svg viewBox="0 0 36 36" className="moi-readiness-svg">
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.15)"
+                    strokeWidth="3.8"
                   />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth="3.8"
+                    strokeDasharray={`${stats.readinessPct}, 100`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="moi-readiness-score">
+                  <span className="moi-score-number">{stats.readinessPct}%</span>
+                  <span className="moi-score-lbl">جاهزية</span>
                 </div>
-                <span className="exec-bar-date-label">{d.day}</span>
               </div>
-            ))}
+
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 800 }}>مؤشر التواجد الميداني</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginTop: '3px' }}>
+                  {stats.onDuty.toLocaleString('ar-LY')} فرداً يمارسون مهامهم الأمنية بكافة النطاقات
+                </div>
+              </div>
+            </div>
+
+            {/* Status Breakdown List */}
+            <div className="moi-status-breakdown">
+              <div className="moi-status-row">
+                <div className="moi-status-lbl-group">
+                  <span className="moi-status-dot" style={{ backgroundColor: '#10b981' }} />
+                  <span>على رأس العمل المباشر</span>
+                </div>
+                <strong>{stats.onDuty.toLocaleString('ar-LY')} ({stats.readinessPct}%)</strong>
+              </div>
+
+              <div className="moi-status-row">
+                <div className="moi-status-lbl-group">
+                  <span className="moi-status-dot" style={{ backgroundColor: '#f59e0b' }} />
+                  <span>إجازات رسمية وإدارية</span>
+                </div>
+                <strong>{stats.onLeave.toLocaleString('ar-LY')} ({((stats.onLeave / stats.totalCount) * 100).toFixed(1)}%)</strong>
+              </div>
+
+              <div className="moi-status-row">
+                <div className="moi-status-lbl-group">
+                  <span className="moi-status-dot" style={{ backgroundColor: '#ef4444' }} />
+                  <span>موقوف أو معلق مؤقتاً</span>
+                </div>
+                <strong>{stats.onSuspended.toLocaleString('ar-LY')} ({((stats.onSuspended / stats.totalCount) * 100).toFixed(1)}%)</strong>
+              </div>
+            </div>
+
+            {/* Quick Action Link */}
+            <button
+              type="button"
+              onClick={() => setActiveSection && setActiveSection('leaves')}
+              style={{
+                marginTop: '16px',
+                width: '100%',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                color: '#ffffff',
+                padding: '9px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>متابعة سجلات الإجازات والانضباط</span>
+              <ChevronLeft size={16} />
+            </button>
           </div>
         </div>
 
-        {/* Card 5: AI Security Assistant (Glowing 3D Orb + Chat Input) */}
-        <div className="exec-ai-assistant-card">
-          <div className="exec-card-header-row">
-            <h3 className="exec-card-title">
-              <Sparkles size={18} style={{ color: '#2563eb' }} />
-              <span>المساعد الأمني الذكي</span>
-            </h3>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '3px 8px', borderRadius: '9999px' }}>
-              ● متصل بالبيانات
+        {/* TERRITORIAL DEPLOYMENT MATRIX */}
+        <div className="moi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-card-header">
+            <div>
+              <h3 className="moi-card-title">
+                <MapPin size={18} style={{ color: '#0284c7' }} />
+                <span>توزيع الانتشار الميداني للمراكز والوحدات</span>
+              </h3>
+              <span className="moi-card-sublabel">
+                توزيع القوة الميدانية وتغطية نطاقات بلدية أوباري، بنت بيه، والغريفة
+              </span>
+            </div>
+            <span style={{
+              background: '#eff6ff',
+              color: '#1e3a8a',
+              border: '1px solid #bfdbfe',
+              padding: '3px 10px',
+              borderRadius: '9999px',
+              fontSize: '11.5px',
+              fontWeight: 800
+            }}>
+              8 قطاعات رئيسية
             </span>
           </div>
 
-          {/* 3D Glowing Blue Sphere / Orb */}
-          <div className="exec-ai-orb-stage">
-            <div className="exec-3d-blue-orb">
-              {isAiLoading && <RefreshCw size={24} className="spin" style={{ color: '#ffffff' }} />}
-            </div>
-            <div className="exec-orb-shadow" />
-          </div>
-
-          <div className="exec-ai-prompt-heading">
-            بماذا يمكنني مساعدتك اليوم سيادة اللواء؟
-          </div>
-
-          {/* AI Response Display Box (If Active) */}
-          {aiAnswer && (
-            <div className="exec-ai-response-box">
-              <div className="exec-ai-response-header">
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <aiAnswer.icon size={14} />
-                  <span>{aiAnswer.title}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAiAnswer(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <p style={{ margin: '0 0 10px', fontSize: '12.5px' }}>{aiAnswer.text}</p>
-              {aiAnswer.actionLabel && (
-                <button
-                  type="button"
-                  onClick={() => setActiveSection && setActiveSection(aiAnswer.actionSection)}
-                  style={{
-                    background: '#2563eb',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '5px 12px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {aiAnswer.actionLabel} ←
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Quick Prompt Chips */}
-          <div className="exec-ai-chips-list">
-            <button
-              type="button"
-              className="exec-ai-chip-btn"
-              onClick={() => handleAiQuery('استخراج موقف القوة والغياب الفوري')}
-            >
-              <span className="exec-ai-chip-sparkle">✦</span>
-              <span>استخراج موقف القوة والغياب الفوري</span>
-            </button>
-
-            <button
-              type="button"
-              className="exec-ai-chip-btn"
-              onClick={() => handleAiQuery('فحص البريد الصادر والمعلق')}
-            >
-              <span className="exec-ai-chip-sparkle">✦</span>
-              <span>فحص البريد الصادر والمعلق</span>
-            </button>
-
-            <button
-              type="button"
-              className="exec-ai-chip-btn"
-              onClick={() => handleAiQuery('حصر الآليات والدوريات الجاهزة')}
-            >
-              <span className="exec-ai-chip-sparkle">✦</span>
-              <span>حصر الآليات والدوريات الجاهزة</span>
-            </button>
-
-            <button
-              type="button"
-              className="exec-ai-chip-btn"
-              onClick={() => handleAiQuery('تقرير الجاهزية الأمنية لغرفة العمليات')}
-            >
-              <span className="exec-ai-chip-sparkle">✦</span>
-              <span>تقرير الجاهزية لغرفة العمليات</span>
-            </button>
-          </div>
-
-          {/* Bottom Interactive Chat Input Bar */}
-          <form
-            className="exec-ai-input-bar"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (aiQuestion.trim()) handleAiQuery(aiQuestion);
-            }}
-          >
-            <input
-              type="text"
-              className="exec-ai-input-field"
-              placeholder="اسأل المساعد الأمني عن أي بيانات..."
-              value={aiQuestion}
-              onChange={(e) => setAiQuestion(e.target.value)}
-            />
-            <button
-              type="button"
-              className="exec-ai-mic-btn"
-              title="إدخال صوتي (ميكروفون)"
-              onClick={() => handleAiQuery('تقرير الموقف الأمني الشامل')}
-            >
-              <Mic size={16} />
-            </button>
-            <button type="submit" className="exec-ai-send-btn">
-              <span>إرسال</span>
-              <Send size={13} />
-            </button>
-          </form>
-
-        </div>
-
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────
-         4. DETAILED HIERARCHY & TERRITORIAL DRILLDOWN (Toggleable Drawer)
-         ────────────────────────────────────────────────────────────────────── */}
-      <div style={{ marginTop: '10px' }}>
-        <button
-          type="button"
-          onClick={() => setShowRankDetails(!showRankDetails)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '14px 20px',
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 800,
-            color: '#1e3a8a',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Award size={18} style={{ color: '#d4af37' }} />
-            <span>الهيكل القيادي وتعداد الرتب والانتشار الميداني للمراكز والوحدات ({stats.totalCount.toLocaleString('ar-LY')} عضواً)</span>
-          </div>
-          <ChevronDown
-            size={18}
-            style={{
-              transform: showRankDetails ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s'
-            }}
-          />
-        </button>
-
-        {showRankDetails && (
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Territorial Units Matrix */}
-            <div className="moi-card" style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0' }}>
-              <div className="moi-card-header" style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MapPin size={18} style={{ color: '#0284c7' }} />
-                  <span>توزيع القوة الميدانية على المراكز والوحدات التابعة</span>
-                </h4>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', background: '#eff6ff', padding: '3px 10px', borderRadius: '9999px' }}>
-                  8 قطاعات أمنية
-                </span>
-              </div>
-              <div className="moi-dept-list">
-                {stats.keyUnits.map((unit, idx) => {
-                  const pct = ((unit.count / stats.totalCount) * 100).toFixed(1);
-                  return (
-                    <div key={idx} className="moi-dept-item">
-                      <div className="moi-dept-top">
-                        <div className="moi-dept-name-box">
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: unit.color }} />
-                          <span>{unit.name}</span>
-                        </div>
-                        <div className="moi-dept-stats">
-                          <strong style={{ color: '#0a192f', fontSize: '13px' }}>{unit.count.toLocaleString('ar-LY')}</strong> عضواً ({pct}%)
-                        </div>
+          <div className="moi-card-body">
+            <div className="moi-dept-list">
+              {stats.keyUnits.map((unit, idx) => {
+                const pct = ((unit.count / stats.totalCount) * 100).toFixed(1);
+                return (
+                  <div key={idx} className="moi-dept-item">
+                    <div className="moi-dept-top">
+                      <div className="moi-dept-name-box">
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: unit.color }} />
+                        <span>{unit.name}</span>
                       </div>
-                      <div className="moi-dept-bar-track">
-                        <div
-                          className="moi-dept-bar-fill"
-                          style={{
-                            width: `${Math.min(parseFloat(pct) * 3.5, 100)}%`,
-                            backgroundColor: unit.color
-                          }}
-                        />
+                      <div className="moi-dept-stats">
+                        <strong style={{ color: '#0a192f', fontSize: '13px' }}>{unit.count.toLocaleString('ar-LY')}</strong> عضواً ({pct}%)
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="moi-dept-bar-track">
+                      <div
+                        className="moi-dept-bar-fill"
+                        style={{
+                          width: `${Math.min(parseFloat(pct) * 3.5, 100)}%`,
+                          backgroundColor: unit.color
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Military Ranks Hierarchy Cards */}
-            <div className="moi-card" style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Award size={18} style={{ color: '#d4af37' }} />
-                  <span>تعداد الرتب الرسمية المقيدة بالمنظومة</span>
-                </h4>
-
-                <div className="moi-rank-tabs">
-                  {[
-                    { id: 'all', label: `الكل (${stats.totalCount})` },
-                    { id: 'command', label: `ضباط قادة (${stats.commandOfficersCount})` },
-                    { id: 'field', label: `ضباط ميدان (${stats.fieldOfficersCount})` },
-                    { id: 'nco', label: `ضباط صف (${stats.ncoCount})` },
-                    { id: 'constables', label: `أفراد (${stats.constablesCount})` },
-                    { id: 'civil', label: `مدنيون (${stats.civilCount})` }
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      className={`moi-rank-tab ${rankTab === tab.id ? 'active' : ''}`}
-                      onClick={() => setRankTab(tab.id)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="moi-rank-grid">
-                {stats.cleanRankList
-                  .filter(r => (rankTab === 'all' || r.tier === rankTab))
-                  .map(rank => {
-                    const pct = ((rank.count / stats.totalCount) * 100).toFixed(1);
-                    return (
-                      <div key={rank.id} className="moi-rank-card">
-                        <div className="moi-rank-info">
-                          <div className="moi-rank-title">{rank.label}</div>
-                          <div className="moi-rank-tier">{rank.tierLabel}</div>
-                        </div>
-                        <div className="moi-rank-metric">
-                          <div className="moi-rank-count">{rank.count.toLocaleString('ar-LY')}</div>
-                          <div className="moi-rank-pct">{pct}%</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-
           </div>
-        )}
+        </div>
+
+      </div>
+
+      {/* ── 4. MILITARY & CIVIL RANKS HIERARCHY MATRIX ── */}
+      <section className="moi-card" style={{ marginBottom: '22px' }}>
+        <div className="moi-ribbon-bar" />
+        <div className="moi-card-header">
+          <div>
+            <h3 className="moi-card-title">
+              <Award size={18} style={{ color: '#d4af37' }} />
+              <span>الهيكل القيادي وتعداد الرتب العسكرية والمدنية</span>
+            </h3>
+            <span className="moi-card-sublabel">
+              تعداد الرتب الرسمية المقيدة بالمنظومة وفقاً للتدرج العسكري المعتمد
+            </span>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="moi-rank-tabs">
+            {[
+              { id: 'all', label: `الكل (${stats.totalCount})` },
+              { id: 'command', label: `ضباط قادة (${stats.commandOfficersCount})` },
+              { id: 'field', label: `ضباط ميدان وأعوان (${stats.fieldOfficersCount})` },
+              { id: 'nco', label: `ضباط صف ومساعدين (${stats.ncoCount})` },
+              { id: 'constables', label: `أفراد (${stats.constablesCount})` },
+              { id: 'civil', label: `مدنيون (${stats.civilCount})` }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`moi-rank-tab ${rankTab === tab.id ? 'active' : ''}`}
+                onClick={() => setRankTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="moi-card-body">
+          {/* Quick Search */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '8px 14px',
+            maxWidth: '380px',
+            marginBottom: '12px'
+          }}>
+            <Search size={15} style={{ color: '#64748b' }} />
+            <input
+              type="text"
+              placeholder="تصفية الرتبة بالاسم..."
+              value={rankSearchQuery}
+              onChange={(e) => setRankSearchQuery(e.target.value)}
+              style={{
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontFamily: 'inherit',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                width: '100%',
+                color: '#0a192f'
+              }}
+            />
+          </div>
+
+          {/* Ranks Cards Grid */}
+          <div className="moi-rank-grid">
+            {displayedRanks.map(rank => {
+              const pct = ((rank.count / stats.totalCount) * 100).toFixed(1);
+              return (
+                <div key={rank.id} className="moi-rank-card">
+                  <div className="moi-rank-info">
+                    <div className="moi-rank-title">{rank.label}</div>
+                    <div className="moi-rank-tier">{rank.tierLabel}</div>
+                    <div style={{
+                      width: '100%',
+                      height: '4px',
+                      background: '#e2e8f0',
+                      borderRadius: '9999px',
+                      overflow: 'hidden',
+                      marginTop: '8px'
+                    }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${(rank.count / maxRankCount) * 100}%`,
+                          backgroundColor: rank.color,
+                          borderRadius: '9999px'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="moi-rank-metric">
+                    <div className="moi-rank-count">{rank.count.toLocaleString('ar-LY')}</div>
+                    <div className="moi-rank-pct">{pct}%</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5. BOTTOM ROW: BANKS HEADCOUNT + QUICK OPERATIONAL ACTION HUB ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+        {/* BANK DISTRIBUTION */}
+        <div className="moi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-card-header">
+            <div>
+              <h3 className="moi-card-title">
+                <Building2 size={18} style={{ color: '#1e3a8a' }} />
+                <span>التوزيع المالي والمصرفي للمنتسبين</span>
+              </h3>
+              <span className="moi-card-sublabel">
+                أعداد أفراد القوة بالفروع المصرفية لصرف المرتبات
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn-dash-action outline"
+              style={{ padding: '4px 10px', fontSize: '11.5px' }}
+              onClick={() => setActiveSection && setActiveSection('force')}
+            >
+              <Users size={13} />
+              <span>عرض كشف القوة</span>
+            </button>
+          </div>
+
+          <div className="moi-card-body">
+            <div className="moi-bank-list">
+              {stats.bankList.slice(0, 6).map((bank, i) => {
+                const pct = ((bank.count / stats.totalCount) * 100).toFixed(1);
+                return (
+                  <div key={i} className="moi-bank-item">
+                    <div className="moi-bank-info">
+                      <span className="moi-bank-badge">{i + 1}</span>
+                      <div>
+                        <div className="moi-bank-name">{bank.name}</div>
+                        <div style={{ fontSize: '10.5px', color: '#64748b' }}>حسابات جارية معتمدة</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'left' }}>
+                      <span className="moi-bank-count">{bank.count.toLocaleString('ar-LY')}</span>
+                      <span style={{ fontSize: '11px', color: '#64748b', marginRight: '4px' }}>فرد ({pct}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* OPERATIONAL SHORTCUT HUB */}
+        <div className="moi-card">
+          <div className="moi-ribbon-bar" />
+          <div className="moi-card-header">
+            <div>
+              <h3 className="moi-card-title">
+                <Layers size={18} style={{ color: '#059669' }} />
+                <span>مركز العمليات والوصول السريع للأنظمة</span>
+              </h3>
+              <span className="moi-card-sublabel">
+                الانتقال الفوري لأهم الأقسام والمنظومات التشغيلية
+              </span>
+            </div>
+          </div>
+
+          <div className="moi-card-body">
+            <div className="moi-shortcuts-grid">
+              {[
+                { id: 'force', name: 'سجل القوة العمومية', desc: 'إدارة وفحص بيانات 2,211 منتسب', icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
+                { id: 'operations', name: 'غرفة العمليات', desc: 'تسجيل البلاغات والإشارات', icon: Radio, bg: '#fee2e2', clr: '#dc2626' },
+                { id: 'vehicles', name: 'الآليات والمركبات', desc: 'متابعة 92 آلية ومركبة أمنية', icon: Car, bg: '#ecfdf5', clr: '#059669' },
+                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' },
+                { id: 'mail', name: 'البريد والمراسلات', desc: 'الصادر والوارد والوثائق الرسمية', icon: Mail, bg: '#e0f2fe', clr: '#0284c7' },
+                { id: 'letters', name: 'النماذج والرسائل', desc: 'صياغة المكاتبات الرسمية', icon: Send, bg: '#f3e8ff', clr: '#7c3aed' }
+              ].map(shortcut => {
+                const IconComponent = shortcut.icon;
+                return (
+                  <button
+                    key={shortcut.id}
+                    type="button"
+                    className="moi-shortcut-btn"
+                    onClick={() => setActiveSection && setActiveSection(shortcut.id)}
+                  >
+                    <div className="moi-shortcut-icon" style={{ background: shortcut.bg, color: shortcut.clr }}>
+                      <IconComponent size={20} />
+                    </div>
+                    <span className="moi-shortcut-label">{shortcut.name}</span>
+                    <span className="moi-shortcut-desc">{shortcut.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>

@@ -530,30 +530,6 @@ body {
   flex-shrink: 0;
 }
 
-.dashboard-sidebar.sidebar-collapsed {
-  width: 84px !important;
-  min-width: 84px !important;
-}
-
-.dashboard-sidebar.sidebar-collapsed .sidebar-header {
-  padding: 16px 8px;
-  justify-content: center;
-}
-
-.dashboard-sidebar.sidebar-collapsed .sidebar-brand {
-  justify-content: center;
-}
-
-.dashboard-sidebar.sidebar-collapsed .nav-item {
-  justify-content: center;
-  padding: 12px;
-}
-
-.dashboard-sidebar.sidebar-collapsed .sidebar-user {
-  justify-content: center;
-  padding: 12px 6px;
-}
-
 .sidebar-header {
   padding: 22px 18px;
   display: flex;

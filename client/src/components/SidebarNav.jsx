@@ -4,7 +4,6 @@ import {
   X,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
   Shield,
   Users,
   Car,
@@ -13,12 +12,10 @@ import {
   Share2,
   Send,
   Camera,
-  Settings,
-  ChevronsLeft,
-  ChevronsRight
+  Settings
 } from 'lucide-react';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import OfficialLogo from './OfficialLogo';
+import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
 // Official Directorate Operational Divisions
 export const SECTION_DIVISIONS = [
@@ -63,7 +60,6 @@ export default function SidebarNav({
 }) {
   const [navSearch, setNavSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState({});
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const toggleGroup = (groupId) => {
     setCollapsedGroups((prev) => ({
@@ -105,29 +101,27 @@ export default function SidebarNav({
         aria-hidden="true"
       />
 
-      <aside
-        className={`dashboard-sidebar ${isMobileOpen ? 'sidebar-open' : ''} ${
-          isSidebarCollapsed ? 'sidebar-collapsed' : ''
-        }`}
-        style={isSidebarCollapsed ? { width: '84px', minWidth: '84px' } : undefined}
-      >
+      <aside className={`dashboard-sidebar ${isMobileOpen ? 'sidebar-open' : ''}`}>
         {/* Libyan Sovereign Banner Ribbon */}
         <div className="moi-libyan-ribbon" />
 
-        {/* Sidebar Header with New Sovereign Logo */}
-        <div className="sidebar-header" style={{ padding: isSidebarCollapsed ? '16px 8px' : '20px 18px' }}>
-          <div className="sidebar-brand" style={{ justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', width: '100%' }}>
-            <div className="sidebar-logo" style={{ background: 'transparent', border: 'none', padding: 0 }}>
-              <OfficialLogo size={isSidebarCollapsed ? 36 : 42} />
+        {/* Sidebar Header */}
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <div className="sidebar-logo">
+              <img
+                src="./moi-logo.png"
+                onError={(e) => {
+                  e.currentTarget.src = MOI_LOGO_BASE64;
+                }}
+                alt="وزارة الداخلية"
+              />
             </div>
-            {!isSidebarCollapsed && (
-              <div className="sidebar-title">
-                <h2>وزارة الداخلية</h2>
-                <span>مديرية أمن أوباري</span>
-              </div>
-            )}
+            <div className="sidebar-title">
+              <h2>وزارة الداخلية</h2>
+              <span>مديرية أمن أوباري</span>
+            </div>
           </div>
-
           <button
             className="sidebar-close-btn"
             onClick={onCloseMobile}
@@ -137,70 +131,27 @@ export default function SidebarNav({
           </button>
         </div>
 
-        {/* Collapse Toggle Button (Matching Reference Design: << Collapse) */}
-        <div style={{ padding: isSidebarCollapsed ? '8px 6px' : '6px 16px', display: 'flex', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-          <button
-            type="button"
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '9999px',
-              color: '#64748b',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              width: isSidebarCollapsed ? '40px' : 'auto',
-              justifyContent: 'center'
-            }}
-            title={isSidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
-          >
-            {isSidebarCollapsed ? (
-              <ChevronsRight size={14} />
-            ) : (
-              <>
-                <ChevronsLeft size={14} />
-                <span>طي القائمة</span>
-              </>
-            )}
-          </button>
+        {/* Quick Nav Search Input */}
+        <div className="sidebar-search-box">
+          <Search size={14} className="sidebar-search-icon" />
+          <input
+            type="text"
+            className="sidebar-search-input"
+            placeholder="بحث سريع في الوحدات..."
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            aria-label="تصفية الأقسام"
+          />
+          {navSearch && (
+            <button
+              type="button"
+              className="sidebar-search-clear"
+              onClick={() => setNavSearch('')}
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
-
-        {/* Quick Nav Search Input (Only when expanded) */}
-        {!isSidebarCollapsed && (
-          <div className="sidebar-search-box">
-            <Search size={14} className="sidebar-search-icon" />
-            <input
-              type="text"
-              className="sidebar-search-input"
-              placeholder="بحث سريع في الوحدات..."
-              value={navSearch}
-              onChange={(e) => setNavSearch(e.target.value)}
-              aria-label="تصفية الأقسام"
-            />
-            {navSearch && (
-              <button
-                type="button"
-                className="sidebar-search-clear"
-                onClick={() => setNavSearch('')}
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Category Label (MENU) */}
-        {!isSidebarCollapsed && (
-          <div style={{ padding: '12px 18px 4px', fontSize: '11px', fontWeight: 800, color: '#94a3b8', letterSpacing: '1px' }}>
-            القوائم والعمليات (MENU)
-          </div>
-        )}
 
         {/* Categorized Navigation */}
         <nav className="sidebar-nav" aria-label="أقسام المنظومة">
@@ -216,27 +167,25 @@ export default function SidebarNav({
 
               return (
                 <div key={div.id} className="nav-group-wrapper">
-                  {!isSidebarCollapsed && (
-                    <div
-                      className={`nav-group-header ${hasActiveChild ? 'has-active' : ''}`}
-                      onClick={() => toggleGroup(div.id)}
-                      title="انقر لتوسيع / طي المجموعة"
-                    >
-                      <div className="nav-group-title-box">
-                        <GroupIcon size={14} style={{ color: div.color }} />
-                        <span className="nav-group-title-text">{div.title}</span>
-                      </div>
-                      <div className="nav-group-meta">
-                        <span className="nav-group-count">{div.items.length}</span>
-                        <ChevronDown
-                          size={14}
-                          className={`nav-group-arrow ${isCollapsed ? 'collapsed' : ''}`}
-                        />
-                      </div>
+                  <div
+                    className={`nav-group-header ${hasActiveChild ? 'has-active' : ''}`}
+                    onClick={() => toggleGroup(div.id)}
+                    title="انقر لتوسيع / طي المجموعة"
+                  >
+                    <div className="nav-group-title-box">
+                      <GroupIcon size={14} style={{ color: div.color }} />
+                      <span className="nav-group-title-text">{div.title}</span>
                     </div>
-                  )}
+                    <div className="nav-group-meta">
+                      <span className="nav-group-count">{div.items.length}</span>
+                      <ChevronDown
+                        size={14}
+                        className={`nav-group-arrow ${isCollapsed ? 'collapsed' : ''}`}
+                      />
+                    </div>
+                  </div>
 
-                  {(!isCollapsed || isSidebarCollapsed) && (
+                  {!isCollapsed && (
                     <div className="nav-group-items">
                       {div.items.map((sec) => {
                         const IconComp = sec.icon;
@@ -247,20 +196,14 @@ export default function SidebarNav({
                             id={`nav-item-${sec.id}`}
                             data-section={sec.id}
                             className={`nav-item ${isActive ? 'active' : ''}`}
-                            style={{
-                              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-                              padding: isSidebarCollapsed ? '10px' : '9px 12px',
-                              borderRadius: '12px'
-                            }}
-                            title={sec.name}
                             onClick={() => {
                               onSelectSection(sec.id);
                               if (onCloseMobile) onCloseMobile();
                             }}
                           >
-                            <IconComp size={18} />
-                            {!isSidebarCollapsed && <span className="nav-item-label">{sec.name}</span>}
-                            {isActive && !isSidebarCollapsed && <div className="nav-item-active-marker" />}
+                            <IconComp size={16} />
+                            <span className="nav-item-label">{sec.name}</span>
+                            {isActive && <div className="nav-item-active-marker" />}
                           </div>
                         );
                       })}
@@ -272,38 +215,31 @@ export default function SidebarNav({
           )}
         </nav>
 
-        {/* User Card in Sidebar Footer (Matching Profile Card with Avatar & Chevron) */}
+        {/* User Card in Sidebar Footer */}
         <div
           className="sidebar-user"
           onClick={onOpenProfileModal}
-          style={{
-            padding: isSidebarCollapsed ? '12px 6px' : '14px 16px',
-            justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-            borderRadius: '16px',
-            margin: '8px'
-          }}
-          title="الملف الشخصي وإعدادات الحساب"
+          title="انقر لفتح إعدادات المستخدم وتعديل البيانات ورفع الصورة"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="sidebar-user-avatar" style={{ width: '38px', height: '38px', borderRadius: '50%' }}>
-              {user.avatar ? (
-                <img src={user.avatar} alt="صورة المستخدم" className="user-avatar-img" />
-              ) : (
-                <span>{user.full_name ? user.full_name.charAt(0) : 'م'}</span>
-              )}
-            </div>
-            {!isSidebarCollapsed && (
-              <div className="sidebar-user-info">
-                <h4>{user.full_name || 'سيادة اللواء / موسى سعد'}</h4>
-                <p>مدير أمن أوباري</p>
-              </div>
+          <div className="sidebar-user-avatar">
+            {user.avatar ? (
+              <img src={user.avatar} alt="صورة المستخدم" className="user-avatar-img" />
+            ) : (
+              <span>{user.full_name ? user.full_name.charAt(0) : 'م'}</span>
             )}
-          </div>
-          {!isSidebarCollapsed && (
-            <div style={{ color: '#94a3b8' }}>
-              <ChevronLeft size={16} />
+            <div className="avatar-edit-badge" title="تغيير الصورة">
+              <Camera size={10} />
             </div>
-          )}
+          </div>
+          <div className="sidebar-user-info">
+            <h4>{user.full_name || 'سيادة اللواء / موسى سعد محمد البدين'}</h4>
+            <p>
+              {user.badge_number || 'MOI-10492'} | {user.rank_title || 'لواء شرطة'}
+            </p>
+          </div>
+          <div className="sidebar-user-settings-icon" title="إعدادات الحساب">
+            <Settings size={15} />
+          </div>
         </div>
       </aside>
     </>
