@@ -64,7 +64,13 @@ const INITIAL_OUTGOING_MAIL = [
     print_employee: 'عبدالصمد',
     status: 'delivered', // 'delivered' = تم التسليم (مغلق), 'pending' = قيد الإرسال, 'action_required'
     attachment_name: 'مذكرة_تنسيق_رسمية.pdf',
+    greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+    greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+    prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
     letter_body: 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
+    show_stamp: true,
+    show_signature: true,
+    show_qr: true,
     cc_list: [
       'السيد / وكيل وزارة الداخلية',
       'معالي / وزير الداخلية',
@@ -73,7 +79,7 @@ const INITIAL_OUTGOING_MAIL = [
       'الغرفة الأمنية المشتركة',
       'الإدارة العامة للتفتيش والمتابعة'
     ],
-    signer_name: 'لواء / موسى سعد محمد',
+    signer_name: 'لواء / موسى سعد محمد البدين',
     signer_title: 'مدير مديرية أمن أوباري',
     phone: '0915938137',
     email: 'Info@ubari-security.ly',
@@ -89,19 +95,25 @@ const INITIAL_OUTGOING_MAIL = [
     recipient: 'مدير الإدارة العامة للتفتيش والمتابعة',
     recipient_title: 'إلى السيد / مدير الإدارة العامة للتفتيش والمتابعة',
     date: '08/10/2026',
-    subject: 'إحالة التقرير الشهري لضبطيات الدوريات ومراكز الشرطة بالمديرية',
+    subject: 'إحالة التتقرير الشهري لضبطيات الدوريات ومراكز الشرطة بالمديرية',
     delivery_method: 'يدوي / ورقي',
     sender_employee: 'عبدالصمد',
     editor_employee: 'عبدالصمد',
     print_employee: 'عبدالصمد',
     status: 'delivered',
     attachment_name: 'تقرير_شهري_أكتوبر.pdf',
+    greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+    greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+    prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
     letter_body: 'نحيل إليكم طيه كشف التقرير الأمني الدوري لمديرية أمن أوباري، المتضمن كافة المحاضر والضبطيات ومناوبات الأجهزة الأمنية لشهر أكتوبر 2026م للتفضل بالاطلاع.',
+    show_stamp: true,
+    show_signature: true,
+    show_qr: true,
     cc_list: [
       'السيد / وكيل وزارة الداخلية',
       'المساعد للشؤون الأمنية'
     ],
-    signer_name: 'لواء / موسى سعد محمد',
+    signer_name: 'لواء / موسى سعد محمد البدين',
     signer_title: 'مدير مديرية أمن أوباري',
     phone: '0915938137',
     email: 'Info@ubari-security.ly',
@@ -247,6 +259,7 @@ export default function MailSection({ user, forceMembers = [] }) {
     recipient: '',
     date: new Date().toLocaleDateString('en-GB'), // e.g. 12/10/2026
     subject: '',
+    letter_body: 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
     delivery_method: 'إلكتروني (منظومة/إيميل)',
     sender_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
     status: 'delivered', // تم التسليم (مغلق)
@@ -267,7 +280,7 @@ export default function MailSection({ user, forceMembers = [] }) {
     attachment_name: ''
   });
 
-  // Active Letter for Preview & Print matching Image 3
+  // Active Letter for Preview & Print matching Image 3 (الرسالة القديمة المعتمدة مع المحرر)
   const [previewLetter, setPreviewLetter] = useState({
     ...INITIAL_OUTGOING_MAIL[0],
     font_family: "'Cairo', sans-serif",
@@ -278,7 +291,9 @@ export default function MailSection({ user, forceMembers = [] }) {
     font_style: 'normal',
     text_decoration: 'none',
     text_color: '#000000',
-    greeting: 'بعد التحيـــــة والســــلام ،،،',
+    greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+    greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+    prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
     show_stamp: true,
     show_signature: true,
     show_qr: true
@@ -338,7 +353,13 @@ export default function MailSection({ user, forceMembers = [] }) {
       print_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
       signer_name: 'لواء / موسى سعد محمد البدين',
       signer_title: 'مدير مديرية أمن أوباري',
+      greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+      prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
       letter_body: outgoingForm.letter_body || 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
+      show_stamp: true,
+      show_signature: true,
+      show_qr: true,
       cc_list: [
         'السيد / وكيل وزارة الداخلية',
         'معالي / وزير الداخلية',
@@ -384,6 +405,7 @@ export default function MailSection({ user, forceMembers = [] }) {
       recipient: '',
       date: new Date().toLocaleDateString('en-GB'),
       subject: '',
+      letter_body: 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
       delivery_method: 'إلكتروني (منظومة/إيميل)',
       sender_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
       status: 'delivered',
@@ -395,6 +417,7 @@ export default function MailSection({ user, forceMembers = [] }) {
 
     // Prompt user to preview the generated official letter
     setPreviewLetter(newRecord);
+    return newRecord;
   };
 
   // Save Incoming Mail Handler (Image 2) - Real SQLite API with offline cache
@@ -680,7 +703,7 @@ export default function MailSection({ user, forceMembers = [] }) {
     }));
   };
 
-  // Open Letter Preview Modal matching Image 3
+  // Open Letter Preview Modal matching Image 3 (إظهار الرسالة القديمة المعتمدة مع المحرر)
   const handleOpenLetterPreview = (letterItem) => {
     setPreviewLetter({
       font_family: "'Cairo', sans-serif",
@@ -691,12 +714,15 @@ export default function MailSection({ user, forceMembers = [] }) {
       font_style: 'normal',
       text_decoration: 'none',
       text_color: '#000000',
-      greeting: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+      prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
       show_stamp: true,
       show_signature: true,
       show_qr: true,
       ...letterItem
     });
+    setDesignerEditorViewMode('split');
     setShowLetterModal(true);
   };
 
@@ -711,14 +737,84 @@ export default function MailSection({ user, forceMembers = [] }) {
       font_style: 'normal',
       text_decoration: 'none',
       text_color: '#000000',
-      greeting: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+      prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
       show_stamp: true,
       show_signature: true,
       show_qr: true,
       ...letterItem
     });
+    setDesignerEditorViewMode('split');
     setActiveTab('letter_designer');
     if (showLetterModal) setShowLetterModal(false);
+  };
+
+  // بناء كائن رسالة متكامل من بيانات الفورم الحالية
+  const buildLetterFromOutgoingForm = () => {
+    return {
+      ...outgoingForm,
+      id: Date.now(),
+      type: 'outgoing',
+      recipient_title: outgoingForm.recipient.startsWith('إلى') ? outgoingForm.recipient : `إلى السيد / ${outgoingForm.recipient}`,
+      editor_employee: outgoingForm.sender_employee || (user?.full_name?.includes('عبدالصمد') ? 'عبدالصمد' : user?.full_name) || 'عبدالصمد',
+      print_employee: outgoingForm.sender_employee || (user?.full_name?.includes('عبدالصمد') ? 'عبدالصمد' : user?.full_name) || 'عبدالصمد',
+      signer_name: 'لواء / موسى سعد محمد البدين',
+      signer_title: 'مدير مديرية أمن أوباري',
+      greeting_1: 'بعد التحيـــــة والســــلام ،،،',
+      greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
+      prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
+      letter_body: outgoingForm.letter_body || 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
+      show_stamp: true,
+      show_signature: true,
+      show_qr: true,
+      font_family: "'Cairo', sans-serif",
+      font_size: '16px',
+      line_height: '1.9',
+      text_align: 'right',
+      font_weight: 'normal',
+      cc_list: [
+        'السيد / وكيل وزارة الداخلية',
+        'معالي / وزير الداخلية',
+        'آمر المنطقة العسكرية الجنوبية',
+        'المساعد للشؤون الأمنية',
+        'الغرفة الأمنية المشتركة',
+        'الإدارة العامة للتفتيش والمتابعة'
+      ],
+      phone: '0915938137',
+      email: 'Info@ubari-security.ly'
+    };
+  };
+
+  // معاينة الرسالة والمحرر مباشرة من الفورم
+  const handlePreviewFromForm = () => {
+    if (!outgoingForm.subject || !outgoingForm.recipient) {
+      alert('يرجى إدخال الموضوع والجهة الموجه إليها أولاً لعرض المعاينة');
+      return;
+    }
+    const letter = buildLetterFromOutgoingForm();
+    handleOpenLetterPreview(letter);
+  };
+
+  // حفظ وطباعة فورية من الفورم وإصلاح بيانات النموذج بدون أي تلف
+  const handleSaveAndPrintFromForm = async (e) => {
+    if (e) e.preventDefault();
+    if (!outgoingForm.subject || !outgoingForm.recipient) {
+      alert('يرجى كتابة الموضوع والجهة الموجه إليها بدقة قبل الطباعة');
+      return;
+    }
+
+    const saved = await handleSaveOutgoing();
+    if (saved) {
+      setPreviewLetter(saved);
+      setShowLetterModal(true);
+      setTimeout(() => {
+        const el = document.getElementById('official-letter-to-print');
+        if (el) {
+          printDocumentInIframe(el.outerHTML, `رسالة_رسمية_${saved.code_no || 'صادر'}`);
+        }
+      }, 350);
+    }
   };
 
   // Print Letter function using isolated Iframe printer to prevent blank pages
@@ -761,6 +857,549 @@ export default function MailSection({ user, forceMembers = [] }) {
       );
     });
   }, [incomingList, searchTerm, statusFilter]);
+
+  // لوحة محرر الرسائل الرسمية المتكاملة (نصوص، ترويسة، خطوط، أدعية واستفتاحات، توقيع وختم وتوزيع)
+  const renderLetterEditorPanel = () => {
+    if (!previewLetter) return null;
+    return (
+      <div className="full-document-editor-panel">
+        {/* Subtabs bar */}
+        <div className="editor-subtabs-bar">
+          <button
+            type="button"
+            className={`subtab-btn ${activeDesignerSubtab === 'body' ? 'active' : ''}`}
+            onClick={() => setActiveDesignerSubtab('body')}
+          >
+            <Type size={15} />
+            <span>نص الرسالة والتنسيق ونوع الخط</span>
+          </button>
+          <button
+            type="button"
+            className={`subtab-btn ${activeDesignerSubtab === 'meta' ? 'active' : ''}`}
+            onClick={() => setActiveDesignerSubtab('meta')}
+          >
+            <Building2 size={15} />
+            <span>الترويسة والمرجع والمخاطب</span>
+          </button>
+          <button
+            type="button"
+            className={`subtab-btn ${activeDesignerSubtab === 'signature_cc' ? 'active' : ''}`}
+            onClick={() => setActiveDesignerSubtab('signature_cc')}
+          >
+            <Shield size={15} />
+            <span>التوقيع والختم وجهات التوزيع (CC)</span>
+          </button>
+        </div>
+
+        <div className="editor-tab-pane">
+          {/* SUBTAB 1: BODY & TYPOGRAPHY */}
+          {activeDesignerSubtab === 'body' && (
+            <div>
+              {/* Rich Typography Toolbar */}
+              <div className="rich-editor-toolbar">
+                {/* Text Style: Bold, Italic, Underline */}
+                <div className="toolbar-group">
+                  <button
+                    type="button"
+                    className={`btn-format ${(previewLetter.font_weight === 'bold' || previewLetter.font_weight === '800') ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({
+                      ...prev,
+                      font_weight: (prev.font_weight === 'bold' || prev.font_weight === '800') ? 'normal' : 'bold'
+                    }))}
+                    title="خط عريض (Bold)"
+                  >
+                    <Bold size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-format ${previewLetter.font_style === 'italic' ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({
+                      ...prev,
+                      font_style: prev.font_style === 'italic' ? 'normal' : 'italic'
+                    }))}
+                    title="خط مائل (Italic)"
+                  >
+                    <Italic size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-format ${previewLetter.text_decoration === 'underline' ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({
+                      ...prev,
+                      text_decoration: prev.text_decoration === 'underline' ? 'none' : 'underline'
+                    }))}
+                    title="تسطير تحته خط (Underline)"
+                  >
+                    <Underline size={15} />
+                  </button>
+                </div>
+
+                {/* Alignment: Right, Center, Justify */}
+                <div className="toolbar-group">
+                  <button
+                    type="button"
+                    className={`btn-format ${(previewLetter.text_align === 'right' || !previewLetter.text_align) ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'right' }))}
+                    title="محاذاة لليمين"
+                  >
+                    <AlignRight size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-format ${previewLetter.text_align === 'center' ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'center' }))}
+                    title="محاذاة في الوسط"
+                  >
+                    <AlignCenter size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-format ${previewLetter.text_align === 'justify' ? 'active' : ''}`}
+                    onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'justify' }))}
+                    title="ضبط الكشيدة (Justify)"
+                  >
+                    <AlignJustify size={15} />
+                  </button>
+                </div>
+
+                {/* Font Family Selector */}
+                <div className="toolbar-group">
+                  <label className="toolbar-lbl">نوع الخط:</label>
+                  <select
+                    className="toolbar-select font-family-select"
+                    value={previewLetter.font_family || "'Cairo', sans-serif"}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, font_family: e.target.value }))}
+                    style={{ minWidth: '145px', fontWeight: 'bold' }}
+                  >
+                    <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
+                    <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
+                    <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
+                    <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
+                    <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
+                    <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
+                    <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
+                  </select>
+                </div>
+
+                {/* Font Size Selector */}
+                <div className="toolbar-group">
+                  <label className="toolbar-lbl">حجم الخط:</label>
+                  <select
+                    className="toolbar-select"
+                    value={previewLetter.font_size || '16px'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, font_size: e.target.value }))}
+                  >
+                    <option value="14px">14px (صغير)</option>
+                    <option value="16px">16px (قياسي رسمي)</option>
+                    <option value="17px">17px (متوسط واضح)</option>
+                    <option value="18px">18px (متوسط)</option>
+                    <option value="20px">20px (كبير)</option>
+                    <option value="22px">22px (عريض جداً)</option>
+                  </select>
+                </div>
+
+                {/* Line Height Selector */}
+                <div className="toolbar-group">
+                  <label className="toolbar-lbl">تباعد الأسطر:</label>
+                  <select
+                    className="toolbar-select"
+                    value={previewLetter.line_height || '1.9'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, line_height: e.target.value }))}
+                  >
+                    <option value="1.6">1.6 (متقارب)</option>
+                    <option value="1.8">1.8 (متوسط)</option>
+                    <option value="1.9">1.9 (رسمي معتمد)</option>
+                    <option value="2.1">2.1 (متباعد وواضح)</option>
+                    <option value="2.4">2.4 (عريض التباعد)</option>
+                  </select>
+                </div>
+
+                {/* Text Color Selector */}
+                <div className="toolbar-group">
+                  <label className="toolbar-lbl">اللون:</label>
+                  <select
+                    className="toolbar-select"
+                    value={previewLetter.text_color || '#000000'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, text_color: e.target.value }))}
+                  >
+                    <option value="#000000">أسود داكن (#000000)</option>
+                    <option value="#0a192f">كحلي سيادي (#0a192f)</option>
+                    <option value="#1e3a8a">أزرق ملكي (#1e3a8a)</option>
+                    <option value="#1e293b">رمادي غامق (#1e293b)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Salutations & Greetings Grid (التحيات والاستفتاح النبوي ودعاء الختام - عناصر الرسالة القديمة المعتمدة) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div className="editor-input-group">
+                  <label className="editor-control-lbl">التحية والافتتاحية الأولى:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.greeting_1 !== undefined ? previewLetter.greeting_1 : (previewLetter.greeting || 'بعد التحيـــــة والســــلام ،،،')}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, greeting_1: e.target.value, greeting: e.target.value }))}
+                    placeholder="بعد التحيـــــة والســــلام ،،،"
+                  />
+                </div>
+
+                <div className="editor-input-group">
+                  <label className="editor-control-lbl">دعاء الختام والبركة:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.prayer_line !== undefined ? previewLetter.prayer_line : 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, prayer_line: e.target.value }))}
+                    placeholder="وفقكم الله لما فيه خدمة الوطن والمواطن..."
+                  />
+                </div>
+              </div>
+
+              <div className="editor-input-group" style={{ marginBottom: '10px' }}>
+                <label className="editor-control-lbl">الاستفتاح النبوي (التحية الثانية المعتمدة):</label>
+                <input
+                  type="text"
+                  className="editor-text-input"
+                  value={previewLetter.greeting_2 !== undefined ? previewLetter.greeting_2 : 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد'}
+                  onChange={(e) => setPreviewLetter(prev => ({ ...prev, greeting_2: e.target.value }))}
+                  placeholder="الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد"
+                />
+              </div>
+
+              {/* Quick Official Phrases Chips */}
+              <div className="quick-phrases-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <Sparkles size={14} color="#1d4ed8" />
+                  <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#1e40af' }}>
+                    صيغ رسمية جاهزة للرسائل والمراسلات (انقر للإدراج السريع):
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="phrase-chip"
+                    onClick={() => insertPhraseIntoLetterBody('إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.')}
+                  >
+                    + من حيث الاختصاص واتخاذ اللازم
+                  </button>
+                  <button
+                    type="button"
+                    className="phrase-chip"
+                    onClick={() => insertPhraseIntoLetterBody('يرجى التكرم بالإيعاز للمختصين طرفكم بموافاتنا بتقرير أمني مفصل وعاجل بالخصوص.')}
+                  >
+                    + الإيعاز بالموافاة بتقرير مفصل
+                  </button>
+                  <button
+                    type="button"
+                    className="phrase-chip"
+                    onClick={() => insertPhraseIntoLetterBody('نحيل إليكم طيه الأوراق والمحاضر المتعلقة بالموضوع المذكور أعلاه للتفضل بالاطلاع والإجراء.')}
+                  >
+                    + نحيل إليكم طيه الأوراق والمحاضر
+                  </button>
+                  <button
+                    type="button"
+                    className="phrase-chip"
+                    onClick={() => insertPhraseIntoLetterBody('بناءً على تعليمات وتوجيهات السيد اللواء مدير مديرية أمن أوباري بالخصوص.')}
+                  >
+                    + بناءً على تعليمات السيد اللواء مدير الأمن
+                  </button>
+                  <button
+                    type="button"
+                    className="phrase-chip"
+                    onClick={() => insertPhraseIntoLetterBody('شاكرين لكم حسن تعاونكم الدائم معنا لما فيه خدمة الوطن والصالح الأمني العام.')}
+                  >
+                    + شاكرين حسن تعاونكم الدائم
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Letter Body Editor */}
+              <div className="editor-input-group">
+                <label className="editor-control-lbl">متن ونص الرسالة الرسمية:</label>
+                <textarea
+                  rows={8}
+                  className="rich-body-textarea"
+                  style={{
+                    fontFamily: previewLetter.font_family || "'Cairo', sans-serif",
+                    fontSize: previewLetter.font_size || '16px',
+                    lineHeight: previewLetter.line_height || '1.9',
+                    textAlign: previewLetter.text_align || 'right',
+                    fontWeight: previewLetter.font_weight || 'normal',
+                    fontStyle: previewLetter.font_style || 'normal',
+                    textDecoration: previewLetter.text_decoration || 'none',
+                    color: previewLetter.text_color || '#000000'
+                  }}
+                  value={previewLetter.letter_body || ''}
+                  onChange={(e) => setPreviewLetter(prev => ({ ...prev, letter_body: e.target.value }))}
+                  placeholder="اكتب هنا نص الرسالة والتوجيهات الأمنية الرسمية..."
+                />
+              </div>
+            </div>
+          )}
+
+          {/* SUBTAB 2: METADATA & RECIPIENT */}
+          {activeDesignerSubtab === 'meta' && (
+            <div>
+              <div className="grid-2-controls" style={{ marginBottom: '12px' }}>
+                <div>
+                  <label className="editor-control-lbl">المخاطب الرئيسي (الجهة أو الشخص):</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.recipient_title || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, recipient_title: e.target.value }))}
+                    placeholder="إلى السيد / آمر المنطقة العسكرية الجنوبية"
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">الموضوع (بخصوص):</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.subject || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="موضوع الرسالة"
+                  />
+                </div>
+              </div>
+
+              <div className="grid-4-controls" style={{ marginBottom: '12px' }}>
+                <div>
+                  <label className="editor-control-lbl">الرقم الإشاري:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.reference || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, reference: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">رقم القيد:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.record_number || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, record_number: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">التاريخ (الموافق):</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.date || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">كود الرسالة (Code No):</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.code_no || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, code_no: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid-2-controls" style={{ marginBottom: '12px' }}>
+                <div>
+                  <label className="editor-control-lbl">إشارة إلى مراسلتكم رقم:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.reply_to_reference || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, reply_to_reference: e.target.value }))}
+                    placeholder="مثال: 1.2/2026"
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">بتاريخ:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.reply_date || ''}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, reply_date: e.target.value }))}
+                    placeholder="مثال: 10/10/2026"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUBTAB 3: SIGNER, STAMP & CC DISTRIBUTION LIST */}
+          {activeDesignerSubtab === 'signature_cc' && (
+            <div>
+              {/* Signer rank & name */}
+              <div className="grid-2-controls" style={{ marginBottom: '14px' }}>
+                <div>
+                  <label className="editor-control-lbl">اسم المسؤول الموقّع:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.signer_name || 'لواء / موسى سعد محمد البدين'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, signer_name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">صفة ورتبة الموقّع:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.signer_title || 'مدير مديرية أمن أوباري'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, signer_title: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Official Stamp & Signature Toggles */}
+              <div style={{ display: 'flex', gap: '20px', padding: '12px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+                  <input
+                    type="checkbox"
+                    checked={previewLetter.show_stamp !== false}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_stamp: e.target.checked }))}
+                  />
+                  <span>إظهار ختم المديرية الرسمي</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+                  <input
+                    type="checkbox"
+                    checked={previewLetter.show_signature !== false}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_signature: e.target.checked }))}
+                  />
+                  <span>إظهار التوقيع الرسمي</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+                  <input
+                    type="checkbox"
+                    checked={previewLetter.show_qr !== false}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_qr: e.target.checked }))}
+                  />
+                  <span>إظهار باركود التحقق الأمني (QR)</span>
+                </label>
+              </div>
+
+              {/* Dynamic CC List Management */}
+              <div style={{ marginBottom: '16px' }}>
+                <label className="editor-control-lbl" style={{ marginBottom: '8px' }}>
+                  جهات التوزيع والإحاطة (صورة منه إلى :-):
+                </label>
+                
+                {/* List of current CC entities */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                  {(Array.isArray(previewLetter.cc_list) ? previewLetter.cc_list : []).map((ccItem, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '5px 10px',
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#1e293b'
+                      }}
+                    >
+                      <span>{ccItem}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCcItem(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          padding: '0 2px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="حذف هذه الجهة"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add New CC Entity Form */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    placeholder="أدخل اسم الجهة أو المسؤول (مثال: السيد / مدير إدارة البحث الجنائي)..."
+                    value={newCcEntity}
+                    onChange={(e) => setNewCcEntity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCcItem();
+                      }
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCcItem}
+                    className="btn-toolbar-save"
+                    style={{ padding: '7px 16px', fontSize: '12.5px', whiteSpace: 'nowrap' }}
+                  >
+                    <Plus size={14} />
+                    <span>إضافة جهة</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer Details */}
+              <div className="grid-4-controls">
+                <div>
+                  <label className="editor-control-lbl">المحرر:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.editor_employee || 'عبدالصمد'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, editor_employee: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">الطباعة:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.print_employee || 'عبدالصمد'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, print_employee: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">رقم الهاتف:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.phone || '0915938137'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="editor-control-lbl">البريد الإلكتروني:</label>
+                  <input
+                    type="text"
+                    className="editor-text-input"
+                    value={previewLetter.email || 'Info@ubari-security.ly'}
+                    onChange={(e) => setPreviewLetter(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="mail-section-container">
@@ -981,6 +1620,19 @@ export default function MailSection({ user, forceMembers = [] }) {
                 />
               </div>
 
+              {/* نص الرسالة الرسمية الصادرة (متن الخطاب والتوجيهات) */}
+              <div className="mail-input-group" style={{ marginTop: '16px' }}>
+                <label>متن وتوجيهات الرسالة الرسمية الصادرة (نص الخطاب):</label>
+                <textarea
+                  rows={3}
+                  className="mail-input"
+                  style={{ resize: 'vertical', minHeight: '75px', lineHeight: '1.8' }}
+                  placeholder="اكتب هنا متن الرسالة والتوجيهات الأمنية (مثال: إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة)..."
+                  value={outgoingForm.letter_body}
+                  onChange={(e) => setOutgoingForm({ ...outgoingForm, letter_body: e.target.value })}
+                />
+              </div>
+
               {/* Row 4: طريقة الإرسال, الموظف المرسل, حالة التسليم, اختيار ملف */}
               <div className="form-fields-grid-4" style={{ marginTop: '16px', alignItems: 'flex-end' }}>
                 {/* طريقة الإرسال */}
@@ -1048,8 +1700,8 @@ export default function MailSection({ user, forceMembers = [] }) {
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="mail-form-submit-row" style={{ marginTop: '22px' }}>
+              {/* Submit Buttons (إصلاح وتكامل أزرار الفورم عند المعاينة والطباعة) */}
+              <div className="mail-form-submit-row" style={{ marginTop: '22px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button type="submit" className="btn-save-record">
                   <Send size={16} />
                   <span>حفظ وتقييد السجل</span>
@@ -1058,32 +1710,34 @@ export default function MailSection({ user, forceMembers = [] }) {
                 <button
                   type="button"
                   className="btn-create-official-letter"
-                  onClick={() => {
-                    const tempLetter = {
-                      ...outgoingForm,
-                      id: Date.now(),
-                      recipient_title: outgoingForm.recipient.startsWith('إلى') ? outgoingForm.recipient : `إلى السيد / ${outgoingForm.recipient || 'آمر المنطقة العسكرية الجنوبية'}`,
-                      editor_employee: outgoingForm.sender_employee || 'عبدالصمد',
-                      print_employee: outgoingForm.sender_employee || 'عبدالصمد',
-                      signer_name: 'لواء / موسى سعد محمد',
-                      signer_title: 'مدير مديرية أمن أوباري',
-                      letter_body: outgoingForm.letter_body || 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
-                      cc_list: [
-                        'السيد / وكيل وزارة الداخلية',
-                        'معالي / وزير الداخلية',
-                        'آمر المنطقة العسكرية الجنوبية',
-                        'المساعد للشؤون الأمنية',
-                        'الغرفة الأمنية المشتركة',
-                        'الإدارة العامة للتفتيش والمتابعة'
-                      ],
-                      phone: '0915938137',
-                      email: 'Info@ubari-security.ly'
-                    };
-                    handleOpenLetterPreview(tempLetter);
-                  }}
+                  onClick={handlePreviewFromForm}
+                  title="فتح نافذة المعاينة التفاعلية مع المحرر المزدوج A4"
                 >
-                  <FileText size={16} />
-                  <span>معاينة وطباعة الرسالة الرسمية الصادرة (النموذج المعتمد)</span>
+                  <Eye size={16} />
+                  <span>معاينة وتحرير الرسالة (المحرر + A4)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAndPrintFromForm}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 22px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#1e3a8a',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(30,58,138,0.25)'
+                  }}
+                  title="حفظ السجل في قاعدة البيانات وفتح أمر الطباعة الرسمي فوراً"
+                >
+                  <Printer size={16} />
+                  <span>حفظ وطباعة الرسالة فوراً</span>
                 </button>
               </div>
             </form>
@@ -1799,518 +2453,7 @@ export default function MailSection({ user, forceMembers = [] }) {
           <div className={`letter-modal-body-wrapper ${designerEditorViewMode}`}>
             {/* 1. Left/Main Pane: The Rich Editor Panel */}
             {(designerEditorViewMode === 'split' || designerEditorViewMode === 'editor') && (
-              <div className="full-document-editor-panel">
-                {/* Subtabs bar */}
-                <div className="editor-subtabs-bar">
-                  <button
-                    type="button"
-                    className={`subtab-btn ${activeDesignerSubtab === 'body' ? 'active' : ''}`}
-                    onClick={() => setActiveDesignerSubtab('body')}
-                  >
-                    <Type size={15} />
-                    <span>نص الرسالة والتنسيق ونوع الخط</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`subtab-btn ${activeDesignerSubtab === 'meta' ? 'active' : ''}`}
-                    onClick={() => setActiveDesignerSubtab('meta')}
-                  >
-                    <Building2 size={15} />
-                    <span>الترويسة والمرجع والمخاطب</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`subtab-btn ${activeDesignerSubtab === 'signature_cc' ? 'active' : ''}`}
-                    onClick={() => setActiveDesignerSubtab('signature_cc')}
-                  >
-                    <Shield size={15} />
-                    <span>التوقيع والختم وجهات التوزيع (CC)</span>
-                  </button>
-                </div>
-
-                <div className="editor-tab-pane">
-                  {/* SUBTAB 1: BODY & TYPOGRAPHY */}
-                  {activeDesignerSubtab === 'body' && (
-                    <div>
-                      {/* Rich Typography Toolbar */}
-                      <div className="rich-editor-toolbar">
-                        {/* Text Style: Bold, Italic, Underline */}
-                        <div className="toolbar-group">
-                          <button
-                            type="button"
-                            className={`btn-format ${(previewLetter.font_weight === 'bold' || previewLetter.font_weight === '800') ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({
-                              ...prev,
-                              font_weight: (prev.font_weight === 'bold' || prev.font_weight === '800') ? 'normal' : 'bold'
-                            }))}
-                            title="خط عريض (Bold)"
-                          >
-                            <Bold size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className={`btn-format ${previewLetter.font_style === 'italic' ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({
-                              ...prev,
-                              font_style: prev.font_style === 'italic' ? 'normal' : 'italic'
-                            }))}
-                            title="خط مائل (Italic)"
-                          >
-                            <Italic size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className={`btn-format ${previewLetter.text_decoration === 'underline' ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({
-                              ...prev,
-                              text_decoration: prev.text_decoration === 'underline' ? 'none' : 'underline'
-                            }))}
-                            title="تسطير تحته خط (Underline)"
-                          >
-                            <Underline size={15} />
-                          </button>
-                        </div>
-
-                        {/* Alignment: Right, Center, Justify */}
-                        <div className="toolbar-group">
-                          <button
-                            type="button"
-                            className={`btn-format ${(previewLetter.text_align === 'right' || !previewLetter.text_align) ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'right' }))}
-                            title="محاذاة لليمين"
-                          >
-                            <AlignRight size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className={`btn-format ${previewLetter.text_align === 'center' ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'center' }))}
-                            title="محاذاة في الوسط"
-                          >
-                            <AlignCenter size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className={`btn-format ${previewLetter.text_align === 'justify' ? 'active' : ''}`}
-                            onClick={() => setPreviewLetter(prev => ({ ...prev, text_align: 'justify' }))}
-                            title="ضبط الكشيدة (Justify)"
-                          >
-                            <AlignJustify size={15} />
-                          </button>
-                        </div>
-
-                        {/* Font Family Selector */}
-                        <div className="toolbar-group">
-                          <label className="toolbar-lbl">نوع الخط:</label>
-                          <select
-                            className="toolbar-select font-family-select"
-                            value={previewLetter.font_family || "'Cairo', sans-serif"}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, font_family: e.target.value }))}
-                            style={{ minWidth: '145px', fontWeight: 'bold' }}
-                          >
-                            <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
-                            <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
-                            <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
-                            <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
-                            <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
-                            <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
-                            <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
-                          </select>
-                        </div>
-
-                        {/* Font Size Selector */}
-                        <div className="toolbar-group">
-                          <label className="toolbar-lbl">حجم الخط:</label>
-                          <select
-                            className="toolbar-select"
-                            value={previewLetter.font_size || '16px'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, font_size: e.target.value }))}
-                          >
-                            <option value="14px">14px (صغير)</option>
-                            <option value="16px">16px (قياسي رسمي)</option>
-                            <option value="17px">17px (متوسط واضح)</option>
-                            <option value="18px">18px (متوسط)</option>
-                            <option value="20px">20px (كبير)</option>
-                            <option value="22px">22px (عريض جداً)</option>
-                          </select>
-                        </div>
-
-                        {/* Line Height Selector */}
-                        <div className="toolbar-group">
-                          <label className="toolbar-lbl">تباعد الأسطر:</label>
-                          <select
-                            className="toolbar-select"
-                            value={previewLetter.line_height || '1.9'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, line_height: e.target.value }))}
-                          >
-                            <option value="1.6">1.6 (متقارب)</option>
-                            <option value="1.8">1.8 (متوسط)</option>
-                            <option value="1.9">1.9 (رسمي معتمد)</option>
-                            <option value="2.1">2.1 (متباعد وواضح)</option>
-                            <option value="2.4">2.4 (عريض التباعد)</option>
-                          </select>
-                        </div>
-
-                        {/* Text Color Selector */}
-                        <div className="toolbar-group">
-                          <label className="toolbar-lbl">اللون:</label>
-                          <select
-                            className="toolbar-select"
-                            value={previewLetter.text_color || '#000000'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, text_color: e.target.value }))}
-                          >
-                            <option value="#000000">أسود داكن (#000000)</option>
-                            <option value="#0a192f">كحلي سيادي (#0a192f)</option>
-                            <option value="#1e3a8a">أزرق ملكي (#1e3a8a)</option>
-                            <option value="#1e293b">رمادي غامق (#1e293b)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Salutation (التحية الرسمية) */}
-                      <div className="editor-input-group" style={{ marginBottom: '10px' }}>
-                        <label className="editor-control-lbl">التحية والافتتاحية الرسمية:</label>
-                        <input
-                          type="text"
-                          className="editor-text-input"
-                          value={previewLetter.greeting !== undefined ? previewLetter.greeting : 'بعد التحيـــــة والســــلام ،،،'}
-                          onChange={(e) => setPreviewLetter(prev => ({ ...prev, greeting: e.target.value }))}
-                          placeholder="مثال: بعد التحيـــــة والســــلام ،،،"
-                        />
-                      </div>
-
-                      {/* Quick Official Phrases Chips */}
-                      <div className="quick-phrases-bar">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                          <Sparkles size={14} color="#1d4ed8" />
-                          <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#1e40af' }}>
-                            صيغ رسمية جاهزة للرسائل والمراسلات (انقر للإدراج السريع):
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          <button
-                            type="button"
-                            className="phrase-chip"
-                            onClick={() => insertPhraseIntoLetterBody('إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.')}
-                          >
-                            + من حيث الاختصاص واتخاذ اللازم
-                          </button>
-                          <button
-                            type="button"
-                            className="phrase-chip"
-                            onClick={() => insertPhraseIntoLetterBody('يرجى التكرم بالإيعاز للمختصين طرفكم بموافاتنا بتقرير أمني مفصل وعاجل بالخصوص.')}
-                          >
-                            + الإيعاز بالموافاة بتقرير مفصل
-                          </button>
-                          <button
-                            type="button"
-                            className="phrase-chip"
-                            onClick={() => insertPhraseIntoLetterBody('نحيل إليكم طيه الأوراق والمحاضر المتعلقة بالموضوع المذكور أعلاه للتفضل بالاطلاع والإجراء.')}
-                          >
-                            + نحيل إليكم طيه الأوراق والمحاضر
-                          </button>
-                          <button
-                            type="button"
-                            className="phrase-chip"
-                            onClick={() => insertPhraseIntoLetterBody('بناءً على تعليمات وتوجيهات السيد اللواء مدير مديرية أمن أوباري بالخصوص.')}
-                          >
-                            + بناءً على تعليمات السيد اللواء مدير الأمن
-                          </button>
-                          <button
-                            type="button"
-                            className="phrase-chip"
-                            onClick={() => insertPhraseIntoLetterBody('شاكرين لكم حسن تعاونكم الدائم معنا لما فيه خدمة الوطن والصالح الأمني العام.')}
-                          >
-                            + شاكرين حسن تعاونكم الدائم
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Main Letter Body Editor */}
-                      <div className="editor-input-group">
-                        <label className="editor-control-lbl">متن ونص الرسالة الرسمية:</label>
-                        <textarea
-                          rows={8}
-                          className="rich-body-textarea"
-                          style={{
-                            fontFamily: previewLetter.font_family || "'Cairo', sans-serif",
-                            fontSize: previewLetter.font_size || '16px',
-                            lineHeight: previewLetter.line_height || '1.9',
-                            textAlign: previewLetter.text_align || 'right',
-                            fontWeight: previewLetter.font_weight || 'normal',
-                            fontStyle: previewLetter.font_style || 'normal',
-                            textDecoration: previewLetter.text_decoration || 'none',
-                            color: previewLetter.text_color || '#000000'
-                          }}
-                          value={previewLetter.letter_body || ''}
-                          onChange={(e) => setPreviewLetter(prev => ({ ...prev, letter_body: e.target.value }))}
-                          placeholder="اكتب هنا نص الرسالة والتوجيهات الأمنية الرسمية..."
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SUBTAB 2: METADATA & RECIPIENT */}
-                  {activeDesignerSubtab === 'meta' && (
-                    <div>
-                      <div className="grid-2-controls" style={{ marginBottom: '12px' }}>
-                        <div>
-                          <label className="editor-control-lbl">المخاطب الرئيسي (الجهة أو الشخص):</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.recipient_title || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, recipient_title: e.target.value }))}
-                            placeholder="إلى السيد / آمر المنطقة العسكرية الجنوبية"
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">الموضوع (بخصوص):</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.subject || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, subject: e.target.value }))}
-                            placeholder="موضوع الرسالة"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid-4-controls" style={{ marginBottom: '12px' }}>
-                        <div>
-                          <label className="editor-control-lbl">الرقم الإشاري:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.reference || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, reference: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">رقم القيد:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.record_number || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, record_number: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">التاريخ (الموافق):</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.date || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, date: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">كود الرسالة (Code No):</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.code_no || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, code_no: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid-2-controls" style={{ marginBottom: '12px' }}>
-                        <div>
-                          <label className="editor-control-lbl">إشارة إلى مراسلتكم رقم:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.reply_to_reference || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, reply_to_reference: e.target.value }))}
-                            placeholder="مثال: 1.2/2026"
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">بتاريخ:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.reply_date || ''}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, reply_date: e.target.value }))}
-                            placeholder="مثال: 10/10/2026"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SUBTAB 3: SIGNER, STAMP & CC DISTRIBUTION LIST */}
-                  {activeDesignerSubtab === 'signature_cc' && (
-                    <div>
-                      {/* Signer rank & name */}
-                      <div className="grid-2-controls" style={{ marginBottom: '14px' }}>
-                        <div>
-                          <label className="editor-control-lbl">اسم المسؤول الموقّع:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.signer_name || 'لواء / موسى سعد محمد'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, signer_name: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">صفة ورتبة الموقّع:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.signer_title || 'مدير مديرية أمن أوباري'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, signer_title: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Official Stamp & Signature Toggles */}
-                      <div style={{ display: 'flex', gap: '20px', padding: '12px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                          <input
-                            type="checkbox"
-                            checked={previewLetter.show_stamp !== false}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_stamp: e.target.checked }))}
-                          />
-                          <span>إظهار ختم المديرية الرسمي</span>
-                        </label>
-
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                          <input
-                            type="checkbox"
-                            checked={previewLetter.show_signature !== false}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_signature: e.target.checked }))}
-                          />
-                          <span>إظهار التوقيع الرسمي</span>
-                        </label>
-
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                          <input
-                            type="checkbox"
-                            checked={previewLetter.show_qr !== false}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, show_qr: e.target.checked }))}
-                          />
-                          <span>إظهار باركود التحقق الأمني (QR)</span>
-                        </label>
-                      </div>
-
-                      {/* Dynamic CC List Management */}
-                      <div style={{ marginBottom: '16px' }}>
-                        <label className="editor-control-lbl" style={{ marginBottom: '8px' }}>
-                          جهات التوزيع والإحاطة (صورة منه إلى :-):
-                        </label>
-                        
-                        {/* List of current CC entities */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
-                          {(Array.isArray(previewLetter.cc_list) ? previewLetter.cc_list : []).map((ccItem, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '5px 10px',
-                                background: '#f1f5f9',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                color: '#1e293b'
-                              }}
-                            >
-                              <span>{ccItem}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveCcItem(idx)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#ef4444',
-                                  cursor: 'pointer',
-                                  padding: '0 2px',
-                                  display: 'flex',
-                                  alignItems: 'center'
-                                }}
-                                title="حذف هذه الجهة"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Add New CC Entity Form */}
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            placeholder="أدخل اسم الجهة أو المسؤول (مثال: السيد / مدير إدارة البحث الجنائي)..."
-                            value={newCcEntity}
-                            onChange={(e) => setNewCcEntity(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddCcItem();
-                              }
-                            }}
-                            style={{ flex: 1 }}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCcItem}
-                            className="btn-toolbar-save"
-                            style={{ padding: '7px 16px', fontSize: '12.5px', whiteSpace: 'nowrap' }}
-                          >
-                            <Plus size={14} />
-                            <span>إضافة جهة</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Footer Details */}
-                      <div className="grid-4-controls">
-                        <div>
-                          <label className="editor-control-lbl">المحرر:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.editor_employee || 'عبدالصمد'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, editor_employee: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">الطباعة:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.print_employee || 'عبدالصمد'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, print_employee: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">رقم الهاتف:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.phone || '0915938137'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, phone: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">البريد الإلكتروني:</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={previewLetter.email || 'Info@ubari-security.ly'}
-                            onChange={(e) => setPreviewLetter(prev => ({ ...prev, email: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              renderLetterEditorPanel()
             )}
 
             {/* 2. Right Pane: Official Letter Sheet Preview (Always in DOM for print) */}
@@ -2332,44 +2475,76 @@ export default function MailSection({ user, forceMembers = [] }) {
       )}
 
       {/* ========================================================================= */}
-      {/* 4. MODAL: PREVIEW & PRINT OFFICIAL LETTER (Image 3)                       */}
+      {/* 4. MODAL: PREVIEW & EDIT OFFICIAL LETTER (الرسالة القديمة مع المحرر)       */}
       {/* ========================================================================= */}
       {showLetterModal && previewLetter && (
         <div className="moi-modal-overlay" onClick={() => setShowLetterModal(false)}>
-          <div className="moi-modal-box letter-modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="moi-modal-box letter-modal-box split-wide-modal" onClick={(e) => e.stopPropagation()}>
             <div className="moi-modal-header letter-modal-topbar">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileText size={18} color="#1e3a8a" />
-                <h3 style={{ margin: 0 }}>معاينة وطباعة الرسالة الرسمية الصادرة</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                  معاينة وتحرير الرسالة الرسمية الصادرة
+                </h3>
+                <span className="code-badge-blue" style={{ fontSize: '12px' }}>
+                  {previewLetter.reference || previewLetter.code_no}
+                </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="btn-action-edit"
-                  style={{ padding: '6px 12px', fontSize: '13px', background: '#1e3a8a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  onClick={() => handleOpenInDesigner(previewLetter)}
-                >
-                  <Edit size={14} />
-                  <span>تعديل في المصمم</span>
-                </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {/* View Mode Switcher */}
+                <div className="designer-mode-switch">
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${designerEditorViewMode === 'split' ? 'active' : ''}`}
+                    onClick={() => setDesignerEditorViewMode('split')}
+                    title="تحرير ومعاينة جنباً إلى جنب"
+                  >
+                    <Eye size={14} />
+                    <span>شاشة مزدوجة (محرر + معاينة)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${designerEditorViewMode === 'editor' ? 'active' : ''}`}
+                    onClick={() => setDesignerEditorViewMode('editor')}
+                    title="محرر كامل للنصوص والبيانات"
+                  >
+                    <Edit size={14} />
+                    <span>محرر النصوص</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-mode-toggle ${designerEditorViewMode === 'preview' ? 'active' : ''}`}
+                    onClick={() => setDesignerEditorViewMode('preview')}
+                    title="معاينة الورقة الرسمية A4 للطباعة"
+                  >
+                    <FileText size={14} />
+                    <span>معاينة A4 فقط</span>
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   className="btn-toolbar-save"
                   onClick={handleSaveLetterEdits}
-                  style={{ padding: '6px 14px', fontSize: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '6px 14px', fontSize: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
+                  title="حفظ كافة التعديلات في قاعدة البيانات المركزية والسجل"
                 >
                   <Save size={14} />
                   <span>حفظ التعديلات</span>
                 </button>
+
                 <button
                   type="button"
                   className="btn-toolbar-save"
                   onClick={handlePrintOfficialLetter}
-                  style={{ padding: '6px 14px', fontSize: '13px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '6px 16px', fontSize: '13px', background: '#1e3a8a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
+                  title="طباعة الرسالة الرسمية ورقياً أو حفظها كـ PDF"
                 >
                   <Printer size={15} />
-                  <span>طباعة الرسالة فوراً</span>
+                  <span>طباعة فورية (A4)</span>
                 </button>
+
                 <button
                   type="button"
                   className="moi-modal-close-btn"
@@ -2380,8 +2555,26 @@ export default function MailSection({ user, forceMembers = [] }) {
               </div>
             </div>
 
-            <div className="letter-modal-body">
-              <OfficialLetterSheet letter={previewLetter} qrUrl={qrCodeDataUrl} />
+            {/* Modal Body: Split Editor Panel + Live Authentic A4 Preview Sheet */}
+            <div className={`letter-modal-body-wrapper ${designerEditorViewMode}`}>
+              {(designerEditorViewMode === 'split' || designerEditorViewMode === 'editor') && (
+                renderLetterEditorPanel()
+              )}
+              {(designerEditorViewMode === 'split' || designerEditorViewMode === 'preview') && (
+                <div
+                  className="letter-modal-preview-pane"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    overflowY: 'auto',
+                    background: '#cbd5e1',
+                    padding: '16px',
+                    borderRadius: '12px'
+                  }}
+                >
+                  <OfficialLetterSheet letter={previewLetter} qrUrl={qrCodeDataUrl} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2737,13 +2930,19 @@ function OfficialLetterSheet({ letter, qrUrl }) {
         <h3>{letter.recipient_title || `إلى السيد / ${letter.recipient || 'آمر المنطقة العسكرية الجنوبية'}`}</h3>
       </div>
 
-      {/* Formal Greetings */}
+      {/* Formal Greetings matching Image 3 (الرسالة القديمة المعتمدة) */}
       <div className="a4-greetings-section">
-        <p className="greeting-line-1">{letter.greeting || 'بعد التحيـــــة والســــلام ،،،'}</p>
+        <p className="greeting-line-1">{letter.greeting_1 || letter.greeting || 'بعد التحيـــــة والســــلام ،،،'}</p>
+        <p className="greeting-line-2">
+          {letter.greeting_2 || 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد'}
+        </p>
       </div>
 
       {/* Letter Body Text with Live Typography */}
       <div className="a4-body-content">
+        <p className="body-prayer-line">
+          {letter.prayer_line || 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه'}
+        </p>
         <p
           className="body-main-clause"
           style={{
@@ -2767,7 +2966,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
         <div className="sig-inner layout-stacked">
           {letter.show_signature !== false && (
             <div className="sig-text-side">
-              <h4 className="sig-officer-name">{letter.signer_name || 'لواء / موسى سعد محمد'}</h4>
+              <h4 className="sig-officer-name">{letter.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
               <h5 className="sig-officer-rank">{letter.signer_title || 'مدير مديرية أمن أوباري'}</h5>
             </div>
           )}
@@ -2776,7 +2975,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
               <div className="stamp-inner-text">
                 <span>وزارة الداخلية</span>
                 <span>مديرية أمن أوباري</span>
-                <span style={{ fontSize: '8px', color: '#b91c1c' }}>معتمد رسمي</span>
+                <span>* مكتب المدير *</span>
               </div>
             </div>
           )}
