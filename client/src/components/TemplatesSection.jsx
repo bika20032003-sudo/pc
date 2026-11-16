@@ -38,7 +38,9 @@ import {
   Layers,
   Type,
   Stamp,
-  Copy
+  Copy,
+  RotateCcw,
+  Hash
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
@@ -379,36 +381,33 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     return `2026-T${String(nextSeq).padStart(2, '0')}`;
   };
 
-  // Handler: "إنشاء وطباعة النموذج" button (Photo 1 & 2)
-  const handleCreateTemplate = async () => {
-    if (!employeeSearch.trim()) {
-      alert('يرجى إدخال أو اختيار اسم الموظف أولاً');
-      return;
-    }
+  const [isArchiveRefreshing, setIsArchiveRefreshing] = useState(false);
 
-    const tplInfo = TEMPLATE_TYPES.find(t => t.id === selectedTemplateType) || TEMPLATE_TYPES[0];
-    const content = generateTemplateContent(selectedTemplateType, selectedEmployee, referenceNumber);
+  // بناء كائن المستند الرسمي للنموذج الإداري
+  const buildTemplateDocumentObject = (typeId, empName, empObj, refNum) => {
+    const tplInfo = TEMPLATE_TYPES.find(t => t.id === typeId) || TEMPLATE_TYPES[0];
+    const content = generateTemplateContent(typeId, empObj, refNum);
     const codeNo = getNextReportCode(savedTemplates);
     const dateFormatted = new Date().toLocaleDateString('ar-LY');
 
-    const cleanRef = referenceNumber.trim();
+    const cleanRef = (refNum || '').trim();
     const recordNum = cleanRef || String(savedTemplates.length + 14);
     const refFormatted = cleanRef
       ? (cleanRef.includes('/') ? cleanRef : `${cleanRef}/2026`)
       : `${recordNum}/2026`;
 
-    let newDoc = {
+    return {
       id: Date.now(),
       code_no: codeNo,
       record_number: recordNum,
       reference: refFormatted,
-      template_type_id: selectedTemplateType,
+      template_type_id: typeId,
       template_name: tplInfo.name,
-      employee_name: employeeSearch,
-      employee_role: selectedEmployee?.role || 'موظف',
-      employee_job_no: selectedEmployee?.job_number || '8163450',
-      employee_national_id: selectedEmployee?.national_id || '119940251120',
-      employee_dept: selectedEmployee?.department || 'الشؤون الإدارية والمالية',
+      employee_name: empName,
+      employee_role: empObj?.role || 'موظف',
+      employee_job_no: empObj?.job_number || '8163450',
+      employee_national_id: empObj?.national_id || '119940251120',
+      employee_dept: empObj?.department || 'الشؤون الإدارية والمالية',
       date: dateFormatted,
 
       // Header fields
@@ -431,15 +430,21 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
       // Body text & Typography
       body_text: content.body,
+      font_family: "'Cairo', sans-serif",
       font_size: '16.5px',
       line_height: '2',
       text_align: 'right',
       font_weight: 'normal',
+      font_style: 'normal',
+      text_decoration: 'none',
+      text_color: '#000000',
 
       // Signer & Stamp
       signer_name: 'لواء / موسى سعد محمد البدين',
       signer_title: 'مدير مديرية أمن أوباري',
       show_stamp: true,
+      stamp_layout: 'side',
+      sig_position: 'left',
       stamp_text_1: 'وزارة الداخلية',
       stamp_text_2: 'مديرية أمن أوباري',
       stamp_text_3: '* مكتب المدير *',
@@ -461,6 +466,16 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       email: 'Info@ubari-security.ly',
       created_at: new Date().toISOString()
     };
+  };
+
+  // 1. حفظ وطباعة النموذج فوراً وبشكل حقيقي (A4 Direct Print)
+  const handleCreateAndPrintDirectly = async () => {
+    if (!employeeSearch.trim()) {
+      alert('يرجى إدخال أو اختيار اسم الموظف أولاً للطباعة الفورية');
+      return;
+    }
+
+    let newDoc = buildTemplateDocumentObject(selectedTemplateType, employeeSearch, selectedEmployee, referenceNumber);
 
     // حفظ حقيقي في خادم وقاعدة بيانات SQLite المركزية
     try {
@@ -498,17 +513,230 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       console.warn('تم حفظ النموذج محلياً (الخادم غير متصل):', err.message);
     }
 
-    // Save to list
     const updatedList = [newDoc, ...savedTemplates.filter(item => item.id !== newDoc.id)];
     setSavedTemplates(updatedList);
     localStorage.setItem('ubari_generated_templates', JSON.stringify(updatedList));
 
-    // Open active document modal in split view by default
+    setActiveDocument(newDoc);
+    setShowDocModal(true);
+
+    // طباعة ورقية فورية بدون أي تأخير
+    setTimeout(() => {
+      const el = document.getElementById('official-template-to-print');
+      if (el) {
+        printDocumentInIframe(el.outerHTML, `نموذج_${newDoc.template_name}_${newDoc.code_no}`);
+      }
+    }, 350);
+
+    setNotificationMsg(`تم حفظ وطباعة نموذج «${newDoc.template_name}» برقم إشاري (${newDoc.reference}) فوراً`);
+    setTimeout(() => setNotificationMsg(''), 4500);
+  };
+
+  // 2. معاينة وتحرير النموذج (فتح المحرر الشامل والشاشة المزدوجة)
+  const handlePreviewTemplateModal = async () => {
+    if (!employeeSearch.trim()) {
+      alert('يرجى إدخال أو اختيار اسم الموظف أولاً للمعاينة والتحرير');
+      return;
+    }
+
+    let newDoc = buildTemplateDocumentObject(selectedTemplateType, employeeSearch, selectedEmployee, referenceNumber);
+
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'official_letter',
+          code_no: newDoc.code_no,
+          record_number: newDoc.record_number,
+          reference: newDoc.reference,
+          reply_to_reference: newDoc.employee_job_no,
+          recipient: newDoc.employee_name,
+          recipient_title: newDoc.employee_role,
+          subject: newDoc.subject,
+          letter_body: newDoc.body_text,
+          date: newDoc.date,
+          template_type: newDoc.template_type_id,
+          signer_name: newDoc.signer_name,
+          signer_title: newDoc.signer_title,
+          editor_employee: newDoc.editor,
+          print_employee: newDoc.printer,
+          phone: newDoc.phone,
+          email: newDoc.email,
+          notes: newDoc.template_name,
+          cc_list: JSON.stringify(newDoc.cc_list),
+          status: 'issued'
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.mail && data.mail.id) {
+        newDoc = { ...newDoc, id: data.mail.id, code_no: data.mail.code_no || newDoc.code_no };
+      }
+    } catch (err) {
+      console.warn('تم حفظ النموذج محلياً:', err.message);
+    }
+
+    const updatedList = [newDoc, ...savedTemplates.filter(item => item.id !== newDoc.id)];
+    setSavedTemplates(updatedList);
+    localStorage.setItem('ubari_generated_templates', JSON.stringify(updatedList));
+
     setActiveDocument(newDoc);
     setEditorViewMode('split');
     setShowDocModal(true);
-    setNotificationMsg(`تم حفظ وإنشاء نموذج «${tplInfo.name}» برقم إشاري (${newDoc.reference}) بنجاح`);
+    setNotificationMsg(`تم فتح محرر نموذج «${newDoc.template_name}» في الشاشة المزدوجة`);
     setTimeout(() => setNotificationMsg(''), 4500);
+  };
+
+  // 3. تفريغ حقول النموذج والبدء من جديد
+  const handleResetTemplateForm = () => {
+    setEmployeeSearch('');
+    setSelectedEmployee(null);
+    setReferenceNumber('');
+    setSelectedTemplateType('job_conduct');
+    setNotificationMsg('تم تفريغ حقول النموذج بنجاح');
+    setTimeout(() => setNotificationMsg(''), 3000);
+  };
+
+  // 4. طباعة مباشرة من جدول الأرشيف
+  const handleDirectPrintFromArchive = (item) => {
+    setActiveDocument(item);
+    setShowDocModal(true);
+    setTimeout(() => {
+      const el = document.getElementById('official-template-to-print');
+      if (el) {
+        printDocumentInIframe(el.outerHTML, `نموذج_${item.template_name}_${item.code_no}`);
+      }
+    }, 350);
+  };
+
+  // 5. طباعة كشف سجل الأرشيف كاملاً (A4 Report)
+  const handlePrintArchiveRegistryReport = () => {
+    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const html = `
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</div>
+            <div style="font-size: 17px; font-weight: 900; color: #1e3a8a; margin: 3px 0;">مديرية أمن أوبـــــــــــاري</div>
+            <div style="font-size: 12px; color: #475569;">قسم الشؤون الإدارية والمالية | سجل النماذج والقرارات الصادرة</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف سجل النماذج والرسائل الإدارية</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">إجمالي النماذج: (${filteredArchive.length}) نموذج</div>
+          </div>
+          <div style="text-align: left; font-size: 12px;">
+            <div><strong>تاريخ الاستخراج:</strong> ${today}</div>
+            <div><strong>صفة السجل:</strong> رسمي ومعتمد</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 25px; text-align: right;">
+          <thead>
+            <tr style="background: #1e3a8a; color: #ffffff;">
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الكود</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">نوع النموذج</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">اسم المعني / الموظف</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الرقم الإشاري</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">التاريخ</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">المحرر</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredArchive.map((item, idx) => `
+              <tr style="background: ${idx % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #1e3a8a;">${item.code_no || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; font-weight: 800; color: #0a192f;">${item.template_name}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e3a8a;">${item.employee_name}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.reference || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.date || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.editor || 'عبدالصمد'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 50px;">
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مسؤول الشؤون الإدارية</div>
+            <div style="margin-top: 35px; font-size: 13px; font-weight: 700;">عبدالصمد</div>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مدير مديرية أمن أوباري</div>
+            <div style="margin-top: 35px; font-size: 14px; font-weight: 900; color: #1e3a8a;">لواء / موسى سعد محمد البدين</div>
+          </div>
+        </div>
+      </div>
+    `;
+    printDocumentInIframe(html, 'كشف_سجل_النماذج_الإدارية');
+  };
+
+  // 6. تصدير سجل النماذج إلى Excel / CSV
+  const handleExportArchiveToExcel = () => {
+    if (filteredArchive.length === 0) {
+      alert('لا توجد نماذج في السجل لتصديرها');
+      return;
+    }
+    const headers = ['الكود', 'نوع النموذج', 'اسم المعني / الموظف', 'الرقم الإشاري', 'التاريخ', 'المحرر'];
+    const rows = filteredArchive.map(item => [
+      `"${item.code_no || ''}"`,
+      `"${item.template_name || ''}"`,
+      `"${item.employee_name || ''}"`,
+      `"${item.reference || ''}"`,
+      `"${item.date || ''}"`,
+      `"${item.editor || 'عبدالصمد'}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `سجل_النماذج_الإدارية_أوباري_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 7. تحديث النماذج من السيرفر
+  const handleRefreshArchive = async () => {
+    setIsArchiveRefreshing(true);
+    try {
+      const res = await fetch('/api/mail');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.mail)) {
+        const letters = data.mail.filter(m => m.type === 'official_letter' || m.template_type);
+        if (letters.length > 0) {
+          const mapped = letters.map(m => ({
+            id: m.id,
+            code_no: m.code_no || '2026-T01',
+            record_number: m.record_number || '1',
+            reference: m.reference || `${m.record_number || 1}/2026`,
+            template_type_id: m.template_type || 'job_conduct',
+            template_name: m.notes || 'نموذج إداري رسمي',
+            employee_name: m.recipient || 'عضو شرطة',
+            employee_role: m.recipient_title || 'موظف',
+            employee_job_no: m.reply_to_reference || '8163450',
+            employee_dept: 'مديرية أمن أوباري',
+            date: m.date || new Date().toLocaleDateString('ar-LY'),
+            body_text: m.letter_body || '',
+            signer_name: m.signer_name || 'لواء / موسى سعد محمد البدين',
+            signer_title: m.signer_title || 'مدير مديرية أمن أوباري',
+            editor: m.editor_employee || 'عبدالصمد',
+            printer: m.print_employee || 'عبدالصمد',
+            created_at: m.created_at
+          }));
+          setSavedTemplates(mapped);
+          localStorage.setItem('ubari_generated_templates', JSON.stringify(mapped));
+        }
+      }
+      setNotificationMsg('تم تحديث ومزامنة سجل النماذج الإدارية بنجاح');
+    } catch (err) {
+      setNotificationMsg('تم تحديث العرض من السجلات المحلية');
+    } finally {
+      setTimeout(() => {
+        setIsArchiveRefreshing(false);
+        setNotificationMsg('');
+      }, 1500);
+    }
   };
 
   // Save current active document edits to backend SQLite & localStorage archive
@@ -673,10 +901,14 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
           </div>
         </div>
 
-        {/* The 3 Inputs Row (Photo 1 & Photo 2) */}
+        {/* The 3 Inputs Row with Proper Labels */}
         <div className="templates-inputs-row">
-          {/* Input 1: Exact Force Name Autocomplete Dropdown (Matching User Photo) */}
+          {/* Input 1: Force Name Autocomplete Dropdown */}
           <div className="template-field-wrap">
+            <label className="template-field-label">
+              <User size={14} color="#1e3a8a" />
+              <span>اسم العضو / الموظف المعني:</span>
+            </label>
             <ForceNameAutocomplete
               value={employeeSearch}
               onChange={(val) => {
@@ -692,8 +924,12 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
             />
           </div>
 
-          {/* Input 2: Template Type Dropdown (Center) - Photo 3 */}
+          {/* Input 2: Template Type Dropdown */}
           <div className="template-field-wrap">
+            <label className="template-field-label">
+              <FileText size={14} color="#1e3a8a" />
+              <span>نوع النموذج أو القرار الإداري:</span>
+            </label>
             <div className="field-select-box">
               <select
                 className="template-dropdown-select"
@@ -710,13 +946,17 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
             </div>
           </div>
 
-          {/* Input 3: Reference Number (Left) - Photo 2 */}
+          {/* Input 3: Reference Number */}
           <div className="template-field-wrap">
+            <label className="template-field-label">
+              <Hash size={14} color="#1e3a8a" />
+              <span>الرقم الإشاري والتسلسل (اختياري):</span>
+            </label>
             <div className="field-input-box">
               <input
                 type="text"
                 className="template-text-input ref-number-input"
-                placeholder="الرقم الإشاري (اختياري) مثال: 15/2026"
+                placeholder="الرقم الإشاري (مثال: 15/2026)"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
               />
@@ -724,15 +964,58 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
           </div>
         </div>
 
-        {/* Action Button: [ إنشاء وطباعة النموذج 🖨️ ] (Photo 1 & Photo 2) */}
+        {/* Selected Employee Info Preview Strip */}
+        {selectedEmployee && (
+          <div className="selected-employee-preview-bar">
+            <div className="emp-preview-item">
+              <span className="lbl">الصفة والرتبة:</span>
+              <strong>{selectedEmployee.role || 'عضو شرطة'} / {selectedEmployee.name}</strong>
+            </div>
+            <div className="emp-preview-item">
+              <span className="lbl">الرقم المالي:</span>
+              <span className="badge-emp">{selectedEmployee.financial_number || selectedEmployee.job_number || '8163450'}</span>
+            </div>
+            <div className="emp-preview-item">
+              <span className="lbl">الرقم الوطني:</span>
+              <span>{selectedEmployee.national_id || '119940251120'}</span>
+            </div>
+            <div className="emp-preview-item">
+              <span className="lbl">الإدارة / التبعية:</span>
+              <span>{selectedEmployee.department || 'مديرية أمن أوباري'}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons: Save & Print, Preview & Edit, Reset */}
         <div className="templates-actions-row">
           <button
             type="button"
-            className="btn-create-template-print"
-            onClick={handleCreateTemplate}
+            className="btn-save-and-print"
+            onClick={handleCreateAndPrintDirectly}
+            title="حفظ النموذج في قاعدة البيانات المركزية وأمر الطباعة الرسمي A4 فوراً"
           >
             <Printer size={16} />
-            <span>إنشاء وطباعة النموذج</span>
+            <span>حفظ وطباعة النموذج فوراً</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-create-official-letter"
+            onClick={handlePreviewTemplateModal}
+            title="فتح محرر النموذج والشاشة المزدوجة لتعديل البيانات والنصوص"
+          >
+            <Eye size={16} />
+            <span>معاينة وتحرير النموذج (المحرر + A4)</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-reset-form"
+            onClick={handleResetTemplateForm}
+            title="مسح الحقول للبدء بنموذج جديد"
+          >
+            <RotateCcw size={15} />
+            <span>تفريغ الحقول</span>
           </button>
         </div>
       </div>
@@ -741,24 +1024,78 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       {/* ARCHIVE TABLE: HISTORY OF GENERATED TEMPLATES & RECENT DOCUMENTS           */}
       {/* ========================================================================= */}
       <div className="templates-archive-card">
-        <div className="archive-card-header">
-          <div className="archive-title-group">
-            <h4>سجل النماذج والرسائل المنشأة ({filteredArchive.length})</h4>
+        {/* Top Bar: Title & Operational Actions Toolbar */}
+        <div className="mail-table-top-bar">
+          <div className="table-title-area">
+            <h4>
+              <span>سجل النماذج والرسائل المنشأة</span>
+              <span className="title-count-pill">{filteredArchive.length}</span>
+            </h4>
             <span>الأرشيف الإداري للمستندات والإفادات والقرارات الصادرة</span>
           </div>
 
-          <div className="archive-search-box">
-            <Search size={14} />
-            <input
-              type="text"
-              placeholder="بحث بالاسم، نوع النموذج، أو الرقم الإشاري..."
-              value={archiveSearch}
-              onChange={(e) => setArchiveSearch(e.target.value)}
-            />
+          <div className="table-actions-toolbar">
+            <button
+              type="button"
+              className="btn-toolbar-table-action btn-print-report"
+              onClick={handlePrintArchiveRegistryReport}
+              title="طباعة كشف سجل النماذج الإدارية المعتمد (ورقة رسمية A4)"
+            >
+              <Printer size={14} />
+              <span>طباعة الكشف</span>
+            </button>
+            <button
+              type="button"
+              className="btn-toolbar-table-action btn-export-excel"
+              onClick={handleExportArchiveToExcel}
+              title="تصدير بيانات السجل كملف Excel / CSV"
+            >
+              <Download size={14} />
+              <span>تصدير Excel</span>
+            </button>
+            <button
+              type="button"
+              className="btn-toolbar-table-action btn-refresh-table"
+              onClick={handleRefreshArchive}
+              title="تحديث ومزامنة بيانات السجل المركزي"
+            >
+              <RefreshCw size={14} className={isArchiveRefreshing ? 'spin-anim' : ''} />
+              <span>تحديث</span>
+            </button>
           </div>
         </div>
 
-        <div className="archive-table-wrapper">
+        {/* Dedicated Search Bar */}
+        <div className="mail-table-search-bar">
+          <div className="search-input-wrapper">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              className="mail-search-input"
+              placeholder="ابحث بالاسم، نوع النموذج، الكود، أو الرقم الإشاري..."
+              value={archiveSearch}
+              onChange={(e) => setArchiveSearch(e.target.value)}
+            />
+            {archiveSearch && (
+              <button
+                type="button"
+                className="btn-clear-search"
+                onClick={() => setArchiveSearch('')}
+                title="مسح البحث"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          <div className="search-filters-group">
+            <div className="search-results-counter">
+              <span>السجلات: <strong>{filteredArchive.length}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div className="table-responsive-wrapper">
           <table className="templates-official-table">
             <thead>
               <tr>
@@ -768,7 +1105,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                 <th>الرقم الإشاري</th>
                 <th>التاريخ</th>
                 <th>المحرر</th>
-                <th>الإجراءات</th>
+                <th className="th-table-actions">الإجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -789,7 +1126,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                     </td>
                     <td>{item.date}</td>
                     <td>{item.editor || 'عبدالصمد'}</td>
-                    <td>
+                    <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <div className="table-actions-group">
                         <button
                           type="button"
@@ -799,16 +1136,25 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                             setEditorViewMode('split');
                             setShowDocModal(true);
                           }}
-                          title="معاينة وتحرير وطباعة A4"
+                          title="معاينة وتحرير في الشاشة المزدوجة"
                         >
                           <Eye size={13} />
-                          <span>معاينة وطباعة</span>
+                          <span>معاينة</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-action-print"
+                          onClick={() => handleDirectPrintFromArchive(item)}
+                          title="طباعة الوثيقة A4 فوراً"
+                        >
+                          <Printer size={13} />
+                          <span>طباعة</span>
                         </button>
                         <button
                           type="button"
                           className="btn-action-delete"
                           onClick={() => handleDeleteTemplate(item.id, item.employee_name)}
-                          title="حذف المستند"
+                          title="حذف المستند من السجل"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -852,7 +1198,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {/* 1. Mode Switcher (Split vs Editor vs Preview) */}
-                <div className="editor-mode-toggle-group">
+                <div className="letter-view-mode-pill-group">
                   <button
                     type="button"
                     className={`btn-mode-toggle ${editorViewMode === 'split' ? 'active' : ''}`}
@@ -860,7 +1206,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                     title="العرض المزدوج: محرر ونموذج كامل + معاينة حية في نفس الوقت"
                   >
                     <Columns size={14} />
-                    <span>العرض المزدوج (محرر + معاينة)</span>
+                    <span>العرض المزدوج</span>
                   </button>
 
                   <button
@@ -870,7 +1216,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                     title="المحرر ونموذج التعديل الشامل فقط"
                   >
                     <Edit size={14} />
-                    <span>محرر البيانات الكامل</span>
+                    <span>محرر البيانات</span>
                   </button>
 
                   <button
@@ -887,7 +1233,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                 {/* 2. Save Changes in Archive Button */}
                 <button
                   type="button"
-                  className="btn-save-doc-edits"
+                  className="btn-modal-action btn-modal-save"
                   onClick={handleSaveDocEdits}
                   title="حفظ كافة التعديلات في سجل الأرشيف"
                 >
@@ -898,9 +1244,9 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                 {/* 3. Direct Browser A4 Print */}
                 <button
                   type="button"
-                  className="btn-toolbar-save"
+                  className="btn-modal-action btn-modal-print"
                   onClick={handlePrintDocument}
-                  style={{ padding: '6px 18px', fontSize: '13px' }}
+                  title="طباعة الوثيقة الرسمية فوراً بحجم A4"
                 >
                   <Printer size={15} />
                   <span>طباعة فورية (A4)</span>
@@ -909,10 +1255,11 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                 {/* Close Button */}
                 <button
                   type="button"
-                  className="moi-modal-close-btn"
+                  className="btn-modal-close"
                   onClick={() => setShowDocModal(false)}
+                  title="إغلاق النافذة"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
