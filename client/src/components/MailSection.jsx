@@ -1977,61 +1977,86 @@ export default function MailSection({ user, forceMembers = [] }) {
 
           {/* Outgoing Mail Registry Table */}
           <div className="mail-table-card">
-            <div className="mail-table-header-bar">
+            {/* Top Bar: Title & Operational Actions Toolbar */}
+            <div className="mail-table-top-bar">
               <div className="table-title-area">
-                <h4>جدول قيود البريد الصادر المعتمد ({filteredOutgoing.length})</h4>
-                <span>سجل المراسلات الصادرة عن مديرية أمن أوباري</span>
+                <h4>
+                  <span>جدول قيود البريد الصادر المعتمد</span>
+                  <span className="title-count-pill">{filteredOutgoing.length}</span>
+                </h4>
+                <span>سجل المراسلات الرسمية الصادرة عن مديرية أمن أوباري</span>
               </div>
 
-              <div className="table-search-filters">
-                <div className="search-input-wrapper">
-                  <Search size={14} />
-                  <input
-                    type="text"
-                    placeholder="بحث برقم القيد، الإشاري، الجهة، أو الموضوع..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+              <div className="table-actions-toolbar">
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-print-report"
+                  onClick={handlePrintOutgoingRegistryReport}
+                  title="طباعة كشف سجل البريد الصادر المعتمد (ورقة رسمية A4)"
+                >
+                  <Printer size={14} />
+                  <span>طباعة الكشف</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-export-excel"
+                  onClick={handleExportOutgoingToExcel}
+                  title="تصدير بيانات السجل كملف Excel / CSV"
+                >
+                  <Download size={14} />
+                  <span>تصدير Excel</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-refresh-table"
+                  onClick={handleRefreshMailData}
+                  title="تحديث ومزامنة بيانات السجل المركزي"
+                >
+                  <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
+                  <span>تحديث</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dedicated Search & Filter Bar (شريط بحث احترافي رحب وواضح بدون ضغط أو تشويه) */}
+            <div className="mail-table-search-bar">
+              <div className="search-input-wrapper">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  className="mail-search-input"
+                  placeholder="ابحث برقم القيد، الرقم الإشاري، الجهة، أو موضوع المراسلة..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    className="btn-clear-search"
+                    onClick={() => setSearchTerm('')}
+                    title="مسح البحث"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              <div className="search-filters-group">
+                <div className="filter-select-wrapper">
+                  <Filter size={14} className="filter-icon" />
+                  <select
+                    className="filter-select-mini"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="all">كافة الحالات</option>
+                    <option value="delivered">✅ تم التسليم (مغلق)</option>
+                    <option value="pending">⏳ قيد الإرسال والمتابعة</option>
+                  </select>
                 </div>
 
-                <select
-                  className="filter-select-mini"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">كافة الحالات</option>
-                  <option value="delivered">تم التسليم (مغلق)</option>
-                  <option value="pending">قيد الإرسال</option>
-                </select>
-
-                <div className="table-actions-toolbar">
-                  <button
-                    type="button"
-                    className="btn-toolbar-table-action btn-print-report"
-                    onClick={handlePrintOutgoingRegistryReport}
-                    title="طباعة كشف سجل البريد الصادر المعتمد (ورقة رسمية A4)"
-                  >
-                    <Printer size={14} />
-                    <span>طباعة الكشف</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-toolbar-table-action btn-export-excel"
-                    onClick={handleExportOutgoingToExcel}
-                    title="تصدير بيانات السجل كملف Excel / CSV"
-                  >
-                    <Download size={14} />
-                    <span>تصدير Excel</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-toolbar-table-action btn-refresh-table"
-                    onClick={handleRefreshMailData}
-                    title="تحديث ومزامنة بيانات السجل المركزي"
-                  >
-                    <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
-                    <span>تحديث</span>
-                  </button>
+                <div className="search-results-counter">
+                  <span>السجلات: <strong>{filteredOutgoing.length}</strong></span>
                 </div>
               </div>
             </div>
@@ -2049,7 +2074,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                     <th>طريقة الإرسال</th>
                     <th>المحرر</th>
                     <th>الحالة</th>
-                    <th className="th-table-actions" style={{ minWidth: '220px', textAlign: 'center' }}>إجراءات</th>
+                    <th className="th-table-actions">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2061,14 +2086,18 @@ export default function MailSection({ user, forceMembers = [] }) {
                       <td>
                         <span className="record-badge-red">{item.record_number}</span>
                       </td>
-                      <td style={{ fontWeight: 700, color: '#0a192f' }}>{item.reference}</td>
-                      <td style={{ fontWeight: 700, color: '#1e3a8a' }}>{item.recipient}</td>
+                      <td style={{ fontWeight: 700, color: '#0a192f', whiteSpace: 'nowrap' }}>{item.reference}</td>
+                      <td className="recipient-cell" title={item.recipient} style={{ fontWeight: 700, color: '#1e3a8a' }}>
+                        {item.recipient}
+                      </td>
                       <td className="subject-cell" title={item.subject}>{item.subject}</td>
-                      <td>{item.date}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{item.date}</td>
                       <td>
                         <span className="method-pill">{item.delivery_method}</span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{item.sender_employee || 'عبدالصمد'}</td>
+                      <td title={item.sender_employee || 'عبدالصمد'}>
+                        <span className="editor-cell-text">{item.sender_employee || 'عبدالصمد'}</span>
+                      </td>
                       <td>
                         <span className={`status-pill ${item.status === 'delivered' ? 'active' : 'suspended'}`}>
                           {item.status === 'delivered' ? 'تم التسليم (مغلق)' : 'قيد المتابعة'}
@@ -2083,7 +2112,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                             onClick={() => handleOpenLetterPreview(item)}
                           >
                             <Printer size={13} />
-                            <span>معاينة الرسالة</span>
+                            <span>معاينة</span>
                           </button>
                           <button
                             type="button"
@@ -2092,7 +2121,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                             onClick={() => handleOpenInDesigner(item)}
                           >
                             <Edit size={13} />
-                            <span>تحرير ومحرر</span>
+                            <span>تحرير</span>
                           </button>
                           <button
                             type="button"
@@ -2342,51 +2371,73 @@ export default function MailSection({ user, forceMembers = [] }) {
 
           {/* Incoming Mail Registry Table */}
           <div className="mail-table-card">
-            <div className="mail-table-header-bar">
+            {/* Top Bar: Title & Operational Actions Toolbar */}
+            <div className="mail-table-top-bar">
               <div className="table-title-area">
-                <h4>جدول قيود البريد الوارد المعتمد ({filteredIncoming.length})</h4>
-                <span>سجل المراسلات الواردة إلى مديرية أمن أوباري</span>
+                <h4>
+                  <span>جدول قيود البريد الوارد المعتمد</span>
+                  <span className="title-count-pill">{filteredIncoming.length}</span>
+                </h4>
+                <span>سجل المعاملات والكتب الرسمية الواردة إلى مديرية أمن أوباري</span>
               </div>
 
-              <div className="table-search-filters">
-                <div className="search-input-wrapper">
-                  <Search size={14} />
-                  <input
-                    type="text"
-                    placeholder="بحث برقم الإشاري، الجهة، أو الموضوع..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+              <div className="table-actions-toolbar">
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-print-report"
+                  onClick={handlePrintIncomingRegistryReport}
+                  title="طباعة كشف سجل البريد الوارد المعتمد (ورقة رسمية A4)"
+                >
+                  <Printer size={14} />
+                  <span>طباعة الكشف</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-export-excel"
+                  onClick={handleExportIncomingToExcel}
+                  title="تصدير بيانات السجل كملف Excel / CSV"
+                >
+                  <Download size={14} />
+                  <span>تصدير Excel</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-toolbar-table-action btn-refresh-table"
+                  onClick={handleRefreshMailData}
+                  title="تحديث ومزامنة بيانات السجل المركزي"
+                >
+                  <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
+                  <span>تحديث</span>
+                </button>
+              </div>
+            </div>
 
-                <div className="table-actions-toolbar">
+            {/* Dedicated Search Bar */}
+            <div className="mail-table-search-bar">
+              <div className="search-input-wrapper">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  className="mail-search-input"
+                  placeholder="ابحث برقم الإشاري، الرسالة المرتبطة، الجهة الوارد منها، أو الموضوع..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
                   <button
                     type="button"
-                    className="btn-toolbar-table-action btn-print-report"
-                    onClick={handlePrintIncomingRegistryReport}
-                    title="طباعة كشف سجل البريد الوارد المعتمد (ورقة رسمية A4)"
+                    className="btn-clear-search"
+                    onClick={() => setSearchTerm('')}
+                    title="مسح البحث"
                   >
-                    <Printer size={14} />
-                    <span>طباعة الكشف</span>
+                    <X size={13} />
                   </button>
-                  <button
-                    type="button"
-                    className="btn-toolbar-table-action btn-export-excel"
-                    onClick={handleExportIncomingToExcel}
-                    title="تصدير بيانات السجل كملف Excel / CSV"
-                  >
-                    <Download size={14} />
-                    <span>تصدير Excel</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-toolbar-table-action btn-refresh-table"
-                    onClick={handleRefreshMailData}
-                    title="تحديث ومزامنة بيانات السجل المركزي"
-                  >
-                    <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
-                    <span>تحديث</span>
-                  </button>
+                )}
+              </div>
+
+              <div className="search-filters-group">
+                <div className="search-results-counter">
+                  <span>السجلات: <strong>{filteredIncoming.length}</strong></span>
                 </div>
               </div>
             </div>
@@ -2403,7 +2454,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                     <th>طريقة الاستلام</th>
                     <th>المستلم</th>
                     <th>حالة الإجراء</th>
-                    <th className="th-table-actions" style={{ minWidth: '220px', textAlign: 'center' }}>إجراءات</th>
+                    <th className="th-table-actions">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2412,16 +2463,20 @@ export default function MailSection({ user, forceMembers = [] }) {
                       <td>
                         <span className="code-badge-blue">{item.incoming_reference}</span>
                       </td>
-                      <td style={{ color: item.linked_reference ? '#1e3a8a' : '#94a3b8' }}>
+                      <td style={{ color: item.linked_reference ? '#1e3a8a' : '#94a3b8', whiteSpace: 'nowrap' }}>
                         {item.linked_reference || '—'}
                       </td>
-                      <td style={{ fontWeight: 700, color: '#1e3a8a' }}>{item.source_entity}</td>
+                      <td className="recipient-cell" title={item.source_entity} style={{ fontWeight: 700, color: '#1e3a8a' }}>
+                        {item.source_entity}
+                      </td>
                       <td className="subject-cell" title={item.subject}>{item.subject}</td>
-                      <td>{item.date} {item.time}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{item.date} {item.time}</td>
                       <td>
                         <span className="method-pill">{item.receive_method}</span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{item.receiver_employee || 'عبدالصمد'}</td>
+                      <td title={item.receiver_employee || 'عبدالصمد'}>
+                        <span className="editor-cell-text">{item.receiver_employee || 'عبدالصمد'}</span>
+                      </td>
                       <td>
                         <span className={`status-pill ${item.status === 'replied' ? 'active' : 'suspended'}`}>
                           {item.status === 'replied' ? 'تم الرد' : 'تحت الإجراء'}
@@ -2445,7 +2500,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                             onClick={() => handlePrintIncoming(item)}
                           >
                             <Printer size={13} />
-                            <span>إفادة قيد</span>
+                            <span>إفادة</span>
                           </button>
                           <button
                             type="button"
