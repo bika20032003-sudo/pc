@@ -133,7 +133,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
   const [selectedEmployee, setSelectedEmployee] = useState(SAMPLE_EMPLOYEES[0]);
   const [selectedTemplateType, setSelectedTemplateType] = useState('free_letter'); // 'مراسلة حرة (مستند فارغ ومحرر نصوص)'
   const [referenceNumber, setReferenceNumber] = useState('14'); // Value shown in image 1 or 15/2026 in image 2
-  
+
   // Autocomplete UI dropdown state (Photo 4)
   const [showEmployeeSuggestions, setShowEmployeeSuggestions] = useState(false);
   const employeeInputRef = useRef(null);
@@ -156,7 +156,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return [
       {
@@ -1029,25 +1029,25 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                         </div>
 
                         <div className="toolbar-group">
-                                                  <div className="toolbar-group">
-                          <label className="toolbar-lbl">نوع الخط:</label>
-                          <select
-                            className="toolbar-select font-family-select"
-                            value={activeDocument.font_family || "'Cairo', sans-serif"}
-                            onChange={(e) => setActiveDocument({ ...activeDocument, font_family: e.target.value })}
-                            style={{ minWidth: '130px', fontWeight: 'bold' }}
-                          >
-                            <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
-                            <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
-                            <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
-                            <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
-                            <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
-                            <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
-                            <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
-                          </select>
-                        </div>
+                          <div className="toolbar-group">
+                            <label className="toolbar-lbl">نوع الخط:</label>
+                            <select
+                              className="toolbar-select font-family-select"
+                              value={activeDocument.font_family || "'Cairo', sans-serif"}
+                              onChange={(e) => setActiveDocument({ ...activeDocument, font_family: e.target.value })}
+                              style={{ minWidth: '130px', fontWeight: 'bold' }}
+                            >
+                              <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
+                              <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
+                              <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
+                              <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
+                              <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
+                              <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
+                              <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
+                            </select>
+                          </div>
 
-<label className="toolbar-lbl">حجم الخط:</label>
+                          <label className="toolbar-lbl">حجم الخط:</label>
                           <select
                             className="toolbar-select"
                             value={activeDocument.font_size || '16.5px'}
