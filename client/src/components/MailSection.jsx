@@ -37,7 +37,9 @@ import {
   AlignCenter,
   AlignJustify,
   Type,
-  Sparkles
+  Sparkles,
+  RotateCcw,
+  Columns
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import initialReferredMail from '../data/referred_mail_data.json';
@@ -825,6 +827,239 @@ export default function MailSection({ user, forceMembers = [] }) {
     } else {
       window.print();
     }
+  };
+
+  // تفريغ حقول نموذج البريد الصادر
+  const handleResetOutgoingForm = () => {
+    setOutgoingForm({
+      code_no: '',
+      record_number: '',
+      reference: '',
+      reply_to_reference: '',
+      reply_date: '',
+      recipient: '',
+      date: new Date().toLocaleDateString('en-GB'),
+      subject: '',
+      letter_body: 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة.',
+      delivery_method: 'إلكتروني (منظومة/إيميل)',
+      sender_employee: (user && user.full_name) ? (user.full_name.includes('عبدالصمد') ? 'عبدالصمد' : user.full_name) : 'عبدالصمد',
+      status: 'delivered',
+      attachment_name: ''
+    });
+    setNotificationMsg('تم تفريغ حقول النموذج والبدء بسجل جديد');
+    setTimeout(() => setNotificationMsg(''), 3000);
+  };
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefreshMailData = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/mail');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.mail)) {
+        const out = data.mail.filter(m => m.type === 'outgoing' || m.type === 'official_letter');
+        const inc = data.mail.filter(m => m.type === 'incoming');
+        if (out.length > 0) {
+          setOutgoingList(out);
+          localStorage.setItem('ubari_outgoing_mail', JSON.stringify(out));
+        }
+        if (inc.length > 0) {
+          setIncomingList(inc);
+          localStorage.setItem('ubari_incoming_mail', JSON.stringify(inc));
+        }
+      }
+      setNotificationMsg('تم تحديث ومزامنة سجلات البريد بنجاح');
+    } catch (err) {
+      setNotificationMsg('تم تحديث العرض من السجلات المحلية');
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setNotificationMsg('');
+      }, 1500);
+    }
+  };
+
+  const handleExportOutgoingToExcel = () => {
+    if (filteredOutgoing.length === 0) {
+      alert('لا توجد سجلات بريد صادر لتصديرها');
+      return;
+    }
+    const headers = ['الكود', 'رقم القيد', 'الرقم الإشاري', 'الجهة الموجه إليها', 'الموضوع', 'التاريخ', 'طريقة الإرسال', 'المحرر', 'الحالة'];
+    const rows = filteredOutgoing.map(item => [
+      `"${item.code_no || ''}"`,
+      `"${item.record_number || ''}"`,
+      `"${item.reference || ''}"`,
+      `"${item.recipient || ''}"`,
+      `"${(item.subject || '').replace(/"/g, '""')}"`,
+      `"${item.date || ''}"`,
+      `"${item.delivery_method || ''}"`,
+      `"${item.sender_employee || item.editor_employee || 'عبدالصمد'}"`,
+      `"${item.status === 'delivered' ? 'تم التسليم (مغلق)' : 'قيد الإرسال'}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `سجل_البريد_الصادر_أوباري_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrintOutgoingRegistryReport = () => {
+    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const html = `
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</div>
+            <div style="font-size: 17px; font-weight: 900; color: #1e3a8a; margin: 3px 0;">مديرية أمن أوبـــــــــــاري</div>
+            <div style="font-size: 12px; color: #475569;">مكتب المدير | قسم التوثيق والمحفوظات</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف سجل قيود البريد الصادر العام</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">إجمالي القيود المعتمدة: (${filteredOutgoing.length}) قيد</div>
+          </div>
+          <div style="text-align: left; font-size: 12px;">
+            <div><strong>تاريخ الاستخراج:</strong> ${today}</div>
+            <div><strong>صفة السجل:</strong> رسمي ومعتمد</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 25px; text-align: right;">
+          <thead>
+            <tr style="background: #1e3a8a; color: #ffffff;">
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الكود</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">رقم القيد</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الرقم الإشاري</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">الجهة الموجه إليها</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">الموضوع</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">التاريخ</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">طريقة الإرسال</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredOutgoing.map((item, idx) => `
+              <tr style="background: ${idx % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #1e3a8a;">${item.code_no || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #dc2626;">${item.record_number || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">${item.reference || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e3a8a;">${item.recipient || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.subject || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.date || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.delivery_method || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">${item.status === 'delivered' ? 'تم التسليم' : 'قيد المتابعة'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 50px;">
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مسؤول السجلات والمحفوظات</div>
+            <div style="margin-top: 35px; font-size: 13px; font-weight: 700;">عبدالصمد</div>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مدير مديرية أمن أوباري</div>
+            <div style="margin-top: 35px; font-size: 14px; font-weight: 900; color: #1e3a8a;">لواء / موسى سعد محمد البدين</div>
+          </div>
+        </div>
+      </div>
+    `;
+    printDocumentInIframe(html, 'كشف_سجل_البريد_الصادر');
+  };
+
+  const handleExportIncomingToExcel = () => {
+    if (filteredIncoming.length === 0) {
+      alert('لا توجد سجلات بريد وارد لتصديرها');
+      return;
+    }
+    const headers = ['الرقم الإشاري', 'الرسالة المرتبطة', 'الجهة الوارد منها', 'الموضوع', 'تاريخ الاستلام', 'طريقة الاستلام', 'المستلم', 'حالة الإجراء'];
+    const rows = filteredIncoming.map(item => [
+      `"${item.incoming_reference || ''}"`,
+      `"${item.linked_reference || ''}"`,
+      `"${item.source_entity || ''}"`,
+      `"${(item.subject || '').replace(/"/g, '""')}"`,
+      `"${item.date || ''} ${item.time || ''}"`,
+      `"${item.receive_method || ''}"`,
+      `"${item.receiver_employee || 'عبدالصمد'}"`,
+      `"${item.status === 'replied' ? 'تم الرد' : 'تحت الإجراء'}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `سجل_البريد_الوارد_أوباري_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrintIncomingRegistryReport = () => {
+    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const html = `
+      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 25px; color: #0a192f;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px;">
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 800;">دولة ليبيا - وزارة الداخلية</div>
+            <div style="font-size: 17px; font-weight: 900; color: #1e3a8a; margin: 3px 0;">مديرية أمن أوبـــــــــــاري</div>
+            <div style="font-size: 12px; color: #475569;">مكتب المدير | قسم التوثيق والمحفوظات</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 900; color: #1e3a8a;">كشف سجل قيود البريد الوارد العام</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">إجمالي القيود: (${filteredIncoming.length}) قيد</div>
+          </div>
+          <div style="text-align: left; font-size: 12px;">
+            <div><strong>تاريخ الاستخراج:</strong> ${today}</div>
+            <div><strong>صفة السجل:</strong> رسمي ومعتمد</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 25px; text-align: right;">
+          <thead>
+            <tr style="background: #1e3a8a; color: #ffffff;">
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الرقم الإشاري</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الرسالة المرتبطة</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">الجهة الوارد منها</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a;">الموضوع</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">تاريخ الاستلام</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">طريقة الاستلام</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">المستلم</th>
+              <th style="padding: 8px; border: 1px solid #1e3a8a; text-align: center;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredIncoming.map((item, idx) => `
+              <tr style="background: ${idx % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; color: #1e3a8a;">${item.incoming_reference || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.linked_reference || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e3a8a;">${item.source_entity || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.subject || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.date || ''} ${item.time || ''}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.receive_method || '—'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">${item.receiver_employee || 'عبدالصمد'}</td>
+                <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">${item.status === 'replied' ? 'تم الرد' : 'تحت الإجراء'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 50px;">
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مستلم وقيد الوارد</div>
+            <div style="margin-top: 35px; font-size: 13px; font-weight: 700;">عبدالصمد</div>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 13px;">مدير مديرية أمن أوباري</div>
+            <div style="margin-top: 35px; font-size: 14px; font-weight: 900; color: #1e3a8a;">لواء / موسى سعد محمد البدين</div>
+          </div>
+        </div>
+      </div>
+    `;
+    printDocumentInIframe(html, 'كشف_سجل_البريد_الوارد');
   };
 
   // Filtered Outgoing List
@@ -1700,9 +1935,9 @@ export default function MailSection({ user, forceMembers = [] }) {
                 </div>
               </div>
 
-              {/* Submit Buttons (إصلاح وتكامل أزرار الفورم عند المعاينة والطباعة) */}
-              <div className="mail-form-submit-row" style={{ marginTop: '22px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <button type="submit" className="btn-save-record">
+              {/* Submit Buttons (إصلاح وتكامل وتطوير أزرار الفورم عند المعاينة والطباعة والتفريغ) */}
+              <div className="mail-form-submit-row" style={{ marginTop: '22px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button type="submit" className="btn-save-record" title="حفظ وتقييد السجل في قاعدة البيانات المركزية">
                   <Send size={16} />
                   <span>حفظ وتقييد السجل</span>
                 </button>
@@ -1719,25 +1954,22 @@ export default function MailSection({ user, forceMembers = [] }) {
 
                 <button
                   type="button"
+                  className="btn-save-and-print"
                   onClick={handleSaveAndPrintFromForm}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 22px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#1e3a8a',
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    fontSize: '13.5px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(30,58,138,0.25)'
-                  }}
                   title="حفظ السجل في قاعدة البيانات وفتح أمر الطباعة الرسمي فوراً"
                 >
                   <Printer size={16} />
                   <span>حفظ وطباعة الرسالة فوراً</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-reset-form"
+                  onClick={handleResetOutgoingForm}
+                  title="تفريغ حقول النموذج والبدء بسجل جديد"
+                >
+                  <RotateCcw size={15} />
+                  <span>تفريغ الحقول</span>
                 </button>
               </div>
             </form>
@@ -1771,6 +2003,36 @@ export default function MailSection({ user, forceMembers = [] }) {
                   <option value="delivered">تم التسليم (مغلق)</option>
                   <option value="pending">قيد الإرسال</option>
                 </select>
+
+                <div className="table-actions-toolbar">
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-print-report"
+                    onClick={handlePrintOutgoingRegistryReport}
+                    title="طباعة كشف سجل البريد الصادر المعتمد (ورقة رسمية A4)"
+                  >
+                    <Printer size={14} />
+                    <span>طباعة الكشف</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-export-excel"
+                    onClick={handleExportOutgoingToExcel}
+                    title="تصدير بيانات السجل كملف Excel / CSV"
+                  >
+                    <Download size={14} />
+                    <span>تصدير Excel</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-refresh-table"
+                    onClick={handleRefreshMailData}
+                    title="تحديث ومزامنة بيانات السجل المركزي"
+                  >
+                    <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
+                    <span>تحديث</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1787,7 +2049,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                     <th>طريقة الإرسال</th>
                     <th>المحرر</th>
                     <th>الحالة</th>
-                    <th>إجراءات</th>
+                    <th className="th-table-actions" style={{ minWidth: '220px', textAlign: 'center' }}>إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1812,7 +2074,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                           {item.status === 'delivered' ? 'تم التسليم (مغلق)' : 'قيد المتابعة'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <div className="table-action-buttons">
                           <button
                             type="button"
@@ -1821,21 +2083,21 @@ export default function MailSection({ user, forceMembers = [] }) {
                             onClick={() => handleOpenLetterPreview(item)}
                           >
                             <Printer size={13} />
-                            <span>الرسالة</span>
+                            <span>معاينة الرسالة</span>
                           </button>
                           <button
                             type="button"
                             className="btn-action-edit"
-                            title="تحرير وتصميم الرسالة"
+                            title="تحرير وتصميم الرسالة في المحرر"
                             onClick={() => handleOpenInDesigner(item)}
                           >
                             <Edit size={13} />
-                            <span>تصميم</span>
+                            <span>تحرير ومحرر</span>
                           </button>
                           <button
                             type="button"
                             className="btn-action-delete"
-                            title="حذف القيد"
+                            title="حذف القيد من السجل"
                             onClick={() => handleDeleteOutgoing(item.id)}
                           >
                             <Trash2 size={13} />
@@ -2096,6 +2358,36 @@ export default function MailSection({ user, forceMembers = [] }) {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+
+                <div className="table-actions-toolbar">
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-print-report"
+                    onClick={handlePrintIncomingRegistryReport}
+                    title="طباعة كشف سجل البريد الوارد المعتمد (ورقة رسمية A4)"
+                  >
+                    <Printer size={14} />
+                    <span>طباعة الكشف</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-export-excel"
+                    onClick={handleExportIncomingToExcel}
+                    title="تصدير بيانات السجل كملف Excel / CSV"
+                  >
+                    <Download size={14} />
+                    <span>تصدير Excel</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-toolbar-table-action btn-refresh-table"
+                    onClick={handleRefreshMailData}
+                    title="تحديث ومزامنة بيانات السجل المركزي"
+                  >
+                    <RefreshCw size={14} className={isRefreshing ? 'spin-anim' : ''} />
+                    <span>تحديث</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2111,7 +2403,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                     <th>طريقة الاستلام</th>
                     <th>المستلم</th>
                     <th>حالة الإجراء</th>
-                    <th>إجراءات</th>
+                    <th className="th-table-actions" style={{ minWidth: '220px', textAlign: 'center' }}>إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2135,30 +2427,30 @@ export default function MailSection({ user, forceMembers = [] }) {
                           {item.status === 'replied' ? 'تم الرد' : 'تحت الإجراء'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <div className="table-action-buttons">
                           <button
                             type="button"
                             className="btn-action-preview"
                             title="معاينة تفاصيل البريد الوارد"
                             onClick={() => handlePreviewIncoming(item)}
-                            style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #1e3a8a', background: '#eff6ff', color: '#1e3a8a', cursor: 'pointer' }}
                           >
                             <Eye size={13} />
+                            <span>معاينة</span>
                           </button>
                           <button
                             type="button"
                             className="btn-action-print"
                             title="طباعة إفادة قيد بريد وارد رسمي"
                             onClick={() => handlePrintIncoming(item)}
-                            style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #16a34a', background: '#f0fdf4', color: '#16a34a', cursor: 'pointer' }}
                           >
                             <Printer size={13} />
+                            <span>إفادة قيد</span>
                           </button>
                           <button
                             type="button"
                             className="btn-action-delete"
-                            title="حذف القيد"
+                            title="حذف القيد من السجل"
                             onClick={() => handleDeleteIncoming(item.id)}
                           >
                             <Trash2 size={13} />
@@ -2206,7 +2498,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                     <th style={{ width: '130px' }}>تاريخ الإحالة</th>
                     <th>تأشيرة وتوجيه مدير الأمن</th>
                     <th style={{ width: '120px' }}>الحالة</th>
-                    <th style={{ width: '110px', textAlign: 'center' }}>الإجراء</th>
+                    <th style={{ minWidth: '150px', textAlign: 'center' }}>الإجراء</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2294,42 +2586,20 @@ export default function MailSection({ user, forceMembers = [] }) {
                             `;
                             printDocumentInIframe(html, `إحالة_بريد_${item.ReferralID || item.id}`);
                           }}
-                          style={{
-                            background: '#eff6ff',
-                            color: '#1d4ed8',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '12px',
-                            fontWeight: 700
-                          }}
+                          className="btn-action-print"
+                          title="طباعة بطاقة إحالة البريد والتأشيرة القيادية"
                         >
-                          <Printer size={13} /> طباعة
+                          <Printer size={13} />
+                          <span>طباعة</span>
                         </button>
                         <button
                           type="button"
+                          className="btn-action-delete"
                           onClick={() => handleDeleteReferred(item.id || item.ReferralID)}
-                          style={{
-                            background: '#fef2f2',
-                            color: '#dc2626',
-                            border: 'none',
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            marginRight: '6px'
-                          }}
-                          title="حذف المعاملة المحالة"
+                          title="حذف المعاملة المحالة من السجل"
+                          style={{ marginRight: '6px' }}
                         >
-                          <Trash2 size={13} /> حذف
+                          <Trash2 size={13} />
                         </button>
                       </td>
                     </tr>
@@ -2491,17 +2761,17 @@ export default function MailSection({ user, forceMembers = [] }) {
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* View Mode Switcher */}
-                <div className="designer-mode-switch">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {/* View Mode Switcher Pill Group */}
+                <div className="letter-view-mode-pill-group">
                   <button
                     type="button"
                     className={`btn-mode-toggle ${designerEditorViewMode === 'split' ? 'active' : ''}`}
                     onClick={() => setDesignerEditorViewMode('split')}
                     title="تحرير ومعاينة جنباً إلى جنب"
                   >
-                    <Eye size={14} />
-                    <span>شاشة مزدوجة (محرر + معاينة)</span>
+                    <Columns size={14} />
+                    <span>العرض المزدوج</span>
                   </button>
                   <button
                     type="button"
@@ -2519,26 +2789,24 @@ export default function MailSection({ user, forceMembers = [] }) {
                     title="معاينة الورقة الرسمية A4 للطباعة"
                   >
                     <FileText size={14} />
-                    <span>معاينة A4 فقط</span>
+                    <span>ورقة A4 للطباعة</span>
                   </button>
                 </div>
 
                 <button
                   type="button"
-                  className="btn-toolbar-save"
+                  className="btn-modal-action btn-modal-save"
                   onClick={handleSaveLetterEdits}
-                  style={{ padding: '6px 14px', fontSize: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
                   title="حفظ كافة التعديلات في قاعدة البيانات المركزية والسجل"
                 >
-                  <Save size={14} />
+                  <Save size={15} />
                   <span>حفظ التعديلات</span>
                 </button>
 
                 <button
                   type="button"
-                  className="btn-toolbar-save"
+                  className="btn-modal-action btn-modal-print"
                   onClick={handlePrintOfficialLetter}
-                  style={{ padding: '6px 16px', fontSize: '13px', background: '#1e3a8a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
                   title="طباعة الرسالة الرسمية ورقياً أو حفظها كـ PDF"
                 >
                   <Printer size={15} />
@@ -2547,10 +2815,11 @@ export default function MailSection({ user, forceMembers = [] }) {
 
                 <button
                   type="button"
-                  className="moi-modal-close-btn"
+                  className="btn-modal-close"
                   onClick={() => setShowLetterModal(false)}
+                  title="إغلاق النافذة"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
