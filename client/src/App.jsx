@@ -69,6 +69,7 @@ import TemplatesSection from './components/TemplatesSection';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
 import CommandPaletteModal from './components/CommandPaletteModal';
+import OfficialLogo from './components/OfficialLogo';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
@@ -3063,8 +3064,8 @@ export default function App() {
           <div className="visual-overlay" />
 
           <div className="visual-content-top">
-            <div className="visual-logo-badge">
-              <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }} alt="شعار وزارة الداخلية" />
+            <div className="visual-logo-badge" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+              <OfficialLogo size={52} />
             </div>
             <div className="visual-title-wrap">
               <h2>وزارة الداخلية</h2>
