@@ -133,7 +133,7 @@ export default function SidebarNav({
 
         {/* Quick Nav Search Input */}
         <div className="sidebar-search-box">
-          <Search size={14} className="sidebar-search-icon" />
+          <Search size={16} className="sidebar-search-icon" />
           <input
             type="text"
             className="sidebar-search-input"
@@ -148,7 +148,7 @@ export default function SidebarNav({
               className="sidebar-search-clear"
               onClick={() => setNavSearch('')}
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -173,13 +173,13 @@ export default function SidebarNav({
                     title="انقر لتوسيع / طي المجموعة"
                   >
                     <div className="nav-group-title-box">
-                      <GroupIcon size={14} style={{ color: div.color }} />
-                      <span className="nav-group-title-text">{div.title}</span>
+                      <GroupIcon size={18} style={{ color: div.color }} />
+                      <span className="nav-group-title-text" style={{ fontSize: '14.5px', fontWeight: 800 }}>{div.title}</span>
                     </div>
                     <div className="nav-group-meta">
                       <span className="nav-group-count">{div.items.length}</span>
                       <ChevronDown
-                        size={14}
+                        size={16}
                         className={`nav-group-arrow ${isCollapsed ? 'collapsed' : ''}`}
                       />
                     </div>
@@ -201,8 +201,8 @@ export default function SidebarNav({
                               if (onCloseMobile) onCloseMobile();
                             }}
                           >
-                            <IconComp size={16} />
-                            <span className="nav-item-label">{sec.name}</span>
+                            <IconComp size={21} />
+                            <span className="nav-item-label" style={{ fontSize: '15px' }}>{sec.name}</span>
                             {isActive && <div className="nav-item-active-marker" />}
                           </div>
                         );
@@ -228,7 +228,7 @@ export default function SidebarNav({
               <span>{user.full_name ? user.full_name.charAt(0) : 'م'}</span>
             )}
             <div className="avatar-edit-badge" title="تغيير الصورة">
-              <Camera size={10} />
+              <Camera size={12} />
             </div>
           </div>
           <div className="sidebar-user-info">
@@ -238,7 +238,7 @@ export default function SidebarNav({
             </p>
           </div>
           <div className="sidebar-user-settings-icon" title="إعدادات الحساب">
-            <Settings size={15} />
+            <Settings size={18} />
           </div>
         </div>
       </aside>

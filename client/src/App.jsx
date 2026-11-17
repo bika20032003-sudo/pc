@@ -1945,11 +1945,11 @@ export default function App() {
                 const IconComp = currentSec.icon;
                 return (
                   <div className="topbar-breadcrumb-box">
-                    <div className="topbar-breadcrumb-icon">
-                      <IconComp size={16} />
+                    <div className="topbar-breadcrumb-icon" style={{ width: '36px', height: '36px', borderRadius: '10px' }}>
+                      <IconComp size={20} />
                     </div>
-                    <span className="topbar-breadcrumb-title">{currentSec.name}</span>
-                    <span className="topbar-breadcrumb-badge">مديرية أمن أوباري</span>
+                    <span className="topbar-breadcrumb-title" style={{ fontSize: '16px', fontWeight: 800 }}>{currentSec.name}</span>
+                    <span className="topbar-breadcrumb-badge" style={{ fontSize: '13px', fontWeight: 700 }}>مديرية أمن أوباري</span>
                   </div>
                 );
               })()}
@@ -1960,22 +1960,24 @@ export default function App() {
                 className="topbar-cmd-btn"
                 onClick={() => setIsCommandPaletteOpen(true)}
                 title="انقر أو اضغط Ctrl + K للبحث السريع والانتقال الفوري"
+                style={{ fontSize: '14px', padding: '9px 16px' }}
               >
-                <Search size={14} />
+                <Search size={16} />
                 <span>بحث سريع أو انتقال...</span>
-                <kbd>Ctrl + K</kbd>
+                <kbd style={{ fontSize: '12px' }}>Ctrl + K</kbd>
               </button>
             </div>
 
-            <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               {/* Officer Profile Quick Button */}
               <button
                 type="button"
                 className="topbar-profile-btn"
                 onClick={handleOpenProfileModal}
                 title="الملف الشخصي وإعدادات الحساب - انقر لتعديل بياناتك ورفع صورتك"
+                style={{ padding: '6px 14px' }}
               >
-                <div className="topbar-avatar-circle">
+                <div className="topbar-avatar-circle" style={{ width: '42px', height: '42px', fontSize: '18px' }}>
                   {user.avatar ? (
                     <img src={user.avatar} alt="صورة المستخدم" className="topbar-avatar-img" />
                   ) : (
@@ -1983,17 +1985,17 @@ export default function App() {
                   )}
                 </div>
                 <div className="topbar-profile-info">
-                  <span className="topbar-profile-name">{user.full_name || 'سيادة اللواء / موسى سعد محمد البدين'}</span>
-                  <span className="topbar-profile-sub">الملف الشخصي والإعدادات</span>
+                  <span className="topbar-profile-name" style={{ fontSize: '15px', fontWeight: 800 }}>{user.full_name || 'سيادة اللواء / موسى سعد محمد البدين'}</span>
+                  <span className="topbar-profile-sub" style={{ fontSize: '12.5px' }}>الملف الشخصي والإعدادات</span>
                 </div>
-                <Settings size={15} style={{ color: '#64748b', marginRight: '4px' }} />
+                <Settings size={18} style={{ color: '#64748b', marginRight: '6px' }} />
               </button>
 
-              <span className="topbar-date-text" style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+              <span className="topbar-date-text" style={{ fontSize: '14px', color: '#475569', fontWeight: 700 }}>
                 {currentTime} | {new Date().toLocaleDateString('ar-LY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
-              <button onClick={handleLogout} className="logout-btn" title="تسجيل الخروج">
-                <LogOut size={16} />
+              <button onClick={handleLogout} className="logout-btn" title="تسجيل الخروج" style={{ fontSize: '14.5px', padding: '8px 16px' }}>
+                <LogOut size={18} />
                 <span>خروج</span>
               </button>
             </div>
