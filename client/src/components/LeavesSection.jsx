@@ -114,6 +114,29 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
   const [resumptionNotes, setResumptionNotes] = useState('باشر مهامه الرسمية بالقسم دون تأخير');
   const [resumptionDate, setResumptionDate] = useState(new Date().toISOString().slice(0, 10));
 
+  // Exit Permit Modal (تصريح بالخروج في إجازة - إذن إجازة رسمي 100% مطابق للصورة)
+  const [isExitPermitModalOpen, setIsExitPermitModalOpen] = useState(false);
+  const [activeExitPermit, setActiveExitPermit] = useState({
+    leaveId: null,
+    FullName: '',
+    JobTitle: '',
+    Number: '',
+    Grade: '',
+    Destination: 'داخل وخارج النطاق الجغرافي للمديرية',
+    LeaveType: 'إجازة سنوية اعتيادية',
+    Duration: '30 يوماً',
+    StartDate: '',
+    StartHour: '08:00 صباحاً',
+    EndDate: '',
+    EndHour: '14:00 مساءً',
+    IssuedAt: 'مديرية أمن أوباري',
+    IssuedDate: '',
+    SignerRank: 'لواء شرطة',
+    SignerName: 'موسى سعد محمد البدين',
+    SignerTitle: 'مدير مديرية أمن أوباري',
+    SignerSignature: 'موسى سعد البدين'
+  });
+
   // Autocomplete search state inside New Leave Modal
   const [modalMemberSearch, setModalMemberSearch] = useState('');
   const [modalSelectedMember, setModalSelectedMember] = useState(null);
@@ -866,6 +889,230 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     printDocumentInIframe(printHtml, `نموذج إجازة سنوية ن ش 1-99 - ${leaveForm.name || 'طلب إجازة'}`);
   };
 
+  // دالة مساعدة لتنسيق أجزاء التاريخ / /
+  const formatDateParts = (dateStr) => {
+    if (!dateStr) return { day: '──', month: '──', year: '────' };
+    try {
+      const parts = String(dateStr).slice(0, 10).split('-');
+      if (parts.length === 3) {
+        return { year: parts[0], month: parts[1], day: parts[2] };
+      }
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = String(d.getFullYear());
+        return { day, month, year };
+      }
+      return { day: '──', month: '──', year: '────' };
+    } catch {
+      return { day: '──', month: '──', year: '────' };
+    }
+  };
+
+  // توليد كود الطباعة لتصريح الخروج في إجازة (إذن رسمي) بدقة 100% يطابق الصورة المرفقة
+  const generateExitPermitHtml = (permit) => {
+    const fromParts = formatDateParts(permit.StartDate);
+    const toParts = formatDateParts(permit.EndDate);
+
+    return `
+      <div style="width: 100%; max-width: 680px; margin: 0 auto; padding: 25px 35px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 15px; line-height: 2.3;">
+        
+        <!-- الترويسة العلوية الرسمية: الخط الكوفي/الثلث المعتمد -->
+        <div style="text-align: center; margin-bottom: 14px;">
+          <div style="font-size: 34px; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; font-family: 'Amiri', 'Traditional Arabic', 'Cairo', serif;">
+            وَزَارَةُ الدَّاخِلِيَّةِ
+          </div>
+
+          <!-- الشريط الفاصل والأقواس المزخرفة -->
+          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 10px; margin-bottom: 32px;">
+            <div style="flex: 1; height: 1.5px; background: #000000;"></div>
+            <div style="font-size: 21px; font-weight: 900; padding: 0 10px; letter-spacing: 0.5px; white-space: nowrap;">
+              ﴾ تصريح بالخروج في إجازة ﴿
+            </div>
+            <div style="flex: 1; height: 1.5px; background: #000000;"></div>
+          </div>
+        </div>
+
+        <!-- السطر 1: الاسم والوظيفة -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">الاسم:</span>
+          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 900; font-size: 16px;">
+            ${permit.FullName || ''}
+          </span>
+          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الوظيفة:</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.JobTitle || 'عضو هيئة شرطة'}
+          </span>
+        </div>
+
+        <!-- السطر 2: الرقم والدرجة -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">الرقم:</span>
+          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; font-family: monospace, 'Cairo';">
+            ${permit.Number || ''}
+          </span>
+          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الدرجة:</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.Grade || permit.Rank || 'ضابط صف'}
+          </span>
+        </div>
+
+        <!-- السطر 3: مصرح له بالسفر إلى -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">مصرح له بالسفر إلى :</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.Destination || 'داخل وخارج النطاق الجغرافي للمديرية'}
+          </span>
+        </div>
+
+        <!-- السطر 4: في إجازة ولمدة -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">في إجازة :</span>
+          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.LeaveType || 'سنوية اعتيادية'}
+          </span>
+          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">لمدة :</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.Duration || '30 يوماً'}
+          </span>
+        </div>
+
+        <!-- السطر 5: من تاريخ والساعة -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">من تاريخ</span>
+          <span style="display: inline-block; min-width: 150px; text-align: center; font-weight: 900; letter-spacing: 3px;">
+            ${fromParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.year}
+          </span>
+          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الساعة</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.StartHour || '08:00 صباحاً'}
+          </span>
+        </div>
+
+        <!-- السطر 6: إلى تاريخ والساعة -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">إلى تاريخ</span>
+          <span style="display: inline-block; min-width: 150px; text-align: center; font-weight: 900; letter-spacing: 3px;">
+            ${toParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.year}
+          </span>
+          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الساعة</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.EndHour || '14:00 مساءً'}
+          </span>
+        </div>
+
+        <!-- السطر 7: اعطيت في -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">اعطيت في :</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.IssuedAt || 'مديرية أمن أوباري'}
+          </span>
+        </div>
+
+        <!-- السطر 8: بتاريخ -->
+        <div style="display: flex; align-items: baseline; margin-bottom: 24px;">
+          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">بتاريخ :</span>
+          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
+            ${permit.IssuedDate || ''}
+          </span>
+        </div>
+
+        <!-- بلوك التوقيع والختم المعتمد -->
+        <div style="margin-top: 36px; display: flex; justify-content: space-between; align-items: flex-start;">
+          <!-- الجهة اليسرى: بلوك توقيع ورتبة المصرح -->
+          <div style="width: 52%; font-size: 14.5px; line-height: 2.2;">
+            <div style="display: flex; align-items: baseline;">
+              <span style="font-weight: 800; min-width: 75px;">التوقيع :</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800; color: #1e3a8a;">
+                ${permit.SignerSignature || 'موسى سعد البدين'}
+              </span>
+            </div>
+            <div style="display: flex; align-items: baseline;">
+              <span style="font-weight: 800; min-width: 75px;">الرتبة :</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800;">
+                ${permit.SignerRank || 'لواء شرطة'}
+              </span>
+            </div>
+            <div style="display: flex; align-items: baseline;">
+              <span style="font-weight: 800; min-width: 75px;">الاسم :</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 900;">
+                ${permit.SignerName || 'موسى سعد محمد البدين'}
+              </span>
+            </div>
+            <div style="display: flex; align-items: baseline;">
+              <span style="font-weight: 800; min-width: 75px;">المنصب :</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800;">
+                ${permit.SignerTitle || 'مدير مديرية أمن أوباري'}
+              </span>
+            </div>
+          </div>
+
+          <!-- الجهة اليمنى: مساحة الختم الدائري الرسمي -->
+          <div style="width: 40%; text-align: center; padding-top: 8px;">
+            <div style="width: 125px; height: 125px; border: 2px dashed #94a3b8; border-radius: 50%; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #475569; font-size: 11px; padding: 6px; box-sizing: border-box;">
+              <span style="font-weight: 900; color: #1e3a8a; font-size: 12.5px;">ختم المديرية</span>
+              <span style="font-size: 10px; margin-top: 3px; font-weight: 800;">مديرية أمن أوباري</span>
+              <span style="font-size: 9px; color: #64748b; margin-top: 2px;">وزارة الداخلية</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- التذييل الرسمي للمطبعة -->
+        <div style="margin-top: 50px; position: relative; text-align: center;">
+          <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #52525b; z-index: 1;"></div>
+          <span style="position: relative; z-index: 2; background: #ffffff; padding: 0 18px; font-size: 13.5px; font-weight: 900; color: #18181b; font-family: 'Amiri', 'Traditional Arabic', 'Cairo', serif; letter-spacing: 0.5px;">
+            مطبعة صندوق الرعاية الاجتماعية
+          </span>
+        </div>
+
+      </div>
+    `;
+  };
+
+  // فتح نافذة تصريح الخروج في إجازة (إذن) مع تعبئة البيانات آلياً
+  const handleOpenExitPermitModal = (leave) => {
+    const sDate = leave.StartDate ? (leave.StartDate.slice ? leave.StartDate.slice(0, 10) : leave.StartDate) : (leave.start_date || todayStr);
+    const eDate = leave.EndDate ? (leave.EndDate.slice ? leave.EndDate.slice(0, 10) : leave.EndDate) : (leave.end_date || '');
+    const durationDays = leave.TotalDays || leave.total_days || 30;
+
+    // استخراج بيانات المنتسب المطابقة من القوة العمومية إن وجدت
+    const linkedMember = forceMembers.find(m => 
+      (leave.NationalNumber && (m.national_id === leave.NationalNumber || m.military_number === leave.NationalNumber || m.financial_number === leave.NationalNumber)) ||
+      (m.name && leave.FullName && (m.name === leave.FullName || m.name.includes(leave.FullName) || leave.FullName.includes(m.name)))
+    );
+
+    const permitData = {
+      leaveId: leave.LeaveID,
+      FullName: leave.FullName || leave.name || (linkedMember ? linkedMember.name : ''),
+      JobTitle: leave.role || leave.job_title || (linkedMember ? (linkedMember.role || linkedMember.unit || linkedMember.workplace) : 'عضو هيئة شرطة'),
+      Number: leave.military_number || leave.NationalNumber || leave.job_number || (linkedMember ? (linkedMember.military_number || linkedMember.job_number || linkedMember.national_id) : ''),
+      Grade: leave.Rank || leave.rank || (linkedMember ? linkedMember.rank : 'ضابط صف'),
+      Destination: leave.destination || (leave.Notes && !leave.Notes.includes('نظامية') ? leave.Notes : 'داخل وخارج النطاق الجغرافي للمديرية'),
+      LeaveType: leave.LeaveType || leave.leave_type || 'إجازة سنوية اعتيادية',
+      Duration: `${durationDays} يوماً`,
+      StartDate: sDate,
+      StartHour: leave.start_hour || '08:00 صباحاً',
+      EndDate: eDate,
+      EndHour: leave.end_hour || '14:00 مساءً',
+      IssuedAt: 'مديرية أمن أوباري',
+      IssuedDate: sDate || todayStr,
+      SignerRank: 'لواء شرطة',
+      SignerName: 'موسى سعد محمد البدين',
+      SignerTitle: 'مدير مديرية أمن أوباري',
+      SignerSignature: 'موسى سعد البدين'
+    };
+
+    setActiveExitPermit(permitData);
+    setIsExitPermitModalOpen(true);
+  };
+
+  // طباعة تصريح الخروج في إجازة
+  const handlePrintExitPermit = () => {
+    const printHtml = generateExitPermitHtml(activeExitPermit);
+    printDocumentInIframe(printHtml, `تصريح خروج في إجازة - ${activeExitPermit.FullName || 'إذن إجازة'}`);
+  };
+
   return (
     <div className="leaves-section-container" style={{ padding: '20px', direction: 'rtl', fontFamily: "'Cairo', sans-serif" }}>
       {/* 4-Color Libyan Flag Ribbon Banner */}
@@ -1002,11 +1249,12 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                       <span>تسجيل مباشرة العمل</span>
                     </button>
                     <button
-                      onClick={() => handlePrintLeaveVoucher(alertLeave)}
-                      style={{ padding: '6px 10px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
-                      title="طباعة إذن الإجازة"
+                      onClick={() => handleOpenExitPermitModal(alertLeave)}
+                      style={{ padding: '6px 12px', borderRadius: '7px', border: '1px solid #1e3a8a', background: '#eff6ff', color: '#1e3a8a', fontSize: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      title="عرض وطباعة تصريح الخروج في إجازة (إذن)"
                     >
                       <Printer size={14} />
+                      <span>إذن</span>
                     </button>
                   </div>
                 </div>
@@ -1220,8 +1468,8 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                         )}
 
                         <button
-                          onClick={() => handlePrintLeaveVoucher(leave)}
-                          title="طباعة إذن إجازة رسمي"
+                          onClick={() => handleOpenExitPermitModal(leave)}
+                          title="عرض وطباعة تصريح الخروج في إجازة (إذن رسمي)"
                           style={{ padding: '5px 9px', borderRadius: '6px', border: '1px solid #1e3a8a', background: '#eff6ff', color: '#1e3a8a', fontSize: '11px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
                         >
                           <Printer size={13} />
@@ -2036,6 +2284,388 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                   style={{ padding: '11px 20px', borderRadius: '8px', background: '#e2e8f0', color: '#334155', border: 'none', fontWeight: 800, cursor: 'pointer' }}
                 >
                   إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Exit Permit Modal (تصريح بالخروج في إجازة - إذن إجازة رسمي 100% يطابق الصورة المرفقة) */}
+      {isExitPermitModalOpen && activeExitPermit && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10550,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '840px',
+            maxHeight: '94vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            borderTop: '5px solid #d4af37',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header Bar */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 22px',
+              background: '#f8fafc',
+              borderBottom: '1.5px solid #e2e8f0',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FileText size={22} color="#1e3a8a" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 900, color: '#0f172a' }}>
+                    تصريح بالخروج في إجازة (إذن إجازة رسمي)
+                  </h3>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
+                    مستند إذن السفر والخروج الصادر عن مديرية أمن أوباري - وزارة الداخلية
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handlePrintExitPermit}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    background: '#1e3a8a',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: '13.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(30,58,138,0.25)'
+                  }}
+                  title="طباعة التصريح بصيغة A4 الرسمية"
+                >
+                  <Printer size={16} />
+                  <span>طباعة التصريح (A4)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExitPermitModalOpen(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#475569',
+                    padding: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="إغلاق"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Edit Controls Strip */}
+            <div style={{
+              background: '#f1f5f9',
+              borderBottom: '1px solid #e2e8f0',
+              padding: '10px 22px',
+              display: 'flex',
+              gap: '12px',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              fontSize: '12px',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '220px' }}>
+                <span style={{ fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>مصرح له بالسفر إلى:</span>
+                <input
+                  type="text"
+                  value={activeExitPermit.Destination}
+                  onChange={(e) => setActiveExitPermit(prev => ({ ...prev, Destination: e.target.value }))}
+                  placeholder="طرابلس، سبها، داخل وخارج النطاق..."
+                  style={{ flex: 1, padding: '5px 10px', borderRadius: '6px', border: '1.5px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>ساعة الانطلاق:</span>
+                <input
+                  type="text"
+                  value={activeExitPermit.StartHour}
+                  onChange={(e) => setActiveExitPermit(prev => ({ ...prev, StartHour: e.target.value }))}
+                  style={{ width: '100px', padding: '5px 8px', borderRadius: '6px', border: '1.5px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>ساعة العودة:</span>
+                <input
+                  type="text"
+                  value={activeExitPermit.EndHour}
+                  onChange={(e) => setActiveExitPermit(prev => ({ ...prev, EndHour: e.target.value }))}
+                  style={{ width: '100px', padding: '5px 8px', borderRadius: '6px', border: '1.5px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>جهة التحرير:</span>
+                <input
+                  type="text"
+                  value={activeExitPermit.IssuedAt}
+                  onChange={(e) => setActiveExitPermit(prev => ({ ...prev, IssuedAt: e.target.value }))}
+                  style={{ width: '130px', padding: '5px 8px', borderRadius: '6px', border: '1.5px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                />
+              </div>
+            </div>
+
+            {/* Paper Sheet View Container (Scrollable) */}
+            <div style={{
+              padding: '24px',
+              overflowY: 'auto',
+              background: '#475569',
+              flex: 1
+            }}>
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '6px',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                maxWidth: '680px',
+                margin: '0 auto',
+                padding: '30px 40px',
+                color: '#000000',
+                fontFamily: "'Cairo', Arial, sans-serif",
+                direction: 'rtl',
+                fontSize: '15px',
+                lineHeight: 2.3
+              }}>
+                {/* Header */}
+                <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '2px', marginBottom: '6px', fontFamily: "'Amiri', 'Traditional Arabic', 'Cairo', serif" }}>
+                    وَزَارَةُ الدَّاخِلِيَّةِ
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginTop: '10px', marginBottom: '32px' }}>
+                    <div style={{ flex: 1, height: '1.5px', background: '#000000' }}></div>
+                    <div style={{ fontSize: '21px', fontWeight: 900, padding: '0 10px', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                      ﴾ تصريح بالخروج في إجازة ﴿
+                    </div>
+                    <div style={{ flex: 1, height: '1.5px', background: '#000000' }}></div>
+                  </div>
+                </div>
+
+                {/* Row 1 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>الاسم:</span>
+                  <span style={{ flex: 1.2, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 900, fontSize: '16px' }}>
+                    {activeExitPermit.FullName}
+                  </span>
+                  <span style={{ fontWeight: 800, margin: '0 16px 0 8px', whiteSpace: 'nowrap' }}>الوظيفة:</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.JobTitle}
+                  </span>
+                </div>
+
+                {/* Row 2 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>الرقم:</span>
+                  <span style={{ flex: 1.2, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800, fontFamily: "monospace, 'Cairo'" }}>
+                    {activeExitPermit.Number}
+                  </span>
+                  <span style={{ fontWeight: 800, margin: '0 16px 0 8px', whiteSpace: 'nowrap' }}>الدرجة:</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.Grade}
+                  </span>
+                </div>
+
+                {/* Row 3 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>مصرح له بالسفر إلى :</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.Destination}
+                  </span>
+                </div>
+
+                {/* Row 4 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>في إجازة :</span>
+                  <span style={{ flex: 1.2, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.LeaveType}
+                  </span>
+                  <span style={{ fontWeight: 800, margin: '0 16px 0 8px', whiteSpace: 'nowrap' }}>لمدة :</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.Duration}
+                  </span>
+                </div>
+
+                {/* Row 5 */}
+                {(() => {
+                  const fp = formatDateParts(activeExitPermit.StartDate);
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                      <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>من تاريخ</span>
+                      <span style={{ display: 'inline-block', minWidth: '150px', textAlign: 'center', fontWeight: 900, letterSpacing: '3px' }}>
+                        {fp.day}&nbsp;&nbsp;/&nbsp;&nbsp;{fp.month}&nbsp;&nbsp;/&nbsp;&nbsp;{fp.year}
+                      </span>
+                      <span style={{ fontWeight: 800, margin: '0 16px 0 8px', whiteSpace: 'nowrap' }}>الساعة</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                        {activeExitPermit.StartHour}
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Row 6 */}
+                {(() => {
+                  const tp = formatDateParts(activeExitPermit.EndDate);
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                      <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>إلى تاريخ</span>
+                      <span style={{ display: 'inline-block', minWidth: '150px', textAlign: 'center', fontWeight: 900, letterSpacing: '3px' }}>
+                        {tp.day}&nbsp;&nbsp;/&nbsp;&nbsp;{tp.month}&nbsp;&nbsp;/&nbsp;&nbsp;{tp.year}
+                      </span>
+                      <span style={{ fontWeight: 800, margin: '0 16px 0 8px', whiteSpace: 'nowrap' }}>الساعة</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                        {activeExitPermit.EndHour}
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Row 7 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>اعطيت في :</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.IssuedAt}
+                  </span>
+                </div>
+
+                {/* Row 8 */}
+                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '24px' }}>
+                  <span style={{ fontWeight: 800, marginLeft: '8px', whiteSpace: 'nowrap' }}>بتاريخ :</span>
+                  <span style={{ flex: 1, borderBottom: '1px dotted #000000', padding: '0 8px', fontWeight: 800 }}>
+                    {activeExitPermit.IssuedDate}
+                  </span>
+                </div>
+
+                {/* Signoff Block */}
+                <div style={{ marginTop: '36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ width: '52%', fontSize: '14.5px', lineHeight: 2.2 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, minWidth: '75px' }}>التوقيع :</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>
+                        {activeExitPermit.SignerSignature}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, minWidth: '75px' }}>الرتبة :</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800 }}>
+                        {activeExitPermit.SignerRank}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, minWidth: '75px' }}>الاسم :</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 900 }}>
+                        {activeExitPermit.SignerName}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                      <span style={{ fontWeight: 800, minWidth: '75px' }}>المنصب :</span>
+                      <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800 }}>
+                        {activeExitPermit.SignerTitle}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ width: '40%', textAlign: 'center', paddingTop: '8px' }}>
+                    <div style={{ width: '125px', height: '125px', border: '2px dashed #94a3b8', borderRadius: '50%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '11px', padding: '6px', boxSizing: 'border-box' }}>
+                      <span style={{ fontWeight: 900, color: '#1e3a8a', fontSize: '12.5px' }}>ختم المديرية</span>
+                      <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: 800 }}>مديرية أمن أوباري</span>
+                      <span style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>وزارة الداخلية</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div style={{ marginTop: '50px', position: 'relative', textAlign: 'center' }}>
+                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: '#52525b', zIndex: 1 }}></div>
+                  <span style={{ position: 'relative', zIndex: 2, background: '#ffffff', padding: '0 18px', fontSize: '13.5px', fontWeight: 900, color: '#18181b', fontFamily: "'Amiri', 'Traditional Arabic', 'Cairo', serif", letterSpacing: '0.5px' }}>
+                    مطبعة صندوق الرعاية الاجتماعية
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions Bar */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 22px',
+              background: '#f8fafc',
+              borderTop: '1.5px solid #e2e8f0',
+              flexShrink: 0
+            }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
+                🔒 تصريح معتمد رسمياً بمديرية أمن أوباري مطابق لمواصفات وزارة الداخلية (دولة ليبيا).
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handlePrintExitPermit}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 22px',
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(22,163,74,0.3)'
+                  }}
+                >
+                  <Printer size={18} />
+                  <span>طباعة التصريح الرسمي (A4)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExitPermitModalOpen(false)}
+                  style={{
+                    padding: '10px 18px',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontWeight: 800,
+                    fontSize: '13.5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  إغلاق
                 </button>
               </div>
             </div>
