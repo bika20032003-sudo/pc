@@ -621,7 +621,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const notes = leave.notes || leave.ResumptionNotes || leave.Notes || 'إجازة سنوية نظامية معتمدة بسجلات المديرية';
 
     return `
-      <div style="width: 100%; max-width: 720px; margin: 0 auto; padding: 15px 25px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 13.5px; line-height: 2.1;">
+      <div id="official-leave-form-99" class="official-a4-letter-sheet" style="width: 100%; max-width: 720px; margin: 0 auto; padding: 15px 25px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 13.5px; line-height: 2.1;">
         
         <!-- Header: ن ش 1 / 99 والتسمية السيادية الرسمية -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
@@ -916,7 +916,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const toParts = formatDateParts(permit.EndDate);
 
     return `
-      <div style="width: 100%; max-width: 680px; margin: 0 auto; padding: 25px 35px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 15px; line-height: 2.3;">
+      <div id="moi-exit-permit-to-print" class="official-exit-permit-sheet official-a4-letter-sheet" style="width: 100%; max-width: 680px; margin: 0 auto; padding: 25px 35px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 15px; line-height: 2.3;">
         
         <!-- الترويسة العلوية الرسمية: الخط الكوفي/الثلث المعتمد -->
         <div style="text-align: center; margin-bottom: 14px;">
@@ -1070,8 +1070,8 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     `;
   };
 
-  // فتح نافذة تصريح الخروج في إجازة (إذن) مع تعبئة البيانات آلياً
-  const handleOpenExitPermitModal = (leave) => {
+  // فتح نافذة تصريح الخروج في إجازة (إذن) مع تعبئة البيانات آلياً وتفعيل الطباعة المباشرة
+  const handleOpenExitPermitModal = (leave, autoPrint = true) => {
     const sDate = leave.StartDate ? (leave.StartDate.slice ? leave.StartDate.slice(0, 10) : leave.StartDate) : (leave.start_date || todayStr);
     const eDate = leave.EndDate ? (leave.EndDate.slice ? leave.EndDate.slice(0, 10) : leave.EndDate) : (leave.end_date || '');
     const durationDays = leave.TotalDays || leave.total_days || 30;
@@ -1105,12 +1105,25 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
     setActiveExitPermit(permitData);
     setIsExitPermitModalOpen(true);
+
+    if (autoPrint) {
+      setTimeout(() => {
+        handlePrintExitPermit(permitData);
+      }, 350);
+    }
   };
 
   // طباعة تصريح الخروج في إجازة
-  const handlePrintExitPermit = () => {
-    const printHtml = generateExitPermitHtml(activeExitPermit);
-    printDocumentInIframe(printHtml, `تصريح خروج في إجازة - ${activeExitPermit.FullName || 'إذن إجازة'}`);
+  const handlePrintExitPermit = (permitOverride) => {
+    const permit = permitOverride || activeExitPermit;
+    try {
+      const sheetEl = document.getElementById('moi-exit-permit-to-print');
+      const content = sheetEl ? sheetEl.outerHTML : generateExitPermitHtml(permit);
+      printDocumentInIframe(content, `تصريح خروج في إجازة - ${permit.FullName || 'إذن إجازة'}`);
+    } catch (err) {
+      console.warn('تعذر الطباعة عبر الإطار، جاري التبديل للطباعة المباشرة:', err);
+      window.print();
+    }
   };
 
   return (
@@ -2293,7 +2306,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
       {/* Modal 3: Exit Permit Modal (تصريح بالخروج في إجازة - إذن إجازة رسمي 100% يطابق الصورة المرفقة) */}
       {isExitPermitModalOpen && activeExitPermit && (
-        <div style={{
+        <div className="exit-permit-modal-overlay" style={{
           position: 'fixed',
           inset: 0,
           background: 'rgba(15, 23, 42, 0.85)',
@@ -2444,7 +2457,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
               background: '#475569',
               flex: 1
             }}>
-              <div style={{
+              <div id="moi-exit-permit-to-print" className="official-exit-permit-sheet official-a4-letter-sheet" style={{
                 background: '#ffffff',
                 borderRadius: '6px',
                 boxShadow: '0 8px 30px rgba(0,0,0,0.3)',

@@ -14,15 +14,15 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
 
     const iframe = document.createElement('iframe');
     iframe.id = 'moi-print-isolated-iframe';
-    // Off-screen layout allows the browser engine to fully layout vector graphics, fonts and CSS colors.
+    // Position within viewport bounds so Chromium rasterizes and executes print properly, but keep completely invisible
     iframe.style.position = 'fixed';
-    iframe.style.left = '-10000px';
-    iframe.style.top = '-10000px';
-    iframe.style.width = '210mm';
-    iframe.style.height = '297mm';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '10px';
+    iframe.style.height = '10px';
     iframe.style.border = 'none';
     iframe.style.zIndex = '-9999';
-    iframe.style.opacity = '1';
+    iframe.style.opacity = '0.01';
     iframe.style.pointerEvents = 'none';
     document.body.appendChild(iframe);
 
@@ -103,6 +103,10 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             max-width: 100%;
             image-rendering: -webkit-optimize-contrast;
           }
+          /* Force all print elements to be 100% visible inside isolated print iframe */
+          body, body * {
+            visibility: visible !important;
+          }
         </style>
       </head>
       <body>
@@ -120,17 +124,36 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
       } catch (err) {
-        console.error('Print execution error:', err);
+        console.warn('Iframe print error, attempting popup print fallback:', err);
+        try {
+          const win = window.open('', '_blank');
+          if (win) {
+            win.document.write(doc.documentElement.outerHTML);
+            win.document.close();
+            win.focus();
+            setTimeout(() => {
+              win.print();
+              win.close();
+            }, 300);
+          } else {
+            window.print();
+          }
+        } catch (e2) {
+          window.print();
+        }
       } finally {
         setTimeout(() => {
           if (iframe && iframe.parentNode) {
             iframe.parentNode.removeChild(iframe);
           }
-        }, 5000);
+        }, 8000);
       }
     };
 
-    // Allow images & fonts to decode and rasterize
+    // Trigger print after iframe renders
+    iframe.onload = () => {
+      setTimeout(trigger, 150);
+    };
     setTimeout(trigger, 400);
   } catch (err) {
     console.error('Iframe creation error:', err);

@@ -4581,7 +4581,13 @@ body {
   .official-a4-letter-sheet,
   .official-a4-letter-sheet *,
   #moi-printable-officer-area,
-  #moi-printable-officer-area * {
+  #moi-printable-officer-area *,
+  #moi-exit-permit-to-print,
+  #moi-exit-permit-to-print *,
+  .official-exit-permit-sheet,
+  .official-exit-permit-sheet *,
+  #official-leave-form-99,
+  #official-leave-form-99 * {
     visibility: visible !important;
   }
 
@@ -4590,7 +4596,8 @@ body {
   .letter-modal-box,
   .register-print-box,
   .letter-modal-body,
-  .letter-modal-preview-pane {
+  .letter-modal-preview-pane,
+  .exit-permit-modal-overlay {
     background: transparent !important;
     position: static !important;
     padding: 0 !important;
@@ -4610,6 +4617,9 @@ body {
   /* 6. Strictly position A4 letter sheet at top-left with crisp printing */
   #official-letter-to-print,
   #official-template-to-print,
+  #moi-exit-permit-to-print,
+  .official-exit-permit-sheet,
+  #official-leave-form-99,
   .official-a4-letter-sheet {
     position: absolute !important;
     left: 0 !important;
