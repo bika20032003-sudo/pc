@@ -118,17 +118,54 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
   const [modalMemberSearch, setModalMemberSearch] = useState('');
   const [modalSelectedMember, setModalSelectedMember] = useState(null);
 
-  // New Leave Form state with Bidirectional Automatic Calculation
+  // New Leave Form state with Bidirectional Automatic Calculation matching official form ن ش 1/99
   const todayStr = new Date().toISOString().slice(0, 10);
   const defaultEndStr = new Date(Date.now() + 29 * 86400000).toISOString().slice(0, 10);
 
   const [leaveForm, setLeaveForm] = useState({
-    leave_type: 'اجازة سنوية',
-    destination: 'داخل ليبيا',
+    // القسم الأول
+    general_dept: 'مديرية أمن أوباري',
+    military_number: '',
+    rank: 'شرطي',
+    name: '',
+    workplace: 'ديوان مديرية أمن أوباري',
+    total_days: 30,
     start_date: todayStr,
     end_date: defaultEndStr,
-    total_days: 30,
-    notes: 'إجازة اعتيادية معتمدة بقرار إداري'
+    leave_type: 'سنوية اعتيادية',
+    destination: 'محلية (داخل ليبيا)',
+    request_date: todayStr,
+    request_hijri: '',
+    applicant_signature: '',
+
+    // القسم الثاني: (( يعد من الجهة المختصة بشؤون الإجازات ))
+    entitled_until: `${new Date().getFullYear()}/12/31م`,
+    entitled_days: 30,
+    requested_days: 30,
+    remaining_days: 0,
+    officer_signature: 'رئيس وحدة الإجازات والغياب',
+    section2_date: todayStr,
+    section2_hijri: '',
+
+    // القسم الثالث: أوصي بالموافقة / عدم الموافقة
+    recommendation: 'أوصي بالموافقة لعدم المانع والتزام المنتسب وحسن السيرة',
+    direct_boss_signature: 'الرئيس المباشر',
+    section3_date: todayStr,
+    section3_hijri: '',
+
+    // القسم الرابع: (( قرار الجهة المختصة ))
+    approval_status: 'أوافق على الإجازة المطلوبة',
+    approved_days: 30,
+    approver_signature: 'مدير مديرية أمن أوباري',
+    section4_date: todayStr,
+
+    // القسم الخامس: عاد من إجازته وباشر العمل بتاريخ
+    resumed_date: '',
+    resumed_hijri: '',
+    resumption_signature: '',
+
+    // القسم السادس: ملاحظات
+    notes: 'إجازة سنوية نظامية معتمدة بسجلات مديرية أمن أوباري'
   });
 
   // مزامنة البيانات مع الخادم المركزي
@@ -191,13 +228,28 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const s = new Date(leaveForm.start_date);
     if (!isNaN(s.getTime())) {
       const e = new Date(s.getTime() + (days - 1) * 86400000);
-      setLeaveForm(prev => ({
-        ...prev,
-        total_days: days,
-        end_date: e.toISOString().slice(0, 10)
-      }));
+      setLeaveForm(prev => {
+        const ent = Number(prev.entitled_days) || 30;
+        return {
+          ...prev,
+          total_days: days,
+          requested_days: days,
+          approved_days: days,
+          remaining_days: Math.max(0, ent - days),
+          end_date: e.toISOString().slice(0, 10)
+        };
+      });
     } else {
-      setLeaveForm(prev => ({ ...prev, total_days: days }));
+      setLeaveForm(prev => {
+        const ent = Number(prev.entitled_days) || 30;
+        return {
+          ...prev,
+          total_days: days,
+          requested_days: days,
+          approved_days: days,
+          remaining_days: Math.max(0, ent - days)
+        };
+      });
     }
   };
 
@@ -207,14 +259,39 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
       const diffTime = e.getTime() - s.getTime();
       const calcDays = Math.max(1, Math.round(diffTime / 86400000) + 1);
-      setLeaveForm(prev => ({
-        ...prev,
-        end_date: newEnd,
-        total_days: calcDays
-      }));
+      setLeaveForm(prev => {
+        const ent = Number(prev.entitled_days) || 30;
+        return {
+          ...prev,
+          end_date: newEnd,
+          total_days: calcDays,
+          requested_days: calcDays,
+          approved_days: calcDays,
+          remaining_days: Math.max(0, ent - calcDays)
+        };
+      });
     } else {
       setLeaveForm(prev => ({ ...prev, end_date: newEnd }));
     }
+  };
+
+  // اختيار المنتسب وتعبئة بيانات النموذج آلياً
+  const handleSelectMemberForLeave = (member) => {
+    setModalSelectedMember(member);
+    setModalMemberSearch('');
+    setLeaveForm(prev => {
+      const num = member.job_number || member.financial_number || member.national_id || '---';
+      const rank = member.rank || member.job_title || 'شرطي';
+      const dept = member.department || 'مديرية أمن أوباري';
+      return {
+        ...prev,
+        name: member.name,
+        rank: rank,
+        military_number: num,
+        workplace: dept,
+        applicant_signature: member.name
+      };
+    });
   };
 
   // البحث في المنتسبين داخل نافذة إضافة إجازة جديدة
@@ -302,36 +379,57 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     });
   }, [enrichedLeaves, filterTab, typeFilter, searchTerm]);
 
-  // حفظ إجازة جديدة
+  // حفظ إجازة جديدة بموجب النموذج الرسمي ن ش 1/99
   const handleSaveLeave = async (e) => {
-    e.preventDefault();
-    const targetMember = modalSelectedMember || selectedMember;
-    if (!targetMember) {
-      alert('⚠️ يرجى تحديد المنتسب أولاً لمنحه الإجازة');
+    if (e && e.preventDefault) e.preventDefault();
+    const name = leaveForm.name || (modalSelectedMember && modalSelectedMember.name) || (selectedMember && selectedMember.name);
+    if (!name) {
+      alert('⚠️ يرجى تحديد المنتسب أولاً لمنحه الإجازة الرسمية');
       return;
     }
 
+    const targetMember = modalSelectedMember || selectedMember || {};
+
     const newLeave = {
       LeaveID: Date.now(),
-      NationalNumber: targetMember.national_id || targetMember.financial_number || targetMember.job_number || '---',
-      FullName: targetMember.name,
-      Rank: targetMember.rank || targetMember.job_title || 'شرطي',
-      DepartmentName: targetMember.department || 'مديرية أمن أوباري',
-      LeaveType: leaveForm.leave_type,
+      NationalNumber: leaveForm.military_number || targetMember.national_id || targetMember.financial_number || targetMember.job_number || '---',
+      FullName: name,
+      Rank: leaveForm.rank || targetMember.rank || targetMember.job_title || 'شرطي',
+      DepartmentName: leaveForm.workplace || targetMember.department || 'مديرية أمن أوباري',
+      general_dept: leaveForm.general_dept,
+      LeaveType: leaveForm.leave_type || 'سنوية',
       StartDate: new Date(leaveForm.start_date).toISOString(),
       EndDate: new Date(leaveForm.end_date).toISOString(),
       TotalDays: leaveForm.total_days,
       Notes: leaveForm.destination ? `${leaveForm.destination} - ${leaveForm.notes}` : leaveForm.notes,
-      Status: 'سارية'
+      Status: 'سارية',
+
+      // بيانات النموذج الرسمي المعتمد ن ش 1/99
+      request_date: leaveForm.request_date,
+      request_hijri: leaveForm.request_hijri,
+      applicant_signature: leaveForm.applicant_signature || name,
+      entitled_until: leaveForm.entitled_until,
+      entitled_days: leaveForm.entitled_days,
+      requested_days: leaveForm.requested_days,
+      remaining_days: leaveForm.remaining_days,
+      officer_signature: leaveForm.officer_signature,
+      recommendation: leaveForm.recommendation,
+      direct_boss_signature: leaveForm.direct_boss_signature,
+      approval_status: leaveForm.approval_status,
+      approved_days: leaveForm.approved_days,
+      approver_signature: leaveForm.approver_signature,
+      resumed_date: leaveForm.resumed_date,
+      resumed_hijri: leaveForm.resumed_hijri,
+      resumption_signature: leaveForm.resumption_signature
     };
 
     // تحديث الحالة محلياً
     setLeaves(prev => [newLeave, ...prev]);
 
     // تحديث حالة المنتسب في القوة المركزية إلى إجازة رسمية
-    if (setForceMembers) {
+    if (setForceMembers && (targetMember.id || targetMember.national_id)) {
       setForceMembers(prev => prev.map(m => {
-        if (m.id === targetMember.id || m.national_id === targetMember.national_id) {
+        if (m.id === targetMember.id || (targetMember.national_id && m.national_id === targetMember.national_id)) {
           return { ...m, job_status: 'إجازة رسمية' };
         }
         return m;
@@ -461,128 +559,311 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     document.body.removeChild(link);
   };
 
-  // طباعة إذن إجازة رسمي معتمد A4
-  const handlePrintLeaveVoucher = (leave) => {
-    const calc = calculateLeaveStatus(leave);
-    const printHtml = `
-      <div style="width: 100%; max-width: 680px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a; position: relative;">
-        <!-- الشريط الرسمي بألوان العلم الليبي -->
-        <div style="height: 6px; width: 100%; display: flex; border-radius: 3px; overflow: hidden; margin-bottom: 12px;">
-          <div style="flex: 1; background: #e11d48;"></div>
-          <div style="flex: 2; background: #000000;"></div>
-          <div style="flex: 1; background: #16a34a;"></div>
-        </div>
+  // توليد كود الطباعة للنموذج الرسمي المعتمد لرجال الشرطة (ن ش 1 / 99) بدقة 100%
+  const generateOfficialLeaveFormHtml = (leave) => {
+    const name = leave.FullName || leave.name || '';
+    const rank = leave.Rank || leave.rank || 'شرطي';
+    const number = leave.NationalNumber || leave.military_number || leave.job_number || leave.financial_number || '';
+    const generalDept = leave.general_dept || leave.DepartmentName || 'مديرية أمن أوباري';
+    const workplace = leave.workplace || leave.DepartmentName || 'ديوان مديرية أمن أوباري';
 
-        <!-- الترويسة الرسمية لوزارة الداخلية -->
-        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 14px;">
+    const startDate = leave.StartDate ? (leave.StartDate.slice ? leave.StartDate.slice(0, 10) : leave.StartDate) : (leave.start_date || '');
+    const endDate = leave.EndDate ? (leave.EndDate.slice ? leave.EndDate.slice(0, 10) : leave.EndDate) : (leave.end_date || '');
+    const totalDays = leave.TotalDays || leave.total_days || 30;
+
+    const leaveTypeAndLocation = leave.destination ? 
+      `${leave.leave_type || leave.LeaveType || 'سنوية'} / ${leave.destination}` :
+      (leave.Notes || `${leave.LeaveType || 'سنوية'} / محلية`);
+
+    const requestDate = leave.request_date || (leave.StartDate ? leave.StartDate.slice(0, 10) : new Date().toISOString().slice(0, 10));
+    const requestHijri = leave.request_hijri || '';
+    const applicantSig = leave.applicant_signature || name;
+
+    const dueDate = leave.entitled_until || `${new Date().getFullYear()}/12/31م`;
+    const entitledDays = leave.entitled_days !== undefined ? leave.entitled_days : 30;
+    const requestedDays = leave.requested_days !== undefined ? leave.requested_days : totalDays;
+    const remainingDays = leave.remaining_days !== undefined ? leave.remaining_days : Math.max(0, entitledDays - requestedDays);
+    const officerSig = leave.officer_signature || 'رئيس وحدة الإجازات والغياب';
+
+    const recommendation = leave.recommendation || 'أوصي بالموافقة لعدم المانع وصالح العمل';
+    const directBossSig = leave.direct_boss_signature || 'الرئيس المباشر';
+
+    const approvedDays = leave.approved_days !== undefined ? leave.approved_days : totalDays;
+    const approverSig = leave.approver_signature || leave.competent_authority_signature || 'مدير أمن أوباري';
+
+    const resumedDate = leave.ActualResumptionDate || leave.resumed_date || '';
+    const resumedHijri = leave.resumed_hijri || '';
+    const resumptionSig = leave.resumption_signature || (leave.ActualResumptionDate ? 'رئيس الوحدة' : '');
+
+    const notes = leave.notes || leave.ResumptionNotes || leave.Notes || 'إجازة سنوية نظامية معتمدة بسجلات المديرية';
+
+    return `
+      <div style="width: 100%; max-width: 720px; margin: 0 auto; padding: 15px 25px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 13.5px; line-height: 2.1;">
+        
+        <!-- Header: ن ش 1 / 99 والتسمية السيادية الرسمية -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
           <tr>
-            <td style="text-align: right; vertical-align: middle; width: 40%;">
-              <div style="font-size: 15px; font-weight: 900; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
-              <div style="font-size: 14px; font-weight: 800; color: #0f172a;">مديرية أمن أوباري</div>
-              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم الشؤون الإدارية والمالية • وحدة الإجازات</div>
+            <td style="width: 25%; text-align: right; vertical-align: top; font-weight: 900; font-size: 14.5px;">
+              ن ش 1 / 99
             </td>
-            <td style="text-align: center; vertical-align: middle; width: 20%;">
-              <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 70px; height: 70px; object-fit: contain; margin: 0 auto; display: block;" />
-            </td>
-            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 40%;">
-              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
-              <div style="font-size: 10px; font-weight: 700; color: #0f172a;">Ubari Security Directorate</div>
-              <div style="font-size: 9px; color: #64748b;">Official Leave Authorization Voucher</div>
-            </td>
-          </tr>
-        </table>
-
-        <!-- عنوان الوثيقة والرقم الإشاري -->
-        <div style="text-align: center; margin-bottom: 16px;">
-          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 6px 24px; border-radius: 6px; font-size: 16px; font-weight: 900; letter-spacing: 0.5px;">
-            إذن إجازة رسمية معتمدة
-          </div>
-          <div style="font-size: 11px; color: #64748b; font-weight: 800; margin-top: 6px;">
-            الرقم الإشاري الموحد: <span style="color: #1e3a8a; font-family: monospace; font-size: 12px;">MOI-UBR-LV-${leave.LeaveID}</span>
-            &nbsp;|&nbsp; التاريخ: ${new Date().toLocaleDateString('ar-LY')}
-          </div>
-        </div>
-
-        <!-- جدول بيانات المنتسب والإجازة -->
-        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; font-size: 12px; margin-bottom: 16px;">
-          <tr style="background: #f8fafc;">
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; width: 24%; font-weight: 800;">اسم المنتسب الرباعي:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #0f172a; font-size: 13.5px;" colspan="3">
-              ${leave.FullName}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">الرقم الوطني / المالي:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800; font-family: monospace; color: #0284c7;">
-              ${leave.NationalNumber}
-            </td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800; width: 22%;">الرتبة والوظيفة:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #1e3a8a;">
-              ${leave.Rank || 'عضو هيئة شرطة'}
-            </td>
-          </tr>
-          <tr style="background: #f8fafc;">
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">جهة العمل والتبعية:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800; color: #1e3a8a;">
-              ${leave.DepartmentName}
-            </td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">نوع الإجازة الممنوحة:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #16a34a;">
-              ${leave.LeaveType}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">تاريخ بداية الإجازة:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800;">
-              ${new Date(leave.StartDate).toLocaleDateString('ar-LY')}
-            </td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">تاريخ انتهاء الإجازة:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800; color: #dc2626;">
-              ${new Date(leave.EndDate).toLocaleDateString('ar-LY')}
-            </td>
-          </tr>
-          <tr style="background: #f8fafc;">
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">المدة الإجمالية المعتمدة:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 900; color: #dc2626; font-size: 13px;">
-              ${calc.totalDays} يوماً (محسوبة نظامياً)
-            </td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; color: #475569; font-weight: 800;">جهة الإقامة / السفر:</td>
-            <td style="padding: 9px 12px; border: 1px solid #cbd5e1; font-weight: 800;">
-              ${leave.Notes || 'داخل ليبيا'}
-            </td>
-          </tr>
-        </table>
-
-        <!-- ضوابط وتعليمات العودة ومباشرة العمل -->
-        <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-right: 5px solid #1e3a8a; padding: 12px 16px; border-radius: 8px; font-size: 11.5px; margin-bottom: 22px; color: #1e293b; line-height: 1.7;">
-          <strong style="color: #1e3a8a; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ ضوابط استئناف ومباشرة العمل:</strong>
-          يلتزم المنتسب المأذون له بالإجازة بالحضور ومباشرة مهامه الرسمية فور انتهاء المدة المحددة أعلاه، ويعد اليوم التالي لانتهاء الإجازة موعداً إلزامياً لمباشرة العمل. وفي حال التأخر دون عذر قاهر ومسند رسمياً تطبق أحكام قانون هيئة الشرطة بشأن الغياب والانقطاع عن العمل.
-        </div>
-
-        <!-- مربعات التوقيعات والاعتماد الرسمي -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 30px; font-size: 11.5px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">رئيس وحدة الإجازات والغياب</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 6px;">نقيب / علي سالم محمد</div>
-            </td>
-            <td style="width: 33%; vertical-align: middle;">
-              <div style="width: 70px; height: 70px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 7px; margin-top: 2px;">الختم الرسمي المعتمد</span>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+              <div style="font-size: 17.5px; font-weight: 900; margin-bottom: 2px;">دَوْلَةُ لِيبْيَا</div>
+              <div style="font-size: 16px; font-weight: 900; margin-bottom: 8px;">وَزَارَةُ الدَّاخِلِيَّةِ</div>
+              <div style="font-size: 16.5px; font-weight: 900; border-bottom: 1.5px solid #000; display: inline-block; padding-bottom: 1px;">
+                نموذج طلب الحصول على إجازة سنوية لرجال الشرطة
               </div>
             </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 6px;">لواء / موسى سعد محمد</div>
+            <td style="width: 25%;"></td>
+          </tr>
+        </table>
+
+        <!-- القسم الأول -->
+        <div style="margin-top: 8px;">
+          <div style="font-weight: 900; font-size: 14.5px;">القسم الأول :</div>
+          
+          <div>
+            <span style="font-weight: 700;">الإدارة العامة : </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 85%; padding: 0 6px; font-weight: 800;">${generalDept}</span>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 30%;">
+                <span style="font-weight: 700;">الرقم : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 70%; text-align: center; font-weight: 800;">${number}</span>
+              </td>
+              <td style="width: 32%;">
+                <span style="font-weight: 700;">الرتبة : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 70%; text-align: center; font-weight: 800;">${rank}</span>
+              </td>
+              <td style="width: 38%;">
+                <span style="font-weight: 700;">الاسم: </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 78%; text-align: center; font-weight: 900;">${name}</span>
+              </td>
+            </tr>
+          </table>
+
+          <div>
+            <span style="font-weight: 700;">مكان العمل : </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 86%; padding: 0 6px; font-weight: 800;">${workplace}</span>
+          </div>
+
+          <div style="font-weight: 900; margin-top: 4px;">
+            أرجو منحي إجازة سنوية كما يلي:
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 36%;">
+                <span style="font-weight: 700;">مدة الإجازة المطلوبة: </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 900;">${totalDays} يوماً</span>
+              </td>
+              <td style="width: 32%;">
+                <span style="font-weight: 700;">من: </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 75%; text-align: center; font-weight: 800;">${startDate}</span>
+              </td>
+              <td style="width: 32%;">
+                <span style="font-weight: 700;">إلى غاية: </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 68%; text-align: center; font-weight: 800;">${endDate}</span>
+              </td>
+            </tr>
+          </table>
+
+          <div>
+            <span style="font-weight: 700;">نوع الإجازة المطلوبة محلية / خارجية / العنوان خلال مدة الإجازة : </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 48%; padding: 0 6px; font-weight: 800;">${leaveTypeAndLocation}</span>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 50%;">
+                <span style="font-weight: 700;">تاريخ تقديم الطلب : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${requestDate}</span>
+                <span style="font-weight: 700; margin-right: 8px;">الموافق : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 30%; text-align: center; font-weight: 800;">${requestHijri}</span>
+              </td>
+              <td style="width: 50%; text-align: left;">
+                <span style="font-weight: 900;">توقيع طالب الإجازة </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 50%; text-align: center; font-weight: 800;">${applicantSig}</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- القسم الثاني -->
+        <div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 25%; font-weight: 900; font-size: 14.5px;">القسم الثاني :</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 14px;">(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
+              <td style="width: 25%;"></td>
+            </tr>
+          </table>
+
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المستحقة لغاية : </span>
+            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px; text-align: center; font-weight: 800;">${dueDate}</span>
+            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${entitledDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المطلوبة : </span>
+            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px;"></span>
+            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${requestedDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المتبقية : </span>
+            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px;"></span>
+            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${remainingDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+            <tr>
+              <td style="width: 45%;">
+                <span style="font-weight: 900;">توقيع الضابط المختص </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${officerSig}</span>
+              </td>
+              <td style="width: 25%; text-align: center;">
+                <span style="font-weight: 700;">الموافق </span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+              <td style="width: 30%; text-align: left;">
+                <span style="font-weight: 700;">التاريخ </span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- القسم الثالث -->
+        <div>
+          <div>
+            <span style="font-weight: 900; font-size: 14.5px;">القسم الثالث : </span>
+            <span style="font-weight: 700;">أوصي بالموافقة / عدم الموافقة للأسباب الآتية: </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 55%; padding: 0 6px; font-weight: 800;">${recommendation}</span>
+          </div>
+          <div style="border-bottom: 1px dotted #000; width: 100%; min-height: 20px;"></div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+            <tr>
+              <td style="width: 45%;">
+                <span style="font-weight: 900;">توقيع الرئيس المباشر </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${directBossSig}</span>
+              </td>
+              <td style="width: 25%; text-align: center;">
+                <span style="font-weight: 700;">الموافق </span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+              <td style="width: 30%; text-align: left;">
+                <span style="font-weight: 700;">التاريخ </span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- القسم الرابع -->
+        <div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 25%; font-weight: 900; font-size: 14.5px;">القسم الرابع:</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 14px;">(( قرار الجهة المختصة ))</td>
+              <td style="width: 25%;"></td>
+            </tr>
+          </table>
+
+          <div>
+            <span>1- أوافق / لا أوافق على الإجازة المطلوبة أو على مدة ( </span>
+            <span style="font-weight: 900; padding: 0 8px;">${approvedDays}</span>
+            <span> ) يوماً.</span>
+          </div>
+          <div>
+            <span>2- تحفظ مدة الإجازة المتجمعة أو المتبقية أو التي لم يوافق عليها لاعتبارات تتعلق بصالح العمل ومدتها.</span>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+            <tr>
+              <td style="width: 60%;">
+                <span style="font-weight: 900;">توقيع المختص بمنح الإجازات </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${approverSig}</span>
+              </td>
+              <td style="width: 40%; text-align: left;">
+                <span style="font-weight: 700;">التاريخ </span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- القسم الخامس -->
+        <div>
+          <div>
+            <span style="font-weight: 900; font-size: 14.5px;">القسم الخامس : </span>
+            <span style="font-weight: 700;">عاد من إجازته وباشر العمل بتاريخ: </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 25%; text-align: center; font-weight: 800;">${resumedDate}</span>
+            <span style="font-weight: 700; margin-right: 12px;">الموافق: </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 25%; text-align: center; font-weight: 800;">${resumedHijri}</span>
+          </div>
+
+          <div style="margin-top: 4px;">
+            <span style="font-weight: 900;">توقيع المختص </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 35%; text-align: center; font-weight: 800;">${resumptionSig}</span>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- القسم السادس -->
+        <div>
+          <div>
+            <span style="font-weight: 900; font-size: 14.5px;">القسم السادس : </span>
+            <span style="font-weight: 700;">ملاحظات </span>
+            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 80%; padding: 0 6px; font-weight: 800;">${notes}</span>
+          </div>
+          <div style="border-bottom: 1px dotted #000; width: 100%; min-height: 20px;"></div>
+        </div>
+
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+
+        <!-- التوزيع والمطبعة -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11.5px;">
+          <tr>
+            <td style="width: 60%; vertical-align: bottom; line-height: 1.7;">
+              <div style="font-weight: 900;">التوزيع : النسخة الأصلية لطالب الإجازة.</div>
+              <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
+              <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>
+            </td>
+            <td style="width: 40%; text-align: center; vertical-align: bottom;">
+              <div style="display: inline-block; border: 1.5px solid #000; padding: 4px 14px; border-radius: 4px; font-weight: 900; font-size: 12px;">
+                مطبعة إدارة شؤون العلاقات والتعاون
+              </div>
             </td>
           </tr>
         </table>
+
       </div>
     `;
+  };
 
-    printDocumentInIframe(printHtml, `إذن إجازة رسمي - ${leave.FullName}`);
+  // طباعة النموذج الرسمي المعتمد A4 (ن ش 1 / 99)
+  const handlePrintLeaveVoucher = (leave) => {
+    const printHtml = generateOfficialLeaveFormHtml(leave);
+    printDocumentInIframe(printHtml, `نموذج إجازة سنوية ن ش 1-99 - ${leave.FullName || leave.name || ''}`);
+  };
+
+  // طباعة النموذج الحالي قيد التعبئة في النافذة
+  const handlePrintCurrentForm = () => {
+    const printHtml = generateOfficialLeaveFormHtml(leaveForm);
+    printDocumentInIframe(printHtml, `نموذج إجازة سنوية ن ش 1-99 - ${leaveForm.name || 'طلب إجازة'}`);
   };
 
   return (
@@ -964,186 +1245,713 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
         </table>
       </div>
 
-      {/* Modal 1: New Leave Modal with Real Autocomplete & Bidirectional Date Calculation */}
+      {/* Modal 1: Official Police Leave Form (ن ش 1 / 99 - نموذج طلب الحصول على إجازة سنوية لرجال الشرطة) */}
       {isNewLeaveModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10500, padding: '16px' }}>
-          <div style={{ background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '580px', padding: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', borderTop: '5px solid #10b981' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Plane size={20} color="#10b981" />
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 900, color: '#0f172a' }}>
-                  منح إجازة رسمية جديدة لمنتسب
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsNewLeaveModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Member Autocomplete Picker */}
-            <div style={{ marginBottom: '16px', position: 'relative' }}>
-              <label style={{ fontWeight: 800, color: '#334155', display: 'block', marginBottom: '6px', fontSize: '12px' }}>
-                تحديد المنتسب من القوة العمومية (2,211 منتسب):
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input
-                  type="text"
-                  value={modalMemberSearch}
-                  onChange={(e) => setModalMemberSearch(e.target.value)}
-                  placeholder="🔍 اكتب اسم المنتسب، الرقم الوطني، أو الرقم المالي..."
-                  style={{ width: '100%', padding: '9px 36px 9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '12.5px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {/* Autocomplete Results Dropdown */}
-              {modalSearchedMembers.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', marginTop: '4px', zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.15)', maxHeight: '180px', overflowY: 'auto' }}>
-                  {modalSearchedMembers.map(m => (
-                    <div
-                      key={m.id}
-                      onClick={() => {
-                        setModalSelectedMember(m);
-                        setModalMemberSearch('');
-                      }}
-                      style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
-                    >
-                      <div>
-                        <strong style={{ fontSize: '12px', color: '#0f172a' }}>{m.name}</strong>
-                        <span style={{ fontSize: '11px', color: '#64748b', marginRight: '6px' }}>({m.rank || 'شرطي'})</span>
-                      </div>
-                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 800 }}>{m.department}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Selected Member Preview Pill */}
-              {modalSelectedMember && (
-                <div style={{ marginTop: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#166534', fontWeight: 800 }}>المنتسب المختار: </span>
-                    <strong style={{ fontSize: '12.5px', color: '#15803d' }}>{modalSelectedMember.name}</strong>
-                    <span style={{ fontSize: '11px', color: '#64748b', marginRight: '8px' }}>({modalSelectedMember.rank || 'شرطي'} - {modalSelectedMember.department})</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: '#0284c7', fontFamily: 'monospace', fontWeight: 800 }}>
-                    ر.و: {modalSelectedMember.national_id || '---'}
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.82)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10500,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '860px',
+            maxHeight: '94vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            borderTop: '5px solid #1e3a8a',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header Bar */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 22px',
+              background: '#f8fafc',
+              borderBottom: '1.5px solid #e2e8f0',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FileText size={22} color="#1e3a8a" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 900, color: '#0f172a' }}>
+                    نموذج طلب الحصول على إجازة سنوية لرجال الشرطة (ن ش 1 / 99)
+                  </h3>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
+                    النموذج الرسمي المعتمد بوزارة الداخلية دولة ليبيا
                   </span>
                 </div>
-              )}
-            </div>
-
-            <form onSubmit={handleSaveLeave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
-              <div>
-                <label style={{ fontWeight: 800, color: '#334155', display: 'block', marginBottom: '4px' }}>نوع الإجازة:</label>
-                <select
-                  value={leaveForm.leave_type}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 800 }}
-                >
-                  <option value="اجازة سنوية">إجازة سنوية اعتيادية</option>
-                  <option value="اجازة طارئة">إجازة طارئة</option>
-                  <option value="اجازة مرضية">إجازة مرضية (بتقرير طبي)</option>
-                  <option value="اجازة حج / عمرة">إجازة حج / عمرة</option>
-                  <option value="اجازة دراسية">إجازة دراسية / تدريب</option>
-                  <option value="اجازة وضع وأمومة">إجازة وضع وأمومة</option>
-                </select>
               </div>
 
-              <div>
-                <label style={{ fontWeight: 800, color: '#334155', display: 'block', marginBottom: '4px' }}>مصرح بالسفر إلى:</label>
-                <input
-                  type="text"
-                  value={leaveForm.destination}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, destination: e.target.value })}
-                  placeholder="داخل ليبيا / خارج ليبيا إلى..."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {/* Start Date */}
-              <div>
-                <label style={{ fontWeight: 800, color: '#334155', display: 'block', marginBottom: '4px' }}>تاريخ البدء:</label>
-                <input
-                  type="date"
-                  required
-                  value={leaveForm.start_date}
-                  onChange={(e) => handleStartDateChange(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontWeight: 800 }}
-                />
-              </div>
-
-              {/* Duration in Days (Automatic calculation trigger) */}
-              <div>
-                <label style={{ fontWeight: 800, color: '#1e3a8a', display: 'block', marginBottom: '4px' }}>المدة بالأيام (يحدد تاريخ الانتهاء):</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="180"
-                  required
-                  value={leaveForm.total_days}
-                  onChange={(e) => handleTotalDaysChange(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #1e3a8a', boxSizing: 'border-box', fontWeight: 900, color: '#1e3a8a' }}
-                />
-              </div>
-
-              {/* End Date (Automatic calculation trigger) */}
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ fontWeight: 800, color: '#dc2626', display: 'block', marginBottom: '4px' }}>
-                  تاريخ الانتهاء (محسوب آلياً أو اختره لتعديل الأيام):
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={leaveForm.end_date}
-                  onChange={(e) => handleEndDateChange(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #dc2626', boxSizing: 'border-box', fontWeight: 900, color: '#dc2626' }}
-                />
-              </div>
-
-              {/* Live Automatic Calculation Badge */}
-              <div style={{ gridColumn: 'span 2', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ color: '#64748b', fontSize: '11px' }}>الاحتساب الآلي للمدة: </span>
-                  <strong style={{ color: '#0f172a', fontSize: '12.5px' }}>{leaveForm.total_days} يوماً</strong>
-                </div>
-                <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 800 }}>
-                  تاريخ استئناف العمل المفترض: {new Date(new Date(leaveForm.end_date).getTime() + 86400000).toISOString().slice(0, 10)}
-                </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ fontWeight: 800, color: '#334155', display: 'block', marginBottom: '4px' }}>ملاحظات أو قرار الموافقة:</label>
-                <input
-                  type="text"
-                  value={leaveForm.notes}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, notes: e.target.value })}
-                  placeholder="ملاحظات رئيس القسم أو الإدارة..."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
-                  type="submit"
-                  style={{ flex: 1, padding: '11px', borderRadius: '8px', background: '#10b981', color: '#ffffff', border: 'none', fontWeight: 900, cursor: 'pointer', fontSize: '13px' }}
+                  type="button"
+                  onClick={handlePrintCurrentForm}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    background: '#eff6ff',
+                    border: '1.5px solid #1e3a8a',
+                    borderRadius: '8px',
+                    color: '#1e3a8a',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                  title="طباعة النموذج بصيغة A4 الرسمية"
                 >
-                  اعتماد وحفظ الإجازة 💾
+                  <Printer size={16} />
+                  <span>طباعة A4</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setIsNewLeaveModalOpen(false)}
-                  style={{ padding: '11px 20px', borderRadius: '8px', background: '#e2e8f0', color: '#334155', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#475569',
+                    padding: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="إغلاق"
                 >
-                  إلغاء
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+            </div>
+
+            {/* Quick Autocomplete Member Selector Banner */}
+            <div style={{
+              background: '#eff6ff',
+              borderBottom: '1px solid #bfdbfe',
+              padding: '10px 22px',
+              position: 'relative',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a', whiteSpace: 'nowrap' }}>
+                  🔍 تحديد المنتسب من القوة العمومية (2,211 منتسب) لتعبئة النموذج آلياً:
+                </span>
+                <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={modalMemberSearch}
+                    onChange={(e) => setModalMemberSearch(e.target.value)}
+                    placeholder="ابحث بالاسم، الرقم المالي أو الوطني..."
+                    style={{
+                      width: '100%',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #93c5fd',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  {/* Results Dropdown */}
+                  {modalSearchedMembers.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      left: 0,
+                      background: '#ffffff',
+                      border: '1.5px solid #1e3a8a',
+                      borderRadius: '8px',
+                      marginTop: '4px',
+                      zIndex: 1000,
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+                      maxHeight: '180px',
+                      overflowY: 'auto'
+                    }}>
+                      {modalSearchedMembers.map(m => (
+                        <div
+                          key={m.id}
+                          onClick={() => handleSelectMemberForLeave(m)}
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid #f1f5f9',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
+                        >
+                          <div>
+                            <strong style={{ fontSize: '13px', color: '#0f172a' }}>{m.name}</strong>
+                            <span style={{ fontSize: '11.5px', color: '#64748b', marginRight: '6px' }}>({m.rank || m.job_title || 'شرطي'})</span>
+                          </div>
+                          <span style={{ fontSize: '11.5px', color: '#10b981', fontWeight: 800 }}>{m.department || 'أوباري'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Paper Container (Exact Replica of Document) */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '24px 32px',
+              background: '#ffffff',
+              fontFamily: "'Cairo', Arial, sans-serif"
+            }}>
+              {/* Paper Document Form */}
+              <div style={{
+                border: '1.5px solid #000000',
+                padding: '24px 30px',
+                background: '#ffffff',
+                color: '#000000',
+                fontSize: '14px',
+                lineHeight: '2.1'
+              }}>
+
+                {/* Top Bar: Code and Title */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ width: '25%', textAlign: 'right', verticalAlign: 'top', fontWeight: 900, fontSize: '15px' }}>
+                        ن ش 1 / 99
+                      </td>
+                      <td style={{ width: '50%', textAlign: 'center', verticalAlign: 'top' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 900, marginBottom: '2px' }}>دَوْلَةُ لِيبْيَا</div>
+                        <div style={{ fontSize: '16.5px', fontWeight: 900, marginBottom: '8px' }}>وَزَارَةُ الدَّاخِلِيَّةِ</div>
+                        <div style={{ fontSize: '17px', fontWeight: 900, borderBottom: '1.5px solid #000', display: 'inline-block', paddingBottom: '2px' }}>
+                          نموذج طلب الحصول على إجازة سنوية لرجال الشرطة
+                        </div>
+                      </td>
+                      <td style={{ width: '25%' }}></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* القسم الأول */}
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ fontWeight: 900, fontSize: '15px' }}>القسم الأول :</div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>الإدارة العامة :&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.general_dept}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, general_dept: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, padding: '2px 8px', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '30%' }}>
+                          <span style={{ fontWeight: 700 }}>الرقم :&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.military_number}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, military_number: e.target.value })}
+                            placeholder="الرقم المالي / الوطني"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '65%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '32%' }}>
+                          <span style={{ fontWeight: 700 }}>الرتبة :&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.rank}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, rank: e.target.value })}
+                            placeholder="الرتبة العسكرية"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '68%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '38%' }}>
+                          <span style={{ fontWeight: 700 }}>الاسم:&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.name}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, name: e.target.value })}
+                            placeholder="اسم المنتسب الرباعي"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '75%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 900 }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>مكان العمل :&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.workplace}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, workplace: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, padding: '2px 8px', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <div style={{ fontWeight: 900, marginTop: '4px' }}>
+                    أرجو منحي إجازة سنوية كما يلي:
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '36%' }}>
+                          <span style={{ fontWeight: 700 }}>مدة الإجازة المطلوبة:&nbsp;</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="180"
+                            value={leaveForm.total_days}
+                            onChange={(e) => handleTotalDaysChange(e.target.value)}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '42%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 900 }}
+                          />
+                          <span style={{ fontWeight: 700 }}>&nbsp;يوماً</span>
+                        </td>
+                        <td style={{ width: '32%' }}>
+                          <span style={{ fontWeight: 700 }}>من:&nbsp;</span>
+                          <input
+                            type="date"
+                            value={leaveForm.start_date}
+                            onChange={(e) => handleStartDateChange(e.target.value)}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '75%', textAlign: 'center', fontFamily: 'inherit', fontSize: '13.5px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '32%' }}>
+                          <span style={{ fontWeight: 700 }}>إلى غاية:&nbsp;</span>
+                          <input
+                            type="date"
+                            value={leaveForm.end_date}
+                            onChange={(e) => handleEndDateChange(e.target.value)}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '68%', textAlign: 'center', fontFamily: 'inherit', fontSize: '13.5px', fontWeight: 800 }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>نوع الإجازة المطلوبة محلية / خارجية / العنوان خلال مدة الإجازة :&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.destination}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, destination: e.target.value })}
+                      placeholder="محلية (داخل ليبيا - أوباري / طرابلس)"
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, padding: '2px 8px', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '50%' }}>
+                          <span style={{ fontWeight: 700 }}>تاريخ تقديم الطلب :&nbsp;</span>
+                          <input
+                            type="date"
+                            value={leaveForm.request_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, request_date: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '42%', textAlign: 'center', fontFamily: 'inherit', fontSize: '13.5px', fontWeight: 800 }}
+                          />
+                          <span style={{ fontWeight: 700, marginRight: '8px' }}>الموافق :&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.request_hijri}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, request_hijri: e.target.value })}
+                            placeholder="هجري / هـ"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '28%', textAlign: 'center', fontFamily: 'inherit', fontSize: '13.5px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '50%', textAlign: 'left' }}>
+                          <span style={{ fontWeight: 900 }}>توقيع طالب الإجازة&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.applicant_signature}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, applicant_signature: e.target.value })}
+                            placeholder="توقيع طالب الإجازة"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '55%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* القسم الثاني */}
+                <div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '25%', fontWeight: 900, fontSize: '15px' }}>القسم الثاني :</td>
+                        <td style={{ width: '50%', textAlign: 'center', fontWeight: 900, fontSize: '14.5px' }}>(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
+                        <td style={{ width: '25%' }}></td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>مدة الإجازة المستحقة لغاية :&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.entitled_until}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, entitled_until: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, margin: '0 8px', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                    <span style={{ fontWeight: 900, whiteSpace: 'nowrap' }}>
+                      (&nbsp;
+                      <input
+                        type="number"
+                        min="0"
+                        value={leaveForm.entitled_days}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          setLeaveForm(prev => ({
+                            ...prev,
+                            entitled_days: val,
+                            remaining_days: Math.max(0, val - prev.requested_days)
+                          }));
+                        }}
+                        style={{ border: 'none', outline: 'none', width: '38px', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 900 }}
+                      />
+                      &nbsp;) يوماً
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>مدة الإجازة المطلوبة :&nbsp;</span>
+                    <span style={{ borderBottom: '1px dotted #000', flex: 1, margin: '0 8px' }}></span>
+                    <span style={{ fontWeight: 900, whiteSpace: 'nowrap' }}>
+                      (&nbsp;<span style={{ display: 'inline-block', width: '38px', textAlign: 'center' }}>{leaveForm.requested_days}</span>&nbsp;) يوماً
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>مدة الإجازة المتبقية :&nbsp;</span>
+                    <span style={{ borderBottom: '1px dotted #000', flex: 1, margin: '0 8px' }}></span>
+                    <span style={{ fontWeight: 900, whiteSpace: 'nowrap' }}>
+                      (&nbsp;<span style={{ display: 'inline-block', width: '38px', textAlign: 'center', color: '#1e3a8a' }}>{leaveForm.remaining_days}</span>&nbsp;) يوماً
+                    </span>
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '6px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '45%' }}>
+                          <span style={{ fontWeight: 900 }}>توقيع الضابط المختص&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.officer_signature}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, officer_signature: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '50%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '25%', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 700 }}>الموافق&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.section2_hijri}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, section2_hijri: e.target.value })}
+                            placeholder="/  /"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '60px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                          />
+                        </td>
+                        <td style={{ width: '30%', textAlign: 'left' }}>
+                          <span style={{ fontWeight: 700 }}>التاريخ&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.section2_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, section2_date: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '90px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* القسم الثالث */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 900, fontSize: '15px' }}>القسم الثالث :&nbsp;</span>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>أوصي بالموافقة / عدم الموافقة للأسباب الآتية:&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.recommendation}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, recommendation: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, padding: '2px 8px', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+                  <div style={{ borderBottom: '1px dotted #000', width: '100%', minHeight: '22px' }}></div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '6px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '45%' }}>
+                          <span style={{ fontWeight: 900 }}>توقيع الرئيس المباشر&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.direct_boss_signature}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, direct_boss_signature: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '50%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '25%', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 700 }}>الموافق&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.section3_hijri}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, section3_hijri: e.target.value })}
+                            placeholder="/  /"
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '60px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                          />
+                        </td>
+                        <td style={{ width: '30%', textAlign: 'left' }}>
+                          <span style={{ fontWeight: 700 }}>التاريخ&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.section3_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, section3_date: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '90px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* القسم الرابع */}
+                <div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '25%', fontWeight: 900, fontSize: '15px' }}>القسم الرابع:</td>
+                        <td style={{ width: '50%', textAlign: 'center', fontWeight: 900, fontSize: '14.5px' }}>(( قرار الجهة المختصة ))</td>
+                        <td style={{ width: '25%' }}></td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <span>1-&nbsp;</span>
+                    <select
+                      value={leaveForm.approval_status}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, approval_status: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    >
+                      <option value="أوافق على الإجازة المطلوبة">أوافق على الإجازة المطلوبة</option>
+                      <option value="لا أوافق على الإجازة المطلوبة">لا أوافق على الإجازة المطلوبة</option>
+                      <option value="أوافق على مدة محددة">أوافق على مدة محددة</option>
+                    </select>
+                    <span>&nbsp;أو على مدة (&nbsp;</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={leaveForm.approved_days}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, approved_days: Number(e.target.value) || 0 })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '40px', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 900 }}
+                    />
+                    <span>&nbsp;) يوماً.</span>
+                  </div>
+                  <div>
+                    2- تحفظ مدة الإجازة المتجمعة أو المتبقية أو التي لم يوافق عليها لاعتبارات تتعلق بصالح العمل ومدتها.
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '6px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ width: '60%' }}>
+                          <span style={{ fontWeight: 900 }}>توقيع المختص بمنح الإجازات&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.approver_signature}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, approver_signature: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '50%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                          />
+                        </td>
+                        <td style={{ width: '40%', textAlign: 'left' }}>
+                          <span style={{ fontWeight: 700 }}>التاريخ&nbsp;</span>
+                          <input
+                            type="text"
+                            value={leaveForm.section4_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, section4_date: e.target.value })}
+                            style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '90px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* القسم الخامس */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 900, fontSize: '15px' }}>القسم الخامس :&nbsp;</span>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>عاد من إجازته وباشر العمل بتاريخ:&nbsp;</span>
+                    <input
+                      type="date"
+                      value={leaveForm.resumed_date}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, resumed_date: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '130px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                    />
+                    <span style={{ fontWeight: 700, margin: '0 8px' }}>الموافق:&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.resumed_hijri}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, resumed_hijri: e.target.value })}
+                      placeholder="هجري / هـ"
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '120px', textAlign: 'center', fontFamily: 'inherit', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: '6px' }}>
+                    <span style={{ fontWeight: 900 }}>توقيع المختص&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.resumption_signature}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, resumption_signature: e.target.value })}
+                      placeholder="توقيع الضابط أو رئيس الوحدة"
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '220px', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* القسم السادس */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: 900, fontSize: '15px' }}>القسم السادس :&nbsp;</span>
+                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>ملاحظات&nbsp;</span>
+                    <input
+                      type="text"
+                      value={leaveForm.notes}
+                      onChange={(e) => setLeaveForm({ ...leaveForm, notes: e.target.value })}
+                      style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', flex: 1, padding: '2px 8px', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
+                    />
+                  </div>
+                  <div style={{ borderBottom: '1px dotted #000', width: '100%', minHeight: '22px' }}></div>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
+
+                {/* التوزيع والمطبعة */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px', fontSize: '12px' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ width: '60%', verticalAlign: 'bottom', lineHeight: '1.7' }}>
+                        <div style={{ fontWeight: 900 }}>التوزيع : النسخة الأصلية لطالب الإجازة.</div>
+                        <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
+                        <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>
+                      </td>
+                      <td style={{ width: '40%', textAlign: 'center', verticalAlign: 'bottom' }}>
+                        <div style={{ display: 'inline-block', border: '1.5px solid #000', padding: '4px 16px', borderRadius: '4px', fontWeight: 900, fontSize: '12px' }}>
+                          مطبعة إدارة شؤون العلاقات والتعاون
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+              </div>
+            </div>
+
+            {/* Modal Bottom Actions Footer */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '14px 24px',
+              background: '#f8fafc',
+              borderTop: '1.5px solid #e2e8f0',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleSaveLeave}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 22px',
+                    background: '#059669',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(5,150,105,0.25)'
+                  }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>اعتماد وحفظ الإجازة بالسجل</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrintCurrentForm}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 20px',
+                    background: '#1e3a8a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(30,58,138,0.25)'
+                  }}
+                >
+                  <Printer size={18} />
+                  <span>طباعة النموذج الرسمي (ن ش 1 / 99)</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsNewLeaveModalOpen(false)}
+                style={{
+                  padding: '10px 18px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '13.5px',
+                  cursor: 'pointer'
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}
