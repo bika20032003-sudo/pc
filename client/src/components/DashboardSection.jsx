@@ -702,7 +702,8 @@ export default function DashboardSection({
                 { id: 'vehicles', name: 'الآليات والمركبات', desc: 'متابعة 92 آلية ومركبة أمنية', icon: Car, bg: '#ecfdf5', clr: '#059669' },
                 { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' },
                 { id: 'mail', name: 'البريد والمراسلات', desc: 'الصادر والوارد والوثائق الرسمية', icon: Mail, bg: '#e0f2fe', clr: '#0284c7' },
-                { id: 'letters', name: 'النماذج والرسائل', desc: 'صياغة المكاتبات الرسمية A4', icon: Send, bg: '#f3e8ff', clr: '#7c3aed' }
+                { id: 'letters', name: 'النماذج والرسائل', desc: 'صياغة المكاتبات الرسمية A4', icon: Send, bg: '#f3e8ff', clr: '#7c3aed' },
+                { id: 'user_management', name: 'المستخدمين والصلاحيات', desc: 'إدارة الحسابات وتراخيص الدخول', icon: UserCheck, bg: '#fffbeb', clr: '#b45309' }
               ].map(shortcut => {
                 const IconComponent = shortcut.icon;
                 return (

@@ -81,7 +81,8 @@ export const SECTIONS = [
   { id: 'leaves', name: 'سجل الإجازات', icon: Plane },
   { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
   { id: 'referred', name: 'البريد المحال (تأشيرات)', icon: Share2 },
-  { id: 'letters', name: 'النماذج والرسائل', icon: Send }
+  { id: 'letters', name: 'النماذج والرسائل', icon: Send },
+  { id: 'user_management', name: 'المستخدمين والصلاحيات', icon: UserCheck }
 ];
 
 const DEFAULT_SYSTEM_USERS = [
@@ -172,7 +173,7 @@ export default function App() {
           }
 
           if (isAbdulSamad) {
-            parsed.allowed_sections = ['dashboard', 'force', 'vehicles', 'leaves'];
+            parsed.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management'];
           }
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
@@ -278,7 +279,7 @@ export default function App() {
         (updated.full_name && updated.full_name.includes('عبدالصمد'));
 
       if (isAbdulSamad) {
-        updated.allowed_sections = ['dashboard', 'force', 'vehicles', 'leaves'];
+        updated.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management'];
         if (updated.avatar === generalAvatar) {
           updated.avatar = '';
         }
@@ -462,7 +463,7 @@ export default function App() {
           (data.user.full_name && data.user.full_name.includes('عبدالصمد'));
 
         const userSections = isAbdulSamad
-          ? ['dashboard', 'force', 'vehicles', 'leaves']
+          ? ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management']
           : ((Array.isArray(data.user.allowed_sections) && data.user.allowed_sections.length > 0)
               ? data.user.allowed_sections
               : ['dashboard', 'force']);
@@ -555,7 +556,7 @@ export default function App() {
           (foundUser.full_name && foundUser.full_name.includes('عبدالصمد'));
 
         const rawSections = isAbdulSamad
-          ? ['dashboard', 'force', 'vehicles', 'leaves']
+          ? ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management']
           : ((Array.isArray(foundUser.allowed_sections) && foundUser.allowed_sections.length > 0)
               ? foundUser.allowed_sections
               : ['dashboard', 'force']);
@@ -1843,7 +1844,7 @@ export default function App() {
                             onClick={() => handleOpenViewModal(u)}
                             title="عرض الملف الأمني والصلاحيات"
                           >
-                            <Eye size={13} />
+                            <Eye size={15} />
                             <span>عرض</span>
                           </button>
 
@@ -1857,7 +1858,7 @@ export default function App() {
                             }}
                             title="تعديل البيانات ومستوى الصلاحية"
                           >
-                            <Edit size={13} />
+                            <Edit size={15} />
                             <span>تعديل</span>
                           </button>
 
@@ -1869,12 +1870,12 @@ export default function App() {
                               onClick={() => handleOpenDeleteModal(u)}
                               title="حذف الحساب وإلغاء الصلاحيات"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={15} />
                               <span>حذف</span>
                             </button>
                           ) : (
                             <span className="protected-commander-pill" title="حساب القيادة العامة محمي من الحذف">
-                              <Lock size={11} />
+                              <Lock size={13} />
                               <span>محمي</span>
                             </span>
                           )}
@@ -2357,8 +2358,8 @@ export default function App() {
                           let label = 'مدخل بيانات';
                           let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'force', 'vehicles', 'leaves']; }
-                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management']; }
+                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'leaves']; }
                           else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles']; }
                           else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
                           else if (val === 'data_entry') { label = 'مدخل بيانات'; sections = ['dashboard', 'force']; }
@@ -2525,8 +2526,8 @@ export default function App() {
                           let label = 'مدخل بيانات';
                           let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'force', 'vehicles', 'leaves']; }
-                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management']; }
+                          else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'leaves']; }
                           else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles']; }
                           else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
                           else if (val === 'data_entry') { label = 'مدخل بيانات'; sections = ['dashboard', 'force']; }

@@ -12,7 +12,8 @@ import {
   Share2,
   Send,
   Camera,
-  Settings
+  Settings,
+  UserCheck
 } from 'lucide-react';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
@@ -46,6 +47,13 @@ export const SECTION_DIVISIONS = [
     icon: Mail,
     color: '#4f46e5',
     itemIds: ['mail', 'referred', 'letters']
+  },
+  {
+    id: 'security_admin',
+    title: 'إدارة النظام والصلاحيات',
+    icon: UserCheck,
+    color: '#b45309',
+    itemIds: ['user_management']
   }
 ];
 
