@@ -180,7 +180,7 @@ export default function DashboardSection({
                 <Shield size={16} />
                 <span>وزارة الداخلية • دولة ليبيا</span>
               </div>
-              <h1 className="moi-banner-title">مركز القيادة والمعلومات والتحليل الإحصائي</h1>
+              <h1 className="moi-banner-title">مركز القيادة والمعلومات</h1>
               <p className="moi-banner-subtitle">
                 مديرية أمن أوباري
               </p>
