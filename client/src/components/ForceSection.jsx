@@ -444,7 +444,7 @@ export default function ForceSection({
           <div className="title-gold-bar" />
           <div>
             <h1>إدارة القوة العمومية</h1>
-            <span>مديرية أمن أوباري | قاعدة البيانات المركزية المعتمدة</span>
+            <span>مديرية أمن أوباري</span>
           </div>
         </div>
 

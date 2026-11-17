@@ -178,7 +178,7 @@ export default function DashboardSection({
             <div>
               <div className="moi-banner-badge">
                 <Shield size={16} />
-                <span>وزارة الداخلية • دولة ليبيا | قاعدة البيانات المركزية المعتمدة</span>
+                <span>وزارة الداخلية • دولة ليبيا</span>
               </div>
               <h1 className="moi-banner-title">مركز القيادة والمعلومات والتحليل الإحصائي</h1>
               <p className="moi-banner-subtitle">
