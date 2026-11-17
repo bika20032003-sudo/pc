@@ -182,7 +182,7 @@ export default function DashboardSection({
               </div>
               <h1 className="moi-banner-title">مركز القيادة والمعلومات والتحليل الإحصائي</h1>
               <p className="moi-banner-subtitle">
-                مديرية أمن أوباري | متابعة بيانات وقوة {stats.totalCount.toLocaleString('ar-LY')} منتسباً و 92 آلية أمنية بالسجلات الرسمية المعتمدة
+                مديرية أمن أوباري
               </p>
             </div>
           </div>
