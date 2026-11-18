@@ -3167,7 +3167,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
   const col2 = ccItems.slice(half);
 
   return (
-    <div className="official-a4-letter-sheet" id="official-letter-to-print">
+    <div className="official-a4-letter-sheet" id="official-letter-to-print" style={{ width: '100%', maxWidth: '190mm', minHeight: '265mm', padding: '6mm 10mm', boxSizing: 'border-box', background: '#ffffff', color: '#000000', display: 'flex', flexDirection: 'column', direction: 'rtl', margin: '0 auto', fontFamily: "'Cairo', sans-serif" }}>
       {/* الشريط الوطني الليبي المعتمد (4 ألوان) */}
       <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
         <div style={{ flex: 1, background: '#e11d48' }}></div>
@@ -3176,42 +3176,42 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* Top Header Block matching Image 3 */}
-      <header className="a4-letter-header">
-        <div className="header-lang-right">
-          <h2 className="title-moi-ar">وزارة الداخليـــــــــــــــــــة</h2>
-          <h3 className="title-dir-ar">مديرية أمن أوبـــــــــــــــــاري</h3>
+      <header className="a4-letter-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px', boxSizing: 'border-box' }}>
+        <div className="header-lang-right" style={{ flex: 1, textAlign: 'right' }}>
+          <h2 className="title-moi-ar" style={{ fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '0.5px', lineHeight: 1.25 }}>وزارة الداخليـــــــــــــــــــة</h2>
+          <h3 className="title-dir-ar" style={{ fontSize: '15.5px', fontWeight: 700, margin: '3px 0 0 0', lineHeight: 1.25 }}>مديرية أمن أوبـــــــــــــــــاري</h3>
         </div>
 
-        <div className="header-emblem-center">
-          <img src={MOI_LOGO_BASE64} alt="شعار مديرية أمن أوباري" className="emblem-img" style={{ width: '68px', height: '68px', objectFit: 'contain' }} />
+        <div className="header-emblem-center" style={{ width: '80px', textAlign: 'center', flexShrink: 0, margin: '0 10px' }}>
+          <img src={MOI_LOGO_BASE64} alt="شعار مديرية أمن أوباري" className="emblem-img" style={{ width: '66px', height: '66px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
         </div>
 
-        <div className="header-lang-left">
-          <h2 className="title-moi-en">Ministry of Interior</h2>
-          <h3 className="title-dir-en">Ubari Security Directorate</h3>
+        <div className="header-lang-left" style={{ flex: 1, textAlign: 'left', direction: 'ltr', fontFamily: 'Arial, sans-serif' }}>
+          <h2 className="title-moi-en" style={{ fontSize: '14px', fontWeight: 800, margin: 0, lineHeight: 1.25 }}>Ministry of Interior</h2>
+          <h3 className="title-dir-en" style={{ fontSize: '12px', fontWeight: 700, margin: '2px 0 0 0', lineHeight: 1.25 }}>Ubari Security Directorate</h3>
         </div>
       </header>
 
       {/* QR Code and Metadata Table Row matching Image 3 */}
-      <div className="a4-metadata-qr-row">
+      <div className="a4-metadata-qr-row" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px', boxSizing: 'border-box' }}>
         {/* Table on the right (1st child in RTL) */}
-        <div className="official-meta-table-box">
-          <div className="meta-row">
-            <div className="meta-cell ref-cell">
+        <div className="official-meta-table-box" style={{ border: '1px solid #94a3b8', borderRadius: '6px', background: '#f8fafc', overflow: 'hidden', minWidth: '320px', flex: '0 0 auto' }}>
+          <div className="meta-row" style={{ display: 'flex', flexDirection: 'row', borderBottom: '1px solid #cbd5e1' }}>
+            <div className="meta-cell ref-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px', borderLeft: '1px solid #cbd5e1' }}>
               <span className="meta-lbl">الإشاري:</span>
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{letter.reference || '12/2026'}</span>
             </div>
-            <div className="meta-cell record-cell">
+            <div className="meta-cell record-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px' }}>
               <span className="meta-lbl">القيـــــد:</span>
               <span className="meta-val" style={{ unicodeBidi: 'plaintext' }}>{letter.record_number || '1'}</span>
             </div>
           </div>
-          <div className="meta-row">
-            <div className="meta-cell date-cell">
+          <div className="meta-row" style={{ display: 'flex', flexDirection: 'row' }}>
+            <div className="meta-cell date-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px', borderLeft: '1px solid #cbd5e1' }}>
               <span className="meta-lbl">الموافق:</span>
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{letter.date || '11/10/2026'}</span>
             </div>
-            <div className="meta-cell code-cell">
+            <div className="meta-cell code-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px' }}>
               <span className="meta-lbl">:Code No</span>
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{letter.code_no || '2026-002'}</span>
             </div>
@@ -3219,9 +3219,9 @@ function OfficialLetterSheet({ letter, qrUrl }) {
         </div>
 
         {/* QR Code on the left (2nd child in RTL) */}
-        <div className="qr-code-box">
+        <div className="qr-code-box" style={{ width: '90px', height: '90px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {letter.show_qr !== false && qrUrl ? (
-            <img src={qrUrl} alt="رمز التحقق الأمني QR" className="qr-img" />
+            <img src={qrUrl} alt="رمز التحقق الأمني QR" className="qr-img" style={{ width: '86px', height: '86px', display: 'block' }} />
           ) : (
             <div className="qr-placeholder" />
           )}
@@ -3229,9 +3229,9 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* Subject Box matching Image 3 */}
-      <div className="a4-subject-bordered-box">
-        <span className="subject-title-lbl">بخصوص /</span>
-        <span className="subject-title-content">
+      <div className="a4-subject-bordered-box" style={{ border: '1.5px solid #d4af37', borderRadius: '6px', padding: '7px 16px', background: '#fffdfa', marginBottom: '12px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+        <span className="subject-title-lbl" style={{ fontSize: '15px', fontWeight: 800, whiteSpace: 'nowrap' }}>بخصوص /</span>
+        <span className="subject-title-content" style={{ fontSize: '15px', fontWeight: 700, flex: 1 }}>
           {letter.subject || '....................................................................................................'}
         </span>
       </div>
@@ -3286,17 +3286,17 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* Signature & Stamp Block (Positioned on the LEFT in Libyan correspondence) */}
-      <div className="a4-signature-block pos-left">
-        <div className="sig-inner layout-stacked">
+      <div className="a4-signature-block pos-left" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 'auto', marginBottom: '10px', boxSizing: 'border-box' }}>
+        <div className="sig-inner layout-stacked" style={{ textAlign: 'center', minWidth: '240px', maxWidth: '300px', marginRight: 'auto', marginLeft: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {letter.show_signature !== false && (
             <div className="sig-text-side">
-              <h4 className="sig-officer-name">{letter.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
-              <h5 className="sig-officer-rank">{letter.signer_title || 'مدير مديرية أمن أوباري'}</h5>
+              <h4 className="sig-officer-name" style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 2px 0', color: '#000000', whiteSpace: 'nowrap' }}>{letter.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
+              <h5 className="sig-officer-rank" style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 5px 0', color: '#000000', whiteSpace: 'nowrap' }}>{letter.signer_title || 'مدير مديرية أمن أوباري'}</h5>
             </div>
           )}
           {letter.show_stamp !== false && (
-            <div className="official-stamp-seal-circle">
-              <div className="stamp-inner-text">
+            <div className="official-stamp-seal-circle" style={{ width: '74px', height: '74px', border: '1.5px dashed #1e3a8a', borderRadius: '50%', margin: '2px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div className="stamp-inner-text" style={{ fontSize: '8.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.3, textAlign: 'center' }}>
                 <span>وزارة الداخلية</span>
                 <span>مديرية أمن أوباري</span>
                 <span>* مكتب المدير *</span>
@@ -3307,26 +3307,26 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* CC List matching Image 3 (2 columns) */}
-      <div className="a4-cc-distribution-block">
-        <div className="cc-header">صورة منه إلى :-</div>
-        <div className="cc-grid-2cols">
-          <ul className="cc-col">
+      <div className="a4-cc-distribution-block" style={{ marginTop: '6px', marginBottom: '6px', borderRight: '3px solid #d4af37', paddingRight: '10px' }}>
+        <div className="cc-header" style={{ fontSize: '12px', fontWeight: 800, color: '#000000', marginBottom: '3px', textDecoration: 'underline' }}>صورة منه إلى :-</div>
+        <div className="cc-grid-2cols" style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+          <ul className="cc-col" style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '11px', color: '#334155' }}>
             {col1.map((item, idx) => (
-              <li key={idx}>- {item}</li>
+              <li key={idx} style={{ marginBottom: '2px' }}>- {item}</li>
             ))}
           </ul>
-          <ul className="cc-col">
+          <ul className="cc-col" style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '11px', color: '#334155' }}>
             {col2.map((item, idx) => (
-              <li key={idx}>- {item}</li>
+              <li key={idx} style={{ marginBottom: '2px' }}>- {item}</li>
             ))}
           </ul>
         </div>
       </div>
 
       {/* Bottom Footer Line & Contact Info matching Image 3 */}
-      <footer className="a4-letter-footer">
-        <div className="footer-solid-divider" />
-        <div className="footer-details-row">
+      <footer className="a4-letter-footer" style={{ marginTop: 'auto', width: '100%', fontSize: '11px' }}>
+        <div className="footer-solid-divider" style={{ height: '1px', background: '#cbd5e1', marginBottom: '5px' }} />
+        <div className="footer-details-row" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', color: '#64748b' }}>
           <div className="footer-cell editor-cell">
             <span>المحرر: {letter.editor_employee || 'عبدالصمد'}</span>
           </div>
