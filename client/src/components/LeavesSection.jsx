@@ -582,7 +582,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     document.body.removeChild(link);
   };
 
-  // توليد كود الطباعة للنموذج الرسمي المعتمد لرجال الشرطة (ن ش 1 / 99) بدقة 100%
+  // توليد كود الطباعة للنموذج الرسمي المعتمد لرجال الشرطة (ن ش 1 / 99) بدقة 100% (صفحة واحدة A4)
   const generateOfficialLeaveFormHtml = (leave) => {
     const name = leave.FullName || leave.name || '';
     const rank = leave.Rank || leave.rank || 'شرطي';
@@ -607,12 +607,17 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const requestedDays = leave.requested_days !== undefined ? leave.requested_days : totalDays;
     const remainingDays = leave.remaining_days !== undefined ? leave.remaining_days : Math.max(0, entitledDays - requestedDays);
     const officerSig = leave.officer_signature || 'رئيس وحدة الإجازات والغياب';
+    const s2Date = leave.section2_date || requestDate;
+    const s2Hijri = leave.section2_hijri || '';
 
     const recommendation = leave.recommendation || 'أوصي بالموافقة لعدم المانع وصالح العمل';
     const directBossSig = leave.direct_boss_signature || 'الرئيس المباشر';
+    const s3Date = leave.section3_date || requestDate;
+    const s3Hijri = leave.section3_hijri || '';
 
     const approvedDays = leave.approved_days !== undefined ? leave.approved_days : totalDays;
     const approverSig = leave.approver_signature || leave.competent_authority_signature || 'مدير أمن أوباري';
+    const s4Date = leave.section4_date || requestDate;
 
     const resumedDate = leave.ActualResumptionDate || leave.resumed_date || '';
     const resumedHijri = leave.resumed_hijri || '';
@@ -621,18 +626,18 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const notes = leave.notes || leave.ResumptionNotes || leave.Notes || 'إجازة سنوية نظامية معتمدة بسجلات المديرية';
 
     return `
-      <div id="official-leave-form-99" class="official-a4-letter-sheet" style="width: 100%; max-width: 720px; margin: 0 auto; padding: 15px 25px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 13.5px; line-height: 2.1;">
+      <div id="official-leave-form-99" class="official-leave-form-sheet official-a4-letter-sheet" style="width: 100%; max-width: 185mm; margin: 0 auto; padding: 4mm 8mm; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 11.5px; line-height: 1.55;">
         
-        <!-- Header: ن ش 1 / 99 والتسمية السيادية الرسمية -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+        <!-- Header: ن ش 99/1 والتسمية السيادية الرسمية -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
           <tr>
-            <td style="width: 25%; text-align: right; vertical-align: top; font-weight: 900; font-size: 14.5px;">
-              ن ش 1 / 99
+            <td style="width: 25%; text-align: right; vertical-align: top; font-weight: 900; font-size: 13.5px; padding-top: 2px;">
+              ن ش 99/1
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-size: 17.5px; font-weight: 900; margin-bottom: 2px;">دَوْلَةُ لِيبْيَا</div>
-              <div style="font-size: 16px; font-weight: 900; margin-bottom: 8px;">وَزَارَةُ الدَّاخِلِيَّةِ</div>
-              <div style="font-size: 16.5px; font-weight: 900; border-bottom: 1.5px solid #000; display: inline-block; padding-bottom: 1px;">
+              <div style="font-size: 16px; font-weight: 900; margin-bottom: 1px; font-family: 'Amiri', 'Traditional Arabic', serif;">دَوْلَةُ لِيبْيَا</div>
+              <div style="font-size: 15px; font-weight: 900; margin-bottom: 4px; font-family: 'Amiri', 'Traditional Arabic', serif;">وَزَارَةُ الدَّاخِلِيَّةِ</div>
+              <div style="font-size: 14px; font-weight: 900; border-bottom: 1.5px solid #000; display: inline-block; padding-bottom: 1px;">
                 نموذج طلب الحصول على إجازة سنوية لرجال الشرطة
               </div>
             </td>
@@ -641,41 +646,45 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
         </table>
 
         <!-- القسم الأول -->
-        <div style="margin-top: 8px;">
-          <div style="font-weight: 900; font-size: 14.5px;">القسم الأول :</div>
+        <div style="margin-top: 4px;">
+          <div style="font-weight: 900; font-size: 13px; margin-bottom: 2px;">القسم الأول :</div>
           
-          <div>
-            <span style="font-weight: 700;">الإدارة العامة : </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 85%; padding: 0 6px; font-weight: 800;">${generalDept}</span>
-          </div>
-
-          <table style="width: 100%; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
             <tr>
-              <td style="width: 30%;">
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">الإدارة العامة :</td>
+              <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${generalDept}</td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+            <tr>
+              <td style="width: 28%;">
                 <span style="font-weight: 700;">الرقم : </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 70%; text-align: center; font-weight: 800;">${number}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 68%; text-align: center; font-weight: 800;">${number}</span>
               </td>
               <td style="width: 32%;">
                 <span style="font-weight: 700;">الرتبة : </span>
                 <span style="border-bottom: 1px dotted #000; display: inline-block; width: 70%; text-align: center; font-weight: 800;">${rank}</span>
               </td>
-              <td style="width: 38%;">
-                <span style="font-weight: 700;">الاسم: </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 78%; text-align: center; font-weight: 900;">${name}</span>
+              <td style="width: 40%;">
+                <span style="font-weight: 700;">الاسم : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 80%; text-align: center; font-weight: 900;">${name}</span>
               </td>
             </tr>
           </table>
 
-          <div>
-            <span style="font-weight: 700;">مكان العمل : </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 86%; padding: 0 6px; font-weight: 800;">${workplace}</span>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مكان العمل :</td>
+              <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${workplace}</td>
+            </tr>
+          </table>
+
+          <div style="font-weight: 900; margin: 3px 0 2px 0;">
+            أرجو منحي إجازة سنوية كما يلي:-
           </div>
 
-          <div style="font-weight: 900; margin-top: 4px;">
-            أرجو منحي إجازة سنوية كما يلي:
-          </div>
-
-          <table style="width: 100%; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
             <tr>
               <td style="width: 36%;">
                 <span style="font-weight: 700;">مدة الإجازة المطلوبة: </span>
@@ -692,181 +701,206 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <div>
-            <span style="font-weight: 700;">نوع الإجازة المطلوبة محلية / خارجية / العنوان خلال مدة الإجازة : </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 48%; padding: 0 6px; font-weight: 800;">${leaveTypeAndLocation}</span>
-          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">نوع الإجازة المطلوبة محلية / خارجية / العنوان خلال مدة الإجازة :</td>
+              <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${leaveTypeAndLocation}</td>
+            </tr>
+          </table>
 
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="width: 50%;">
+              <td style="width: 52%;">
                 <span style="font-weight: 700;">تاريخ تقديم الطلب : </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${requestDate}</span>
-                <span style="font-weight: 700; margin-right: 8px;">الموافق : </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 30%; text-align: center; font-weight: 800;">${requestHijri}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 38%; text-align: center; font-weight: 800;">${requestDate}</span>
+                <span style="font-weight: 700; margin-right: 6px;">الموافق : </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 28%; text-align: center; font-weight: 800;">${requestHijri}</span>
               </td>
-              <td style="width: 50%; text-align: left;">
+              <td style="width: 48%; text-align: left;">
                 <span style="font-weight: 900;">توقيع طالب الإجازة </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 50%; text-align: center; font-weight: 800;">${applicantSig}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 55%; text-align: center; font-weight: 800;">${applicantSig}</span>
               </td>
             </tr>
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- القسم الثاني -->
         <div>
-          <table style="width: 100%; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
             <tr>
-              <td style="width: 25%; font-weight: 900; font-size: 14.5px;">القسم الثاني :</td>
-              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 14px;">(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
+              <td style="width: 25%; font-weight: 900; font-size: 13px;">القسم الثاني :</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 12.5px;">(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
               <td style="width: 25%;"></td>
             </tr>
           </table>
 
-          <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المستحقة لغاية : </span>
-            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px; text-align: center; font-weight: 800;">${dueDate}</span>
-            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${entitledDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المطلوبة : </span>
-            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px;"></span>
-            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${requestedDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <span style="font-weight: 700; white-space: nowrap;">مدة الإجازة المتبقية : </span>
-            <span style="border-bottom: 1px dotted #000; flex: 1; margin: 0 8px;"></span>
-            <span style="font-weight: 900; white-space: nowrap;">(&nbsp;&nbsp;&nbsp;${remainingDays}&nbsp;&nbsp;&nbsp;) يوماً</span>
-          </div>
-
-          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
             <tr>
-              <td style="width: 45%;">
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المستحقة لغاية :</td>
+              <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${dueDate}</td>
+              <td style="width: 1%; white-space: nowrap; font-weight: 900; padding-right: 8px;">(&nbsp;&nbsp;&nbsp;${entitledDays}&nbsp;&nbsp;&nbsp;) يوماً</td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المطلوبة :</td>
+              <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${requestedDays} يوماً</td>
+              <td style="width: 1%; white-space: nowrap; font-weight: 900; padding-right: 8px;">(&nbsp;&nbsp;&nbsp;${requestedDays}&nbsp;&nbsp;&nbsp;) يوماً</td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المتبقية :</td>
+              <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${remainingDays} يوماً</td>
+              <td style="width: 1%; white-space: nowrap; font-weight: 900; padding-right: 8px;">(&nbsp;&nbsp;&nbsp;${remainingDays}&nbsp;&nbsp;&nbsp;) يوماً</td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+            <tr>
+              <td style="width: 48%;">
                 <span style="font-weight: 900;">توقيع الضابط المختص </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${officerSig}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 50%; text-align: center; font-weight: 800;">${officerSig}</span>
               </td>
-              <td style="width: 25%; text-align: center;">
+              <td style="width: 26%; text-align: center;">
                 <span style="font-weight: 700;">الموافق </span>
-                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 60%; text-align: center; font-weight: 800;">${s2Hijri || '&nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;'}</span>
               </td>
-              <td style="width: 30%; text-align: left;">
+              <td style="width: 26%; text-align: left;">
                 <span style="font-weight: 700;">التاريخ </span>
-                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 60%; text-align: center; font-weight: 800;">${s2Date || '&nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;'}</span>
               </td>
             </tr>
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- القسم الثالث -->
         <div>
-          <div>
-            <span style="font-weight: 900; font-size: 14.5px;">القسم الثالث : </span>
-            <span style="font-weight: 700;">أوصي بالموافقة / عدم الموافقة للأسباب الآتية: </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 55%; padding: 0 6px; font-weight: 800;">${recommendation}</span>
-          </div>
-          <div style="border-bottom: 1px dotted #000; width: 100%; min-height: 20px;"></div>
-
-          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
             <tr>
-              <td style="width: 45%;">
+              <td style="width: 1%; white-space: nowrap;">
+                <span style="font-weight: 900; font-size: 13px;">القسم الثالث : </span>
+                <span style="font-weight: 700;">أوصي بالموافقة / عدم الموافقة للأسباب الآتية: </span>
+              </td>
+              <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${recommendation}</td>
+            </tr>
+          </table>
+          <div style="border-bottom: 1px dotted #000; width: 100%; height: 16px;"></div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+            <tr>
+              <td style="width: 48%;">
                 <span style="font-weight: 900;">توقيع الرئيس المباشر </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${directBossSig}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 50%; text-align: center; font-weight: 800;">${directBossSig}</span>
               </td>
-              <td style="width: 25%; text-align: center;">
+              <td style="width: 26%; text-align: center;">
                 <span style="font-weight: 700;">الموافق </span>
-                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 60%; text-align: center; font-weight: 800;">${s3Hijri || '&nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;'}</span>
               </td>
-              <td style="width: 30%; text-align: left;">
+              <td style="width: 26%; text-align: left;">
                 <span style="font-weight: 700;">التاريخ </span>
-                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 60%; text-align: center; font-weight: 800;">${s3Date || '&nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;'}</span>
               </td>
             </tr>
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- القسم الرابع -->
         <div>
-          <table style="width: 100%; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
             <tr>
-              <td style="width: 25%; font-weight: 900; font-size: 14.5px;">القسم الرابع:</td>
-              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 14px;">(( قرار الجهة المختصة ))</td>
+              <td style="width: 25%; font-weight: 900; font-size: 13px;">القسم الرابع:</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 12.5px;">(( قرار الجهة المختصة ))</td>
               <td style="width: 25%;"></td>
             </tr>
           </table>
 
-          <div>
+          <div style="margin-bottom: 2px;">
             <span>1- أوافق / لا أوافق على الإجازة المطلوبة أو على مدة ( </span>
-            <span style="font-weight: 900; padding: 0 8px;">${approvedDays}</span>
+            <span style="font-weight: 900; padding: 0 4px; border-bottom: 1px dotted #000; display: inline-block; min-width: 35px; text-align: center;">${approvedDays}</span>
             <span> ) يوماً.</span>
           </div>
           <div>
             <span>2- تحفظ مدة الإجازة المتجمعة أو المتبقية أو التي لم يوافق عليها لاعتبارات تتعلق بصالح العمل ومدتها.</span>
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
             <tr>
               <td style="width: 60%;">
                 <span style="font-weight: 900;">توقيع المختص بمنح الإجازات </span>
-                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${approverSig}</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 48%; text-align: center; font-weight: 800;">${approverSig}</span>
               </td>
               <td style="width: 40%; text-align: left;">
                 <span style="font-weight: 700;">التاريخ </span>
-                <span>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 55%; text-align: center; font-weight: 800;">${s4Date || '&nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;'}</span>
               </td>
             </tr>
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- القسم الخامس -->
         <div>
-          <div>
-            <span style="font-weight: 900; font-size: 14.5px;">القسم الخامس : </span>
-            <span style="font-weight: 700;">عاد من إجازته وباشر العمل بتاريخ: </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 25%; text-align: center; font-weight: 800;">${resumedDate}</span>
-            <span style="font-weight: 700; margin-right: 12px;">الموافق: </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 25%; text-align: center; font-weight: 800;">${resumedHijri}</span>
-          </div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap;">
+                <span style="font-weight: 900; font-size: 13px;">القسم الخامس : </span>
+                <span style="font-weight: 700;">عاد من إجازته وباشر العمل بتاريخ: </span>
+              </td>
+              <td style="border-bottom: 1px dotted #000; width: 28%; text-align: center; font-weight: 800;">${resumedDate}</td>
+              <td style="width: 1%; white-space: nowrap; font-weight: 700; padding: 0 8px;">الموافق:</td>
+              <td style="border-bottom: 1px dotted #000; width: 28%; text-align: center; font-weight: 800;">${resumedHijri}</td>
+            </tr>
+          </table>
 
-          <div style="margin-top: 4px;">
-            <span style="font-weight: 900;">توقيع المختص </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 35%; text-align: center; font-weight: 800;">${resumptionSig}</span>
-          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+            <tr>
+              <td style="width: 60%;">
+                <span style="font-weight: 900;">توقيع المختص </span>
+                <span style="border-bottom: 1px dotted #000; display: inline-block; width: 45%; text-align: center; font-weight: 800;">${resumptionSig}</span>
+              </td>
+              <td style="width: 40%;"></td>
+            </tr>
+          </table>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- القسم السادس -->
         <div>
-          <div>
-            <span style="font-weight: 900; font-size: 14.5px;">القسم السادس : </span>
-            <span style="font-weight: 700;">ملاحظات </span>
-            <span style="border-bottom: 1px dotted #000; display: inline-block; width: 80%; padding: 0 6px; font-weight: 800;">${notes}</span>
-          </div>
-          <div style="border-bottom: 1px dotted #000; width: 100%; min-height: 20px;"></div>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 1%; white-space: nowrap;">
+                <span style="font-weight: 900; font-size: 13px;">القسم السادس : </span>
+                <span style="font-weight: 700;">ملاحظات </span>
+              </td>
+              <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${notes}</td>
+            </tr>
+          </table>
+          <div style="border-bottom: 1px dotted #000; width: 100%; height: 16px;"></div>
         </div>
 
-        <hr style="border: none; border-top: 1.5px solid #000; margin: 9px 0;" />
+        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
         <!-- التوزيع والمطبعة -->
-        <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11.5px;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10.5px;">
           <tr>
-            <td style="width: 60%; vertical-align: bottom; line-height: 1.7;">
+            <td style="width: 60%; vertical-align: bottom; line-height: 1.5;">
               <div style="font-weight: 900;">التوزيع : النسخة الأصلية لطالب الإجازة.</div>
               <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
               <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>
             </td>
             <td style="width: 40%; text-align: center; vertical-align: bottom;">
-              <div style="display: inline-block; border: 1.5px solid #000; padding: 4px 14px; border-radius: 4px; font-weight: 900; font-size: 12px;">
+              <div style="display: inline-block; border: 1.5px solid #000; padding: 3px 12px; border-radius: 4px; font-weight: 900; font-size: 11.5px;">
                 مطبعة إدارة شؤون العلاقات والتعاون
               </div>
             </td>
@@ -916,16 +950,16 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const toParts = formatDateParts(permit.EndDate);
 
     return `
-      <div id="moi-exit-permit-to-print" class="official-exit-permit-sheet official-a4-letter-sheet" style="width: 100%; max-width: 680px; margin: 0 auto; padding: 25px 35px; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 15px; line-height: 2.3;">
+      <div id="moi-exit-permit-to-print" class="official-exit-permit-sheet official-a4-letter-sheet" style="width: 100%; max-width: 175mm; margin: 0 auto; padding: 10mm 15mm; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 14.5px; line-height: 2.1;">
         
         <!-- الترويسة العلوية الرسمية: الخط الكوفي/الثلث المعتمد -->
-        <div style="text-align: center; margin-bottom: 14px;">
-          <div style="font-size: 34px; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; font-family: 'Amiri', 'Traditional Arabic', 'Cairo', serif;">
+        <div style="text-align: center; margin-bottom: 12px;">
+          <div style="font-size: 32px; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; font-family: 'Amiri', 'Traditional Arabic', serif;">
             وَزَارَةُ الدَّاخِلِيَّةِ
           </div>
 
           <!-- الشريط الفاصل والأقواس المزخرفة -->
-          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 10px; margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 8px; margin-bottom: 26px;">
             <div style="flex: 1; height: 1.5px; background: #000000;"></div>
             <div style="font-size: 21px; font-weight: 900; padding: 0 10px; letter-spacing: 0.5px; white-space: nowrap;">
               ﴾ تصريح بالخروج في إجازة ﴿
@@ -935,133 +969,114 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
         </div>
 
         <!-- السطر 1: الاسم والوظيفة -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">الاسم:</span>
-          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 900; font-size: 16px;">
-            ${permit.FullName || ''}
-          </span>
-          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الوظيفة:</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.JobTitle || 'عضو هيئة شرطة'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">الاسم:</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 900; font-size: 15.5px; width: 48%;">${permit.FullName || ''}</td>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding: 0 14px 0 8px;">الوظيفة:</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; width: 40%;">${permit.JobTitle || 'عضو هيئة شرطة'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 2: الرقم والدرجة -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">الرقم:</span>
-          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; font-family: monospace, 'Cairo';">
-            ${permit.Number || ''}
-          </span>
-          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الدرجة:</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.Grade || permit.Rank || 'ضابط صف'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">الرقم:</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; font-family: monospace, 'Cairo'; width: 48%;">${permit.Number || ''}</td>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding: 0 14px 0 8px;">الدرجة:</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; width: 40%;">${permit.Grade || permit.Rank || 'ضابط صف'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 3: مصرح له بالسفر إلى -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">مصرح له بالسفر إلى :</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.Destination || 'داخل وخارج النطاق الجغرافي للمديرية'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">مصرح له بالسفر إلى :</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">${permit.Destination || 'داخل وخارج النطاق الجغرافي للمديرية'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 4: في إجازة ولمدة -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">في إجازة :</span>
-          <span style="flex: 1.2; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.LeaveType || 'سنوية اعتيادية'}
-          </span>
-          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">لمدة :</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.Duration || '30 يوماً'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">في إجازة :</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; width: 48%;">${permit.LeaveType || 'سنوية اعتيادية'}</td>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding: 0 14px 0 8px;">لمدة :</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800; width: 40%;">${permit.Duration || '30 يوماً'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 5: من تاريخ والساعة -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">من تاريخ</span>
-          <span style="display: inline-block; min-width: 150px; text-align: center; font-weight: 900; letter-spacing: 3px;">
-            ${fromParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.year}
-          </span>
-          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الساعة</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.StartHour || '08:00 صباحاً'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">من تاريخ</td>
+            <td style="width: 160px; text-align: center; font-weight: 900; letter-spacing: 2px;">${fromParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${fromParts.year}</td>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding: 0 14px 0 8px;">الساعة</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">${permit.StartHour || '08:00 صباحاً'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 6: إلى تاريخ والساعة -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">إلى تاريخ</span>
-          <span style="display: inline-block; min-width: 150px; text-align: center; font-weight: 900; letter-spacing: 3px;">
-            ${toParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.year}
-          </span>
-          <span style="font-weight: 800; margin: 0 16px 0 8px; white-space: nowrap;">الساعة</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.EndHour || '14:00 مساءً'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">إلى تاريخ</td>
+            <td style="width: 160px; text-align: center; font-weight: 900; letter-spacing: 2px;">${toParts.day}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.month}&nbsp;&nbsp;/&nbsp;&nbsp;${toParts.year}</td>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding: 0 14px 0 8px;">الساعة</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">${permit.EndHour || '14:00 مساءً'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 7: اعطيت في -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 14px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">اعطيت في :</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.IssuedAt || 'مديرية أمن أوباري'}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">اعطيت في :</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">${permit.IssuedAt || 'مديرية أمن أوباري'}</td>
+          </tr>
+        </table>
 
         <!-- السطر 8: بتاريخ -->
-        <div style="display: flex; align-items: baseline; margin-bottom: 24px;">
-          <span style="font-weight: 800; margin-left: 8px; white-space: nowrap;">بتاريخ :</span>
-          <span style="flex: 1; border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">
-            ${permit.IssuedDate || ''}
-          </span>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px;">
+          <tr>
+            <td style="width: 1%; white-space: nowrap; font-weight: 800; padding-left: 8px;">بتاريخ :</td>
+            <td style="border-bottom: 1px dotted #000000; padding: 0 8px; font-weight: 800;">${permit.IssuedDate || ''}</td>
+          </tr>
+        </table>
 
-        <!-- بلوك التوقيع والختم المعتمد -->
-        <div style="margin-top: 36px; display: flex; justify-content: space-between; align-items: flex-start;">
-          <!-- الجهة اليسرى: بلوك توقيع ورتبة المصرح -->
-          <div style="width: 52%; font-size: 14.5px; line-height: 2.2;">
-            <div style="display: flex; align-items: baseline;">
-              <span style="font-weight: 800; min-width: 75px;">التوقيع :</span>
+        <!-- بلوك التوقيع المعتمد (مطابق للأصل الرسمي 100%) -->
+        <div style="margin-top: 26px; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="width: 310px; font-size: 14px; line-height: 2.1;">
+            <div style="display: flex; align-items: baseline; margin-bottom: 4px;">
+              <span style="font-weight: 800; min-width: 65px;">التوقيع :</span>
               <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800; color: #1e3a8a;">
                 ${permit.SignerSignature || 'موسى سعد البدين'}
               </span>
             </div>
-            <div style="display: flex; align-items: baseline;">
-              <span style="font-weight: 800; min-width: 75px;">الرتبة :</span>
+            <div style="display: flex; align-items: baseline; margin-bottom: 4px;">
+              <span style="font-weight: 800; min-width: 65px;">الرتبة :</span>
               <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800;">
                 ${permit.SignerRank || 'لواء شرطة'}
               </span>
             </div>
-            <div style="display: flex; align-items: baseline;">
-              <span style="font-weight: 800; min-width: 75px;">الاسم :</span>
+            <div style="display: flex; align-items: baseline; margin-bottom: 4px;">
+              <span style="font-weight: 800; min-width: 65px;">الاسم :</span>
               <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 900;">
                 ${permit.SignerName || 'موسى سعد محمد البدين'}
               </span>
             </div>
             <div style="display: flex; align-items: baseline;">
-              <span style="font-weight: 800; min-width: 75px;">المنصب :</span>
+              <span style="font-weight: 800; min-width: 65px;">المنصب :</span>
               <span style="flex: 1; border-bottom: 1px dotted #000000; text-align: center; font-weight: 800;">
                 ${permit.SignerTitle || 'مدير مديرية أمن أوباري'}
               </span>
             </div>
           </div>
-
-          <!-- الجهة اليمنى: مساحة الختم الدائري الرسمي -->
-          <div style="width: 40%; text-align: center; padding-top: 8px;">
-            <div style="width: 125px; height: 125px; border: 2px dashed #94a3b8; border-radius: 50%; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #475569; font-size: 11px; padding: 6px; box-sizing: border-box;">
-              <span style="font-weight: 900; color: #1e3a8a; font-size: 12.5px;">ختم المديرية</span>
-              <span style="font-size: 10px; margin-top: 3px; font-weight: 800;">مديرية أمن أوباري</span>
-              <span style="font-size: 9px; color: #64748b; margin-top: 2px;">وزارة الداخلية</span>
-            </div>
-          </div>
+          <div style="flex: 1;"></div>
         </div>
 
         <!-- التذييل الرسمي للمطبعة -->
-        <div style="margin-top: 50px; position: relative; text-align: center;">
+        <div style="margin-top: 38px; position: relative; text-align: center;">
           <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #52525b; z-index: 1;"></div>
-          <span style="position: relative; z-index: 2; background: #ffffff; padding: 0 18px; font-size: 13.5px; font-weight: 900; color: #18181b; font-family: 'Amiri', 'Traditional Arabic', 'Cairo', serif; letter-spacing: 0.5px;">
+          <span style="position: relative; z-index: 2; background: #ffffff; padding: 0 18px; font-size: 13.5px; font-weight: 900; color: #18181b; font-family: 'Amiri', 'Traditional Arabic', serif; letter-spacing: 0.5px;">
             مطبعة صندوق الرعاية الاجتماعية
           </span>
         </div>
@@ -1115,10 +1130,9 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
   // طباعة تصريح الخروج في إجازة
   const handlePrintExitPermit = (permitOverride) => {
-    const permit = permitOverride || activeExitPermit;
+    const permit = permitOverride && permitOverride.FullName ? permitOverride : activeExitPermit;
     try {
-      const sheetEl = document.getElementById('moi-exit-permit-to-print');
-      const content = sheetEl ? sheetEl.outerHTML : generateExitPermitHtml(permit);
+      const content = generateExitPermitHtml(permit);
       printDocumentInIframe(content, `تصريح خروج في إجازة - ${permit.FullName || 'إذن إجازة'}`);
     } catch (err) {
       console.warn('تعذر الطباعة عبر الإطار، جاري التبديل للطباعة المباشرة:', err);
@@ -1479,6 +1493,15 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                             <span>مباشرة</span>
                           </button>
                         )}
+
+                        <button
+                          onClick={() => handlePrintLeaveVoucher(leave)}
+                          title="طباعة نموذج الإجازة الرسمي (ن ش 1 / 99)"
+                          style={{ padding: '5px 9px', borderRadius: '6px', border: '1px solid #0d9488', background: '#f0fdfa', color: '#0d9488', fontSize: '11px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        >
+                          <FileText size={13} />
+                          <span>ن ش 99</span>
+                        </button>
 
                         <button
                           onClick={() => handleOpenExitPermitModal(leave)}
@@ -2579,42 +2602,35 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                   </span>
                 </div>
 
-                {/* Signoff Block */}
-                <div style={{ marginTop: '36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ width: '52%', fontSize: '14.5px', lineHeight: 2.2 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                      <span style={{ fontWeight: 800, minWidth: '75px' }}>التوقيع :</span>
+                {/* Signoff Block (مطابق للأصل الرسمي 100%) */}
+                <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ width: '310px', fontSize: '14px', lineHeight: 2.1 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 800, minWidth: '65px' }}>التوقيع :</span>
                       <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>
                         {activeExitPermit.SignerSignature}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                      <span style={{ fontWeight: 800, minWidth: '75px' }}>الرتبة :</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 800, minWidth: '65px' }}>الرتبة :</span>
                       <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800 }}>
                         {activeExitPermit.SignerRank}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                      <span style={{ fontWeight: 800, minWidth: '75px' }}>الاسم :</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 800, minWidth: '65px' }}>الاسم :</span>
                       <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 900 }}>
                         {activeExitPermit.SignerName}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                      <span style={{ fontWeight: 800, minWidth: '75px' }}>المنصب :</span>
+                      <span style={{ fontWeight: 800, minWidth: '65px' }}>المنصب :</span>
                       <span style={{ flex: 1, borderBottom: '1px dotted #000000', textAlign: 'center', fontWeight: 800 }}>
                         {activeExitPermit.SignerTitle}
                       </span>
                     </div>
                   </div>
-
-                  <div style={{ width: '40%', textAlign: 'center', paddingTop: '8px' }}>
-                    <div style={{ width: '125px', height: '125px', border: '2px dashed #94a3b8', borderRadius: '50%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '11px', padding: '6px', boxSizing: 'border-box' }}>
-                      <span style={{ fontWeight: 900, color: '#1e3a8a', fontSize: '12.5px' }}>ختم المديرية</span>
-                      <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: 800 }}>مديرية أمن أوباري</span>
-                      <span style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>وزارة الداخلية</span>
-                    </div>
-                  </div>
+                  <div style={{ flex: 1 }}></div>
                 </div>
 
                 {/* Footer */}

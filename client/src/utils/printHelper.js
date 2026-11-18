@@ -105,6 +105,61 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             position: relative !important;
             direction: rtl !important;
           }
+          /* Leaves Section Forms: Form ن ش 1/99 & Exit Permit (Strict 1-page A4) */
+          #official-leave-form-99,
+          .official-leave-form-sheet {
+            display: block !important;
+            width: 100% !important;
+            max-width: 185mm !important;
+            min-height: auto !important;
+            max-height: 275mm !important;
+            margin: 0 auto !important;
+            padding: 4mm 8mm !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            position: relative !important;
+            direction: rtl !important;
+            font-family: 'Cairo', Arial, sans-serif !important;
+            font-size: 11.5px !important;
+            line-height: 1.55 !important;
+            box-shadow: none !important;
+            border: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          #official-leave-form-99 table,
+          .official-leave-form-sheet table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          #moi-exit-permit-to-print,
+          .official-exit-permit-sheet {
+            display: block !important;
+            width: 100% !important;
+            max-width: 175mm !important;
+            min-height: auto !important;
+            max-height: 275mm !important;
+            margin: 0 auto !important;
+            padding: 10mm 15mm !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            position: relative !important;
+            direction: rtl !important;
+            font-family: 'Cairo', Arial, sans-serif !important;
+            font-size: 14.5px !important;
+            line-height: 2.1 !important;
+            box-shadow: none !important;
+            border: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          #moi-exit-permit-to-print table,
+          .official-exit-permit-sheet table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
           /* 3-Column Sovereign Official Header (Right Arabic, Center Logo, Left English) */
           .a4-letter-header {
             display: flex !important;
