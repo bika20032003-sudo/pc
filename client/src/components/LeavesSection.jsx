@@ -891,18 +891,13 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
         <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
 
-        <!-- التوزيع والمطبعة -->
+        <!-- التوزيع -->
         <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10.5px;">
           <tr>
-            <td style="width: 60%; vertical-align: bottom; line-height: 1.5;">
+            <td style="width: 100%; vertical-align: bottom; line-height: 1.5;">
               <div style="font-weight: 900;">التوزيع : النسخة الأصلية لطالب الإجازة.</div>
               <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
               <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>
-            </td>
-            <td style="width: 40%; text-align: center; vertical-align: bottom;">
-              <div style="display: inline-block; border: 1.5px solid #000; padding: 3px 12px; border-radius: 4px; font-weight: 900; font-size: 11.5px;">
-                مطبعة إدارة شؤون العلاقات والتعاون
-              </div>
             </td>
           </tr>
         </table>
@@ -2142,19 +2137,14 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
                 <hr style={{ border: 'none', borderTop: '1.5px solid #000', margin: '14px 0' }} />
 
-                {/* التوزيع والمطبعة */}
+                {/* التوزيع */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px', fontSize: '12px' }}>
                   <tbody>
                     <tr>
-                      <td style={{ width: '60%', verticalAlign: 'bottom', lineHeight: '1.7' }}>
+                      <td style={{ width: '100%', verticalAlign: 'bottom', lineHeight: '1.7' }}>
                         <div style={{ fontWeight: 900 }}>التوزيع : النسخة الأصلية لطالب الإجازة.</div>
                         <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
                         <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>
-                      </td>
-                      <td style={{ width: '40%', textAlign: 'center', verticalAlign: 'bottom' }}>
-                        <div style={{ display: 'inline-block', border: '1.5px solid #000', padding: '4px 16px', borderRadius: '4px', fontWeight: 900, fontSize: '12px' }}>
-                          مطبعة إدارة شؤون العلاقات والتعاون
-                        </div>
                       </td>
                     </tr>
                   </tbody>
