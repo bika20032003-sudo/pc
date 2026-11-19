@@ -65,12 +65,65 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          html, body, body * {
+            visibility: visible !important;
+          }
+          table, tbody, #printable-force-roster, .printable-force-roster-sheet, .printable-roster-container {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
+          thead {
+            display: table-header-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+          }
+          .printable-force-roster,
+          .printable-roster-container {
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .roster-sovereign-header {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          .roster-data-table {
+            page-break-before: avoid !important;
+            break-before: avoid !important;
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          .roster-data-table tbody {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          .roster-data-table tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .roster-data-table thead {
+            display: table-header-group !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .roster-data-table tfoot {
+            display: table-footer-group !important;
+          }
           @page {
-            size: A4 portrait;
-            margin: 8mm 10mm;
+            size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape')) ? 'A4 landscape' : 'A4 portrait'};
+            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster')) ? '6mm 8mm' : '8mm 10mm'};
           }
           html, body {
             margin: 0 !important;

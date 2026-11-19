@@ -4587,7 +4587,13 @@ body {
   .official-exit-permit-sheet,
   .official-exit-permit-sheet *,
   #official-leave-form-99,
-  #official-leave-form-99 * {
+  #official-leave-form-99 *,
+  .printable-force-roster,
+  .printable-force-roster *,
+  #printable-force-roster,
+  #printable-force-roster *,
+  .printable-roster-container,
+  .printable-roster-container * {
     visibility: visible !important;
   }
 

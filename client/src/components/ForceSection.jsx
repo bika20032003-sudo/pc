@@ -115,6 +115,9 @@ export default function ForceSection({
   const [statusFilter, setStatusFilter] = useState('الكل'); // 'الكل', 'على رأس العمل', 'إجازة', 'موقوف'
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 50;
+  const [showRosterModal, setShowRosterModal] = useState(false);
+  const [rosterScope, setRosterScope] = useState('all'); // 'all' or 'filtered'
+  const [rosterModalSearch, setRosterModalSearch] = useState('');
 
   // Watch for external edit requests (e.g., from preview modal)
   useEffect(() => {
@@ -315,19 +318,87 @@ export default function ForceSection({
   const policeTotal = forceMembers.filter(m => m.type === 'شرطي').length;
   const civilTotal = forceMembers.filter(m => m.type === 'مدني').length;
 
+  // Fully sorted list of all force members (by military rank score, then alphabetically)
+  const sortedAllMembers = useMemo(() => {
+    const list = [...forceMembers];
+    return list.sort((a, b) => {
+      const scoreA = getMilitaryRankScore(a.rank || a.job_title, a.type);
+      const scoreB = getMilitaryRankScore(b.rank || b.job_title, b.type);
+
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+
+      const nameA = a.name ? String(a.name).trim() : '';
+      const nameB = b.name ? String(b.name).trim() : '';
+      return nameA.localeCompare(nameB, 'ar-LY', { sensitivity: 'base' });
+    });
+  }, [forceMembers]);
+
+  const getArabicDayName = (date = new Date()) => {
+    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    return days[date.getDay()];
+  };
+
+  const getArabicDateString = (date = new Date()) => {
+    const day = date.getDate();
+    const months = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}م`;
+  };
+
+  const getRosterStats = (list) => {
+    let total = list.length;
+    let officers = 0;
+    let ncos = 0;
+    let civilians = 0;
+    let onDuty = 0;
+    let onLeave = 0;
+    let suspended = 0;
+
+    list.forEach(m => {
+      const s = getMilitaryRankScore(m.rank || m.job_title, m.type);
+      const isCiv = (m.type && String(m.type).includes('مدني')) || s === 1000;
+      if (isCiv) {
+        civilians++;
+      } else if (s >= 1 && s <= 8) {
+        officers++;
+      } else {
+        ncos++;
+      }
+
+      const st = (m.job_status || m.status || 'على رأس العمل').trim();
+      if (st.includes('إجازة')) onLeave++;
+      else if (st.includes('موقوف') || st.includes('إيقاف') || st.includes('معلق')) suspended++;
+      else onDuty++;
+    });
+
+    return { total, officers, ncos, civilians, onDuty, onLeave, suspended };
+  };
+
   // Handle Export to Excel/CSV with Arabic UTF-8 BOM
-  const handleExportExcel = () => {
+  const handleExportExcel = (targetList = null) => {
     try {
-      const headers = ['رقم الموظف / المالي', 'الاسم الكامل', 'النوع', 'الوظيفة / الرتبة', 'الرقم الوطني', 'اسم المصرف', 'رقم الحساب', 'الوضع الوظيفي'];
-      const rows = filteredMembers.map(m => [
+      const listToExport = Array.isArray(targetList) ? targetList : filteredMembers;
+      const headers = ['ت', 'الرقم المالي', 'الاسم الكامل', 'النوع', 'الوظيفة / الرتبة', 'الرقم الوطني', 'التبعية / جهة العمل', 'اسم المصرف', 'الفرع', 'رقم الحساب', 'الهاتف', 'الإقامة', 'الوضع الوظيفي'];
+      const rows = listToExport.map((m, idx) => [
+        `"${idx + 1}"`,
         `"${m.financial_number || m.job_number || ''}"`,
         `"${m.name || ''}"`,
         `"${m.type || ''}"`,
-        `"${m.rank || ''}"`,
+        `"${m.rank || m.job_title || ''}"`,
         `"${m.national_id || ''}"`,
+        `"${m.department || ''}"`,
         `"${m.bank_name || ''}"`,
+        `"${m.bank_branch || ''}"`,
         `"${m.account_number || ''}"`,
-        `"${m.status || 'على رأس العمل'}"`
+        `"${m.phone || ''}"`,
+        `"${m.residence || m.tribe_city || ''}"`,
+        `"${m.job_status || m.status || 'على رأس العمل'}"`
       ]);
       const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -345,95 +416,186 @@ export default function ForceSection({
     }
   };
 
-  const handlePrintForceRoster = () => {
-    const today = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
-    const printRows = filteredMembers.slice(0, 32);
+  const handlePrintForceRoster = (scope = rosterScope) => {
+    const targetList = scope === 'filtered' ? filteredMembers : sortedAllMembers;
+    const dayName = getArabicDayName();
+    const fullArabicDate = getArabicDateString();
+    const stats = getRosterStats(targetList);
+
     const html = `
-      <div style="font-family: 'Cairo', sans-serif; direction: rtl; padding: 18px 24px; color: #0a192f; max-width: 820px; margin: 0 auto;">
-        <!-- الشريط الرسمي بألوان العلم الليبي -->
-        <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
-          <div style="flex: 1; background: #e11d48;"></div>
-          <div style="flex: 2; background: #000000;"></div>
-          <div style="flex: 1; background: #16a34a;"></div>
+      <div class="printable-force-roster printable-roster-container" style="font-family: 'Cairo', 'Amiri', -apple-system, sans-serif; direction: rtl; padding: 6px 12px; color: #0a192f; width: 100%; box-sizing: border-box; background: #ffffff;">
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 6mm 8mm;
+          }
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .printable-roster-container {
+              padding: 0 !important;
+              width: 100% !important;
+            }
+            table {
+              page-break-inside: auto !important;
+              break-inside: auto !important;
+            }
+            tr {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            thead {
+              display: table-header-group !important;
+            }
+            tfoot {
+              display: table-footer-group !important;
+            }
+          }
+        </style>
+
+        <!-- Sovereign Header Block (Attached to Table) -->
+        <div class="roster-sovereign-header" style="page-break-inside: avoid !important; break-inside: avoid !important; page-break-after: avoid !important; break-after: avoid !important; margin-bottom: 4px;">
+          <!-- الشريط الرسمي بألوان العلم الليبي -->
+          <div style="height: 4px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 6px;">
+            <div style="flex: 1; background: #e11d48;"></div>
+            <div style="flex: 2; background: #000000;"></div>
+            <div style="flex: 1; background: #16a34a;"></div>
+          </div>
+
+          <!-- الترويسة السيادية الرسمية ثلاثية الأعمدة -->
+          <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 4px; margin-bottom: 6px;">
+            <tr>
+              <td style="text-align: right; vertical-align: middle; width: 32%;">
+                <div style="font-size: 14px; font-weight: 900; color: #1e3a8a; line-height: 1.2;">دولة ليبيــــا</div>
+                <div style="font-size: 13px; font-weight: 800; color: #0a192f; line-height: 1.2;">وزارة الداخليـــــة</div>
+                <div style="font-size: 12px; font-weight: 800; color: #0369a1; line-height: 1.2;">مديرية أمن أوبــــاري</div>
+                <div style="font-size: 10px; font-weight: 700; color: #475569;">قسم شؤون الضباط والأفراد • الشؤون الإدارية والمالية</div>
+              </td>
+              <td style="text-align: center; vertical-align: middle; width: 36%;">
+                <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 58px; height: 58px; object-fit: contain; margin: 0 auto 2px; display: block;" />
+                <div style="display: inline-block; background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%); color: #ffffff; padding: 3px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 900; letter-spacing: 0.5px; border: 1px solid #d4af37;">
+                  كشف القوة العمومية المعتمد
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #b45309; margin-top: 2px;">
+                  قاعدة البيانات الرسمية لقوة منتسبي مديرية أمن أوباري
+                </div>
+              </td>
+              <td style="text-align: left; direction: rtl; vertical-align: middle; width: 32%;">
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 10px; display: inline-block; min-width: 200px;">
+                  <div style="font-size: 11.5px; font-weight: 800; color: #0a192f; margin-bottom: 2px;">
+                    <span style="color: #1e3a8a; font-weight: 900;">اليوم:</span> ${dayName}
+                  </div>
+                  <div style="font-size: 11px; font-weight: 800; color: #0a192f; margin-bottom: 2px;">
+                    <span style="color: #1e3a8a; font-weight: 900;">التاريخ:</span> ${fullArabicDate}
+                  </div>
+                  <div style="font-size: 10px; font-weight: 700; color: #475569;">
+                    <span style="color: #1e3a8a; font-weight: 800;">إجمالي القوة بالكشف:</span> <span style="color: #0284c7; font-weight: 900; font-size: 11.5px;">${targetList.length.toLocaleString('ar-LY')}</span> عضواً
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- شريط الإحصائيات الموجز -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; background: #f1f5f9; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 10px;">
+            <tr>
+              <td style="padding: 3px 6px; text-align: center; border-left: 1px solid #cbd5e1;">
+                <span style="color: #475569; font-weight: 700;">إجمالي القوة:</span>
+                <strong style="color: #0a192f; font-weight: 900; font-size: 11px; margin-right: 4px;">${stats.total}</strong>
+              </td>
+              <td style="padding: 3px 6px; text-align: center; border-left: 1px solid #cbd5e1;">
+                <span style="color: #475569; font-weight: 700;">الضباط:</span>
+                <strong style="color: #1e3a8a; font-weight: 900; font-size: 11px; margin-right: 4px;">${stats.officers}</strong>
+              </td>
+              <td style="padding: 3px 6px; text-align: center; border-left: 1px solid #cbd5e1;">
+                <span style="color: #475569; font-weight: 700;">ضباط الصف والأفراد:</span>
+                <strong style="color: #0369a1; font-weight: 900; font-size: 11px; margin-right: 4px;">${stats.ncos}</strong>
+              </td>
+              <td style="padding: 3px 6px; text-align: center; border-left: 1px solid #cbd5e1;">
+                <span style="color: #475569; font-weight: 700;">الموظفون المدنيون:</span>
+                <strong style="color: #7c3aed; font-weight: 900; font-size: 11px; margin-right: 4px;">${stats.civilians}</strong>
+              </td>
+              <td style="padding: 3px 6px; text-align: center;">
+                <span style="color: #475569; font-weight: 700;">على رأس العمل:</span>
+                <strong style="color: #16a34a; font-weight: 900; font-size: 11px; margin-right: 4px;">${stats.onDuty}</strong>
+              </td>
+            </tr>
+          </table>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; border-bottom: 2.5px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
-          <tr>
-            <td style="text-align: right; vertical-align: middle; width: 38%;">
-              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
-              <div style="font-size: 16px; font-weight: 900; color: #0a192f;">مديرية أمن أوباري</div>
-              <div style="font-size: 11px; font-weight: 700; color: #475569;">قسم شؤون الضباط والأفراد • السجل العام للقوة العمومية</div>
-            </td>
-            <td style="text-align: center; vertical-align: middle; width: 24%;">
-              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 70px; height: 70px; object-fit: contain; margin: 0 auto; display: block;" />
-            </td>
-            <td style="text-align: left; direction: ltr; vertical-align: middle; width: 38%;">
-              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">State of Libya • Ministry of Interior</div>
-              <div style="font-size: 10px; font-weight: 700; color: #0a192f;">Ubari Security Directorate</div>
-              <div style="font-size: 9px; color: #64748b;">Personnel & Force Department</div>
-            </td>
-          </tr>
-        </table>
-
-        <div style="text-align: center; margin-bottom: 14px;">
-          <div style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 4px 20px; border-radius: 6px; font-size: 15px; font-weight: 900;">
-            كشف سجل القوة العمومية المعتمد
-          </div>
-          <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 700;">
-            تاريخ الاستخراج: ${today} | إجمالي القوة المدرجة بالكشف: ${filteredMembers.length} عضواً
-          </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-bottom: 22px; border: 1.5px solid #cbd5e1;">
+        <!-- جدول القوة العمومية المعتمد لجميع العناصر -->
+        <table class="roster-data-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: right; border: 1.5px solid #64748b; margin-bottom: 12px; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: auto !important; break-inside: auto !important;">
           <thead>
-            <tr style="background: #1e3a8a; color: white;">
-              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 32px; text-align: center;">ت</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1;">الاسم الرباعي</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 90px;">الرقم المالي</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 85px;">الرتبة</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1;">التبعية / جهة العمل</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 100px;">المصرف</th>
-              <th style="padding: 7px; border: 1px solid #cbd5e1; width: 85px; text-align: center;">الحالة</th>
+            <tr style="background: #0a192f; color: #ffffff;">
+              <th style="padding: 5px 3px; border: 1px solid #475569; width: 28px; text-align: center; font-weight: 800;">ت</th>
+              <th style="padding: 5px 6px; border: 1px solid #475569; width: 170px; font-weight: 800;">الاسم الرباعي</th>
+              <th style="padding: 5px 4px; border: 1px solid #475569; width: 75px; text-align: center; font-weight: 800;">الرقم المالي</th>
+              <th style="padding: 5px 4px; border: 1px solid #475569; width: 95px; text-align: center; font-weight: 800;">الرقم الوطني</th>
+              <th style="padding: 5px 5px; border: 1px solid #475569; width: 85px; text-align: center; font-weight: 800;">الرتبة / الصفة</th>
+              <th style="padding: 5px 6px; border: 1px solid #475569; width: 125px; font-weight: 800;">التبعية / جهة العمل</th>
+              <th style="padding: 5px 5px; border: 1px solid #475569; width: 105px; font-weight: 800;">المصرف والفرع</th>
+              <th style="padding: 5px 4px; border: 1px solid #475569; width: 95px; text-align: center; font-weight: 800;">رقم الحساب المصرفي</th>
+              <th style="padding: 5px 5px; border: 1px solid #475569; width: 90px; text-align: center; font-weight: 800;">الهاتف / الإقامة</th>
+              <th style="padding: 5px 4px; border: 1px solid #475569; width: 75px; text-align: center; font-weight: 800;">الحالة الوظيفية</th>
             </tr>
           </thead>
           <tbody>
-            ${printRows.map((m, idx) => `
-              <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${idx + 1}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #0a192f;">${m.name}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1; font-family: monospace; color: #0284c7; font-weight: bold;">${m.financial_number || m.job_number || '---'}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: 700; color: #1e3a8a;">${m.job_title || m.rank || 'شرطي'}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.department || '---'}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1;">${m.bank_name || '---'}</td>
-                <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #15803d;">${m.job_status || m.status || 'على رأس العمل'}</td>
+            ${targetList.map((m, idx) => `
+              <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; page-break-inside: avoid; break-inside: avoid;">
+                <td style="padding: 3.5px 2px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+                <td style="padding: 3.5px 6px; border: 1px solid #cbd5e1; font-weight: 800; color: #0a192f; white-space: nowrap;">${m.name}</td>
+                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0284c7; font-weight: 800; font-size: 10px;">${m.financial_number || m.job_number || '---'}</td>
+                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #1e293b; font-weight: 700; font-size: 9.5px;">${m.national_id || '---'}</td>
+                <td style="padding: 3.5px 4px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #1e3a8a;">${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
+                <td style="padding: 3.5px 6px; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">${m.department || 'مديرية أمن أوباري'}</td>
+                <td style="padding: 3.5px 5px; border: 1px solid #cbd5e1; color: #334155; font-size: 9px;">${[m.bank_name, m.bank_branch].filter(Boolean).join(' - ') || '---'}</td>
+                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0f172a; font-weight: 700; font-size: 9.5px;">${m.account_number || '---'}</td>
+                <td style="padding: 3.5px 4px; border: 1px solid #cbd5e1; text-align: center; color: #475569; font-size: 9px;">${m.phone || m.residence || m.tribe_city || '---'}</td>
+                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: ${(m.job_status || m.status || '').includes('إجازة') ? '#d97706' : (m.job_status || m.status || '').includes('موقوف') ? '#dc2626' : '#15803d'}; font-size: 9px;">${m.job_status || m.status || 'على رأس العمل'}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
 
         <!-- مربعات التوقيعات والختم المعتمد -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 14px; page-break-inside: avoid; break-inside: avoid;">
           <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a; margin-bottom: 35px;">مسؤول شؤون القوة</div>
-              <div style="font-weight: 800; font-size: 11.5px; border-top: 1px dashed #94a3b8; padding-top: 4px;">نقيب / علي محمد البشير</div>
+            <td style="width: 28%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">مسؤول شؤون القوة والتحريات</div>
+              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #0a192f;">نقيب / علي محمد البشير</div>
             </td>
-            <td style="width: 34%; vertical-align: middle;">
-              <div style="width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
+            <td style="width: 24%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">رئيس قسم الشؤون الإدارية والمالية</div>
+              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #0a192f;">عقيد / إبراهيم عبدالسلام</div>
+            </td>
+            <td style="width: 20%; vertical-align: middle;">
+              <div style="width: 72px; height: 72px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.3; background: rgba(30,58,138,0.03);">
                 <span>وزارة الداخلية</span>
-                <span style="font-size: 7.5px; color: #0f172a; font-weight: 900;">مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 6.5px;">ختم رسمي</span>
+                <span style="font-size: 8px; color: #0a192f; font-weight: 900;">مديرية أمن أوباري</span>
+                <span style="color: #dc2626; font-size: 7px; font-weight: 900;">الختم الرسمي</span>
               </div>
             </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير أمن أوباري</div>
-              <div style="font-weight: 800; font-size: 11.5px; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #1e3a8a;">لواء / موسى سعد البدين</div>
+            <td style="width: 28%; vertical-align: top;">
+              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">يعتمد مدير أمن أوباري</div>
+              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #1e3a8a;">لواء / موسى سعد البدين</div>
             </td>
           </tr>
         </table>
+
+        <!-- تذييل الوثيقة الرسمية المعتمدة -->
+        <div style="border-top: 1px solid #cbd5e1; margin-top: 12px; padding-top: 5px; display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
+          <div>وثيقة أمنية رسمية معتمدة صادرة عن منظومة مديرية أمن أوباري المركزية - وزارة الداخلية - دولة ليبيا</div>
+          <div>تاريخ الاستخراج: ${dayName} ${fullArabicDate} | عدد السجلات المقيدة: ${targetList.length}</div>
+        </div>
       </div>
     `;
-    printDocumentInIframe(html, 'كشف_القوة_العمومية_أوباري');
+
+    const scopeTitle = scope === 'filtered' ? 'المفلترة' : 'العمومية_الكاملة';
+    printDocumentInIframe(html, `كشف_القوة_${scopeTitle}_مديرية_أمن_أوباري`);
   };
 
   return (
@@ -487,7 +649,7 @@ export default function ForceSection({
           <button
             type="button"
             className="btn-toolbar-print"
-            onClick={handlePrintForceRoster}
+            onClick={() => setShowRosterModal(true)}
           >
             <Printer size={16} />
             <span>طباعة القوة العمومية</span>
@@ -1125,7 +1287,7 @@ export default function ForceSection({
           <button
             type="button"
             className="btn-toolbar-print"
-            onClick={handlePrintForceRoster}
+            onClick={() => setShowRosterModal(true)}
           >
             <Printer size={16} />
             <span>طباعة القوة العمومية</span>
@@ -1460,6 +1622,432 @@ export default function ForceSection({
           </div>
         )}
       </div>
+
+      {/* Certified General Force Roster Modal (كشف القوة العمومية المعتمد) */}
+      {showRosterModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10600,
+            padding: '16px'
+          }}
+          onClick={() => setShowRosterModal(false)}
+        >
+          <div
+            style={{
+              maxWidth: '1320px',
+              width: '98%',
+              maxHeight: '94vh',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.5)',
+              background: '#ffffff',
+              border: '1.5px solid #d4af37'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 4-Color Libyan Ribbon */}
+            <div style={{ height: '6px', width: '100%', display: 'flex' }}>
+              <div style={{ flex: 1, background: '#e11d48' }} />
+              <div style={{ flex: 2, background: '#000000' }} />
+              <div style={{ flex: 1, background: '#16a34a' }} />
+            </div>
+
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
+              color: '#ffffff',
+              padding: '14px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '2px solid #d4af37'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <img
+                  src={MOI_LOGO_BASE64}
+                  alt="شعار وزارة الداخلية"
+                  style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                />
+                <div>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>كشف القوة العمومية المعتمد</span>
+                    <span style={{
+                      background: 'rgba(212, 175, 55, 0.2)',
+                      color: '#d4af37',
+                      border: '1px solid #d4af37',
+                      padding: '2px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11.5px',
+                      fontWeight: 800
+                    }}>
+                      السجل العام المعتمد
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#93c5fd', marginTop: '2px' }}>
+                    مديرية أمن أوباري • قسم شؤون الضباط والأفراد • وزارة الداخلية - دولة ليبيا
+                  </div>
+                </div>
+              </div>
+
+              {/* Day & Date Banner */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(4px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '10px',
+                padding: '6px 16px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#fef08a' }}>
+                  اليوم: {getArabicDayName()}
+                </div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
+                  الموافق: {getArabicDateString()}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowRosterModal(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  border: 'none',
+                  color: '#ffffff',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                title="إغلاق"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Scope Selector & Toolbar Actions */}
+            <div style={{
+              background: '#f8fafc',
+              padding: '12px 22px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              {/* Scope Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>نطاق الكشف المطلوب:</span>
+                <button
+                  type="button"
+                  onClick={() => setRosterScope('all')}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: rosterScope === 'all' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
+                    background: rosterScope === 'all' ? '#1e3a8a' : '#ffffff',
+                    color: rosterScope === 'all' ? '#ffffff' : '#334155',
+                    transition: 'all 0.2s',
+                    boxShadow: rosterScope === 'all' ? '0 2px 6px rgba(30, 58, 138, 0.3)' : 'none'
+                  }}
+                >
+                  كامل القوة العمومية ({sortedAllMembers.length.toLocaleString('ar-LY')} منتسباً)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRosterScope('filtered')}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: rosterScope === 'filtered' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
+                    background: rosterScope === 'filtered' ? '#1e3a8a' : '#ffffff',
+                    color: rosterScope === 'filtered' ? '#ffffff' : '#334155',
+                    transition: 'all 0.2s',
+                    boxShadow: rosterScope === 'filtered' ? '0 2px 6px rgba(30, 58, 138, 0.3)' : 'none'
+                  }}
+                >
+                  النتائج المفلترة بالبحث ({filteredMembers.length.toLocaleString('ar-LY')} منتسباً)
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
+                    handleExportExcel(target);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#ffffff',
+                    color: '#059669',
+                    border: '1.5px solid #059669',
+                    padding: '7px 16px',
+                    borderRadius: '8px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <FileSpreadsheet size={16} />
+                  <span>تصدير Excel (CSV)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handlePrintForceRoster(rosterScope)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                    color: '#ffffff',
+                    border: '1px solid #d4af37',
+                    padding: '7px 20px',
+                    borderRadius: '8px',
+                    fontWeight: 800,
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)'
+                  }}
+                >
+                  <Printer size={18} />
+                  <span>طباعة الكشف الرسمي الكامل (A4 أفقي)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Statistics Bar */}
+            {(() => {
+              const currentList = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
+              const currentStats = getRosterStats(currentList);
+              return (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '8px',
+                  padding: '10px 22px',
+                  background: '#ffffff',
+                  borderBottom: '1px solid #e2e8f0'
+                }}>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '6px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 700 }}>إجمالي القوة بالكشف</div>
+                    <div style={{ fontSize: '17px', color: '#1e3a8a', fontWeight: 900 }}>{currentStats.total.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>عضواً</span></div>
+                  </div>
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '6px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700 }}>الضباط</div>
+                    <div style={{ fontSize: '17px', color: '#15803d', fontWeight: 900 }}>{currentStats.officers.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>ضابطاً</span></div>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '6px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>ضباط الصف والأفراد</div>
+                    <div style={{ fontSize: '17px', color: '#0369a1', fontWeight: 900 }}>{currentStats.ncos.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>فرداً</span></div>
+                  </div>
+                  <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '8px', padding: '6px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#6b21a8', fontWeight: 700 }}>الموظفون المدنيون</div>
+                    <div style={{ fontSize: '17px', color: '#7c3aed', fontWeight: 900 }}>{currentStats.civilians.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>موظفاً</span></div>
+                  </div>
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '6px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#065f46', fontWeight: 700 }}>على رأس العمل</div>
+                    <div style={{ fontSize: '17px', color: '#059669', fontWeight: 900 }}>{currentStats.onDuty.toLocaleString('ar-LY')} <span style={{ fontSize: '11px' }}>مباشراً</span></div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Table Body (Scrollable Live Roster Preview) */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 22px', background: '#f8fafc' }}>
+              {/* Quick Search inside Modal */}
+              <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  flex: 1,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <Search size={16} style={{ position: 'absolute', right: '12px', color: '#94a3b8' }} />
+                  <input
+                    type="text"
+                    placeholder="تصفية سريعة داخل الكشف بالاسم أو الرقم المالي أو الوطني أو المصرف أو جهة العمل..."
+                    value={rosterModalSearch}
+                    onChange={(e) => setRosterModalSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 36px 8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                      fontFamily: 'Cairo, sans-serif'
+                    }}
+                  />
+                </div>
+                {rosterModalSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setRosterModalSearch('')}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#e2e8f0',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    مسح البحث
+                  </button>
+                )}
+              </div>
+
+              {/* The Live Manifest Table */}
+              <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'right' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <tr style={{ background: '#0a192f', color: '#ffffff' }}>
+                        <th style={{ padding: '8px 6px', borderBottom: '2px solid #d4af37', width: '38px', textAlign: 'center' }}>ت</th>
+                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>الاسم الرباعي</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '90px' }}>الرقم المالي</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '110px' }}>الرقم الوطني</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '100px' }}>الرتبة / الصفة</th>
+                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>التبعية / جهة العمل</th>
+                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>المصرف والفرع</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '110px' }}>رقم الحساب</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '100px' }}>الهاتف / الإقامة</th>
+                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '90px' }}>الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const baseList = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
+                        const displayList = rosterModalSearch.trim()
+                          ? baseList.filter(m => {
+                              const term = rosterModalSearch.toLowerCase();
+                              return (
+                                (m.name && m.name.toLowerCase().includes(term)) ||
+                                (m.financial_number && String(m.financial_number).includes(term)) ||
+                                (m.job_number && String(m.job_number).toLowerCase().includes(term)) ||
+                                (m.national_id && String(m.national_id).includes(term)) ||
+                                (m.bank_name && m.bank_name.toLowerCase().includes(term)) ||
+                                (m.account_number && String(m.account_number).includes(term)) ||
+                                (m.department && m.department.toLowerCase().includes(term)) ||
+                                (m.job_title && m.job_title.toLowerCase().includes(term)) ||
+                                (m.rank && m.rank.toLowerCase().includes(term))
+                              );
+                            })
+                          : baseList;
+
+                        return displayList.map((m, idx) => (
+                          <tr
+                            key={m.id || idx}
+                            style={{
+                              background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                              borderBottom: '1px solid #f1f5f9'
+                            }}
+                          >
+                            <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 800, color: '#64748b' }}>{idx + 1}</td>
+                            <td style={{ padding: '6px 10px', fontWeight: 800, color: '#0a192f' }}>{m.name}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#0284c7', fontWeight: 800 }}>{m.financial_number || m.job_number || '---'}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#1e293b', fontWeight: 700 }}>{m.national_id || '---'}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>{m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
+                            <td style={{ padding: '6px 10px', color: '#334155' }}>{m.department || 'مديرية أمن أوباري'}</td>
+                            <td style={{ padding: '6px 10px', color: '#334155', fontSize: '11.5px' }}>{[m.bank_name, m.bank_branch].filter(Boolean).join(' - ') || '---'}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#0f172a', fontWeight: 700 }}>{m.account_number || '---'}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', color: '#475569', fontSize: '11px' }}>{m.phone || m.residence || m.tribe_city || '---'}</td>
+                            <td style={{
+                              padding: '6px 8px',
+                              textAlign: 'center',
+                              fontWeight: 800,
+                              color: (m.job_status || m.status || '').includes('إجازة') ? '#d97706' : (m.job_status || m.status || '').includes('موقوف') ? '#dc2626' : '#15803d'
+                            }}>
+                              {m.job_status || m.status || 'على رأس العمل'}
+                            </td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              background: '#ffffff',
+              padding: '12px 22px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
+                كشف رسمي معتمد • اليوم: {getArabicDayName()} • التاريخ: {getArabicDateString()} • مديرية أمن أوباري
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRosterModal(false)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    background: '#e2e8f0',
+                    color: '#334155',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  إغلاق
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePrintForceRoster(rosterScope)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 22px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                    color: '#ffffff',
+                    border: '1px solid #d4af37',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)'
+                  }}
+                >
+                  <Printer size={16} />
+                  <span>طباعة الكشف الرسمي الكامل (A4 أفقي)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
