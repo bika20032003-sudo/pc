@@ -3093,12 +3093,14 @@ export default function App() {
         />
 
         {/* Employee Self-Service Inquiry Portal Modal */}
-        <EmployeeInquiryModal
-          isOpen={showInquiryModal}
-          onClose={() => setShowInquiryModal(false)}
-          forceMembers={forceMembers}
-          onUpdateMember={handleSelfUpdateForceMember}
-        />
+        {showInquiryModal && (
+          <EmployeeInquiryModal
+            isOpen={showInquiryModal}
+            onClose={() => setShowInquiryModal(false)}
+            forceMembers={forceMembers}
+            onUpdateMember={handleSelfUpdateForceMember}
+          />
+        )}
       </div>
     );
   }
@@ -3339,12 +3341,14 @@ export default function App() {
       </div>
 
       {/* Employee Self-Service Inquiry Portal Modal */}
-      <EmployeeInquiryModal
-        isOpen={showInquiryModal}
-        onClose={() => setShowInquiryModal(false)}
-        forceMembers={forceMembers}
-        onUpdateMember={handleSelfUpdateForceMember}
-      />
+      {showInquiryModal && (
+        <EmployeeInquiryModal
+          isOpen={showInquiryModal}
+          onClose={() => setShowInquiryModal(false)}
+          forceMembers={forceMembers}
+          onUpdateMember={handleSelfUpdateForceMember}
+        />
+      )}
     </div>
   );
 }

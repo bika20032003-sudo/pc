@@ -81,9 +81,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  if (!isOpen) return null;
-
-  // Calculate profile completeness score
+  // Calculate profile completeness score (Hooks must be called before any return!)
   const completeness = useMemo(() => {
     if (!verifiedMember) return 0;
     const fields = [
@@ -100,6 +98,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     const filled = fields.filter((f) => f && String(f).trim() !== '').length;
     return Math.round((filled / fields.length) * 100);
   }, [verifiedMember, formData]);
+
+  if (!isOpen) return null;
 
   // Handle Search Verification - Strictly 1-to-1 matching to prevent mixups
   const handleSearch = (e) => {

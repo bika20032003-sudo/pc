@@ -56,9 +56,29 @@ export default class ErrorBoundary extends React.Component {
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0a192f', marginBottom: '8px' }}>
             نظام الحماية الأمنية الموحد | تم احتواء الخطأ البرمجي بنجاح
           </h2>
-          <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '520px', marginBottom: '22px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '520px', marginBottom: '18px', lineHeight: 1.6 }}>
             تم عزل الخطأ غير المتوقع لضمان استقرار المنظومة وحماية بيانات الجلسة وسجلات القوة العمومية. يمكنك متابعة العمل أو إعادة تحميل الصفحة فوراً.
           </p>
+          {this.state.error && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              marginBottom: '18px',
+              maxWidth: '650px',
+              width: '100%',
+              textAlign: 'left',
+              direction: 'ltr',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              color: '#991b1b',
+              overflowX: 'auto',
+              wordBreak: 'break-all'
+            }}>
+              <strong>Error:</strong> {this.state.error.message || String(this.state.error)}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
               type="button"
