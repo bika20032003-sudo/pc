@@ -225,7 +225,27 @@ export async function initDatabase() {
       );
     `);
 
-    // 8. إنشاء الفهارس الذكية لسرعة البحث الفوري بالاسم والرقم الوطني
+    // 8. جدول سجل الأسلحة والذخائر والعهد الرسمية
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS weapons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        weapon_type TEXT NOT NULL,
+        weapon_number TEXT NOT NULL UNIQUE,
+        serial_number TEXT,
+        caliber TEXT,
+        ammo_count INTEGER DEFAULT 0,
+        magazines_count INTEGER DEFAULT 0,
+        receiving_entity TEXT NOT NULL,
+        receiver_name TEXT,
+        status TEXT DEFAULT 'صالح للعمل ومصروف',
+        issue_date TEXT,
+        notes TEXT,
+        created_at TEXT DEFAULT (datetime('now', 'localtime')),
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+    `);
+
+    // 9. إنشاء الفهارس الذكية لسرعة البحث الفوري بالاسم والرقم الوطني
     await dbInstance.exec(`
       CREATE INDEX IF NOT EXISTS idx_force_national_id ON force_members(national_id);
       CREATE INDEX IF NOT EXISTS idx_force_job_number ON force_members(job_number);
@@ -243,6 +263,10 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_mail_ref ON mail_records(reference);
       CREATE INDEX IF NOT EXISTS idx_mail_status ON mail_records(status);
       CREATE INDEX IF NOT EXISTS idx_mail_created_at ON mail_records(created_at);
+      CREATE INDEX IF NOT EXISTS idx_weapons_number ON weapons(weapon_number);
+      CREATE INDEX IF NOT EXISTS idx_weapons_type ON weapons(weapon_type);
+      CREATE INDEX IF NOT EXISTS idx_weapons_entity ON weapons(receiving_entity);
+      CREATE INDEX IF NOT EXISTS idx_weapons_receiver ON weapons(receiver_name);
     `);
 
     // 8. التحقق من وجود مستخدم المسؤول الافتراضي
@@ -596,6 +620,53 @@ export async function initDatabase() {
       console.log('✅ تم تهيئة وترحيل سجلات البريد الصادر والوارد والمحال إلى SQLite بنجاح.');
     } else {
       console.log(`✅ قاعدة بيانات البريد والمراسلات جاهزة (${mailCountRow.c} سجلاً)`);
+    }
+
+    // 13. ترحيل سجل الأسلحة والذخائر (69 قطعة سلاح) إذا كان الجدول فارغاً
+    const weaponCountRow = await dbInstance.get('SELECT COUNT(*) as c FROM weapons');
+    if (!weaponCountRow || weaponCountRow.c === 0) {
+      const weaponsJsonPath = path.resolve(__dirname, '../data/weapons_data.json');
+      if (fs.existsSync(weaponsJsonPath)) {
+        try {
+          const raw = fs.readFileSync(weaponsJsonPath, 'utf8');
+          const weaponsList = JSON.parse(raw);
+          console.log(`🔫 جارٍ ترحيل ${weaponsList.length} قطعة سلاح وذخيرة إلى SQLite...`);
+
+          await dbInstance.run('BEGIN TRANSACTION;');
+          const wStmt = await dbInstance.prepare(`
+            INSERT INTO weapons (
+              id, weapon_type, weapon_number, serial_number, caliber,
+              ammo_count, magazines_count, receiving_entity, receiver_name,
+              status, issue_date, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+
+          for (const w of weaponsList) {
+            await wStmt.run([
+              w.id,
+              w.weapon_type || w.WeaponType || 'سلاح ناري',
+              String(w.weapon_number || w.WeaponNumber || w.serial_number || '').trim(),
+              String(w.serial_number || w.weapon_number || w.WeaponNumber || '').trim(),
+              w.caliber || (String(w.weapon_type || w.WeaponType).includes('مسدس') ? '9x19 ملم' : '7.62x39 ملم'),
+              parseInt(w.ammo_count || w.AmmoCount, 10) || 0,
+              parseInt(w.magazines_count || w.MagazinesCount, 10) || 0,
+              w.receiving_entity || w.ReceivingEntity || 'مخزن المديرية',
+              w.receiver_name || w.ReceiverName || '',
+              w.status || 'صالح للعمل ومصروف',
+              w.issue_date || (w.IssueDate ? String(w.IssueDate).split('T')[0] : '2026-11-01'),
+              w.notes || 'عهدة رسمية مقيدة بسجلات مديرية أمن أوباري'
+            ]);
+          }
+          await wStmt.finalize();
+          await dbInstance.run('COMMIT;');
+          console.log(`✅ تم ترحيل ${weaponsList.length} قطعة سلاح وذخيرة إلى SQLite بنجاح.`);
+        } catch (err) {
+          await dbInstance.run('ROLLBACK;');
+          console.error('❌ خطأ في ترحيل الأسلحة والذخائر:', err.message);
+        }
+      }
+    } else {
+      console.log(`✅ قاعدة بيانات الأسلحة والذخائر جاهزة (${weaponCountRow.c} قطعة سلاح)`);
     }
 
     isConnected = true;

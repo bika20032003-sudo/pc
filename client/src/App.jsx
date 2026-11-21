@@ -53,11 +53,13 @@ import {
   Key,
   ShieldCheck,
   User,
-  Share2
+  Share2,
+  Crosshair
 } from 'lucide-react';
 
 import importedForceData from './data/force_data.json';
 import VehiclesSection from './components/VehiclesSection';
+import WeaponsSection from './components/WeaponsSection';
 import ForceSection from './components/ForceSection';
 import DashboardSection from './components/DashboardSection';
 import OfficerCardModal from './components/OfficerCardModal';
@@ -78,6 +80,7 @@ export const SECTIONS = [
   { id: 'operations', name: 'غرفة العمليات', icon: Radio },
   { id: 'force', name: 'القوة العمومية', icon: Users },
   { id: 'vehicles', name: 'الآليات والمركبات', icon: Car },
+  { id: 'weapons', name: 'الأسلحة والذخائر والعهد', icon: Crosshair },
   { id: 'leaves', name: 'سجل الإجازات', icon: Plane },
   { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
   { id: 'referred', name: 'البريد المحال (تأشيرات)', icon: Share2 },
@@ -1575,6 +1578,10 @@ export default function App() {
 
     if (activeSection === 'vehicles') {
       return <VehiclesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'weapons') {
+      return <WeaponsSection user={user} forceMembers={forceMembers} />;
     }
 
     if (activeSection === 'leaves') {

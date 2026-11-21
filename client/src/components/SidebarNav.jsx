@@ -36,10 +36,10 @@ export const SECTION_DIVISIONS = [
   },
   {
     id: 'field_ops',
-    title: 'الانتشار الميداني والآليات',
+    title: 'الانتشار الميداني والآليات والعهد',
     icon: Car,
     color: '#b91c1c',
-    itemIds: ['vehicles']
+    itemIds: ['vehicles', 'weapons']
   },
   {
     id: 'comms',

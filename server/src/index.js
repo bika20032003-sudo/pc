@@ -9,6 +9,7 @@ import vehicleRoutes from './routes/vehicleRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
 import mailRoutes from './routes/mailRoutes.js';
+import weaponsRoutes from './routes/weaponsRoutes.js';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/mail', mailRoutes);
+app.use('/api/weapons', weaponsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
