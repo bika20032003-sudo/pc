@@ -274,7 +274,7 @@ export default function App() {
     // 3. Sync to backend API if running
     try {
       const target = forceMembers.find((m) => Number(m.id) === Number(memberId));
-      const res = await fetch('http://localhost:5050/api/force/self-update', {
+      const res = await fetch('/api/force/self-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   X,
@@ -22,7 +22,14 @@ import {
   ChevronRight,
   Hash,
   Activity,
-  FileCheck2
+  FileCheck2,
+  GraduationCap,
+  Languages,
+  BookOpen,
+  FileText,
+  Check,
+  AlertTriangle,
+  Filter
 } from 'lucide-react';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
@@ -61,6 +68,42 @@ const SHOE_SIZES = ['39', '40', '41', '42', '43', '44', '45', '46', '47', '48'];
 const HEADWEAR_SIZES = ['54', '55', '56', '57', '58', '59', '60', '61'];
 const SHIRT_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '38', '39', '40', '41', '42', '43', '44', '45'];
 
+// Education levels preset
+const EDUCATION_LEVELS = [
+  'علوم شرطية وأمنية',
+  'علوم عسكرية',
+  'ليسانس قانون / حقوق',
+  'بكالوريوس علوم أمنية',
+  'بكالوريوس هندسة / تقنية معلومات',
+  'بكالوريوس إدارة واقتصاد',
+  'دبلوم عالي',
+  'دبلوم متوسط',
+  'شهادة ثانوية عامة',
+  'شهادة إعدادية',
+  'تعليم أساسي / ابتدائي',
+  'دراسات عليا (ماجستير/دكتوراه)'
+];
+
+// Common languages preset
+const LANGUAGES_OPTIONS = [
+  'العربية',
+  'العربية والإنجليزية',
+  'العربية والفرنسية',
+  'العربية والطارقية (التماشق)',
+  'العربية ولغات أخرى'
+];
+
+// Health conditions preset
+const HEALTH_CONDITIONS = [
+  'سليم ولائق صحياً',
+  'ضغط دم مزمن',
+  'سكري',
+  'أمراض قلب وشرايين',
+  'حساسية / ربو مزمن',
+  'إصابة عمل سابقة',
+  'أخرى (يرجى التدوين في الملاحظات)'
+];
+
 export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [], onUpdateMember }) {
   // Search States
   const [searchInput, setSearchInput] = useState('');
@@ -73,33 +116,77 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
   // Editable Form Data
   const [formData, setFormData] = useState({});
 
-  // Active Tab for Form
-  const [activeTab, setActiveTab] = useState('contact'); // 'contact' | 'military' | 'medical' | 'banking'
+  // Active Tab for Form: 'family' | 'contact' | 'education' | 'military' | 'banking'
+  const [activeTab, setActiveTab] = useState('family');
+
+  // Filter to show empty fields only
+  const [showEmptyOnly, setShowEmptyOnly] = useState(false);
 
   // Submission Status
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // Calculate profile completeness score (Hooks must be called before any return!)
+  // Definition of all editable fields to track completeness & empty status
+  const TRACKED_FIELDS = useMemo(() => [
+    { key: 'phone', label: 'رقم الهاتف الشخصي', tab: 'contact' },
+    { key: 'emergency_contact', label: 'هاتف الطوارئ / قريب', tab: 'contact' },
+    { key: 'residence', label: 'محل الإقامة الفعلي', tab: 'contact' },
+    { key: 'tribe_city', label: 'القبيلة / المدينة', tab: 'contact' },
+    { key: 'mother_name', label: 'اسم الأم ثلاثياً', tab: 'family' },
+    { key: 'marital_status', label: 'الحالة الاجتماعية', tab: 'family' },
+    { key: 'wife_name', label: 'اسم الزوجة', tab: 'family', conditional: (d) => d.marital_status === 'متزوج' },
+    { key: 'children_count', label: 'عدد الأبناء', tab: 'family' },
+    { key: 'family_book', label: 'رقم كتيب العائلة', tab: 'family' },
+    { key: 'family_paper', label: 'رقم ورقة العائلة', tab: 'family' },
+    { key: 'family_record', label: 'رقم قيد العائلة', tab: 'family' },
+    { key: 'passport_number', label: 'رقم الجواز', tab: 'family' },
+    { key: 'birth_place', label: 'مكان الميلاد', tab: 'family' },
+    { key: 'birth_date', label: 'تاريخ الميلاد', tab: 'family' },
+    { key: 'education_level', label: 'المستوى الدراسي (المؤهل)', tab: 'education' },
+    { key: 'languages', label: 'اللغات التي يجيدها', tab: 'education' },
+    { key: 'blood_type', label: 'فصيلة الدم', tab: 'military' },
+    { key: 'suit_number', label: 'رقم / مقاس البدلة', tab: 'military' },
+    { key: 'shoe_size', label: 'رقم الحذاء العسكري', tab: 'military' },
+    { key: 'headwear_size', label: 'مقاس غطاء الرأس', tab: 'military' },
+    { key: 'shirt_size', label: 'مقاس القميص', tab: 'military' },
+    { key: 'height', label: 'الطول (سم)', tab: 'military' },
+    { key: 'weight', label: 'الوزن (كجم)', tab: 'military' },
+    { key: 'diseases', label: 'الحالة الصحية / الأمراض', tab: 'military' },
+    { key: 'bank_name', label: 'اسم المصرف', tab: 'banking' },
+    { key: 'bank_branch', label: 'فرع المصرف', tab: 'banking' },
+    { key: 'account_number', label: 'رقم الحساب المصرفي', tab: 'banking' }
+  ], []);
+
+  // Compute list of currently empty fields for this employee
+  const emptyFields = useMemo(() => {
+    if (!verifiedMember) return [];
+    return TRACKED_FIELDS.filter((f) => {
+      if (f.conditional && !f.conditional(formData)) return false;
+      const val = formData[f.key];
+      return !val || String(val).trim() === '' || String(val).trim() === '-';
+    });
+  }, [verifiedMember, formData, TRACKED_FIELDS]);
+
+  // Compute profile completeness score (Hooks must be called before any return!)
   const completeness = useMemo(() => {
     if (!verifiedMember) return 0;
-    const fields = [
-      formData.phone,
-      formData.residence,
-      formData.blood_type,
-      formData.suit_number && formData.suit_number !== '-',
-      formData.shoe_size,
-      formData.headwear_size,
-      formData.marital_status,
-      formData.bank_name,
-      formData.account_number
-    ];
-    const filled = fields.filter((f) => f && String(f).trim() !== '').length;
-    return Math.round((filled / fields.length) * 100);
-  }, [verifiedMember, formData]);
+    const applicableFields = TRACKED_FIELDS.filter((f) => {
+      if (f.conditional && !f.conditional(formData)) return false;
+      return true;
+    });
+    if (applicableFields.length === 0) return 100;
+    const filledCount = applicableFields.length - emptyFields.length;
+    return Math.round((filledCount / applicableFields.length) * 100);
+  }, [verifiedMember, TRACKED_FIELDS, emptyFields, formData]);
 
   if (!isOpen) return null;
+
+  // Helper to check if a specific field is empty
+  const isFieldEmpty = (key) => {
+    const val = formData[key];
+    return !val || String(val).trim() === '' || String(val).trim() === '-';
+  };
 
   // Handle Search Verification - Strictly 1-to-1 matching to prevent mixups
   const handleSearch = (e) => {
@@ -139,25 +226,37 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     // Strict 1-to-1 isolation: clone the record into detached state
     setVerifiedMember(match);
     setFormData({
-      phone: match.phone || '',
+      phone: match.phone && match.phone !== '-' ? match.phone : '',
       emergency_contact: match.emergency_contact || match.notes || '',
-      residence: match.residence || '',
-      tribe_city: match.tribe_city || '',
-      blood_type: match.blood_type || '',
+      residence: match.residence && match.residence !== '-' ? match.residence : '',
+      tribe_city: match.tribe_city && match.tribe_city !== '-' ? match.tribe_city : '',
+      mother_name: match.mother_name && match.mother_name !== '-' ? match.mother_name : '',
+      marital_status: match.marital_status && match.marital_status !== '-' ? match.marital_status : 'متزوج',
+      wife_name: match.wife_name && match.wife_name !== '-' ? match.wife_name : '',
+      children_count: match.children_count !== undefined && match.children_count !== '-' ? String(match.children_count) : '',
+      family_book: match.family_book && match.family_book !== '-' ? match.family_book : '',
+      family_paper: match.family_paper && match.family_paper !== '-' ? match.family_paper : '',
+      family_record: match.family_record && match.family_record !== '-' ? match.family_record : '',
+      passport_number: match.passport_number && match.passport_number !== '-' ? match.passport_number : '',
+      birth_place: match.birth_place && match.birth_place !== '-' ? match.birth_place : '',
+      birth_date: match.birth_date && match.birth_date !== '-' ? match.birth_date : '',
+      education_level: match.education_level && match.education_level !== '-' ? match.education_level : '',
+      languages: match.languages && match.languages !== '-' ? match.languages : 'العربية',
+      blood_type: match.blood_type && match.blood_type !== '-' ? match.blood_type : '',
       suit_number: match.suit_number && match.suit_number !== '-' ? match.suit_number : '',
-      shoe_size: match.shoe_size || '',
-      headwear_size: match.headwear_size || '',
-      shirt_size: match.shirt_size || '',
-      marital_status: match.marital_status || 'متزوج',
-      children_count: match.children_count !== undefined ? String(match.children_count) : '0',
-      wife_name: match.wife_name || '',
-      mother_name: match.mother_name || '',
-      birth_date: match.birth_date || '',
-      birth_place: match.birth_place || '',
-      bank_name: match.bank_name || '',
-      bank_branch: match.bank_branch || '',
-      account_number: match.account_number || ''
+      shoe_size: match.shoe_size && match.shoe_size !== '-' ? match.shoe_size : '',
+      headwear_size: match.headwear_size && match.headwear_size !== '-' ? match.headwear_size : '',
+      shirt_size: match.shirt_size && match.shirt_size !== '-' ? match.shirt_size : '',
+      height: match.height && match.height !== '-' ? match.height : '',
+      weight: match.weight && match.weight !== '-' ? match.weight : '',
+      diseases: match.diseases && match.diseases !== '-' ? match.diseases : 'سليم ولائق صحياً',
+      bank_name: match.bank_name && match.bank_name !== '-' ? match.bank_name : '',
+      bank_branch: match.bank_branch && match.bank_branch !== '-' ? match.bank_branch : '',
+      account_number: match.account_number && match.account_number !== '-' ? match.account_number : ''
     });
+
+    // Default active tab to where the first empty field resides
+    setActiveTab('family');
   };
 
   // Reset to search another employee
@@ -168,6 +267,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitSuccess(false);
     setSubmitError(null);
     setSearchInput('');
+    setShowEmptyOnly(false);
   };
 
   // Handle Input Changes
@@ -187,23 +287,33 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitError(null);
 
     try {
-      // Build clean update payload containing ONLY whitelisted editable fields
+      // Build clean update payload containing all non-sovereign personnel details
       const updates = {
         phone: formData.phone?.trim() || '',
         emergency_contact: formData.emergency_contact?.trim() || '',
+        notes: formData.emergency_contact?.trim() || '',
         residence: formData.residence?.trim() || '',
         tribe_city: formData.tribe_city?.trim() || '',
+        mother_name: formData.mother_name?.trim() || '',
+        marital_status: formData.marital_status || '',
+        wife_name: formData.wife_name?.trim() || '',
+        children_count: formData.children_count || '0',
+        family_book: formData.family_book?.trim() || '',
+        family_paper: formData.family_paper?.trim() || '',
+        family_record: formData.family_record?.trim() || '',
+        passport_number: formData.passport_number?.trim() || '',
+        birth_place: formData.birth_place?.trim() || '',
+        birth_date: formData.birth_date || '',
+        education_level: formData.education_level?.trim() || '',
+        languages: formData.languages?.trim() || '',
         blood_type: formData.blood_type || '',
         suit_number: formData.suit_number || '',
         shoe_size: formData.shoe_size || '',
         headwear_size: formData.headwear_size || '',
         shirt_size: formData.shirt_size || '',
-        marital_status: formData.marital_status || '',
-        children_count: formData.children_count || '0',
-        wife_name: formData.wife_name?.trim() || '',
-        mother_name: formData.mother_name?.trim() || '',
-        birth_date: formData.birth_date || '',
-        birth_place: formData.birth_place?.trim() || '',
+        height: formData.height || '',
+        weight: formData.weight || '',
+        diseases: formData.diseases || '',
         bank_name: formData.bank_name || '',
         bank_branch: formData.bank_branch?.trim() || '',
         account_number: formData.account_number?.trim() || ''
@@ -229,284 +339,332 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     }
   };
 
+  // Helper Badge Component to clearly mark empty fields for individuals
+  const FieldStatusBadge = ({ fieldKey, isRequired = false }) => {
+    const empty = isFieldEmpty(fieldKey);
+    if (empty) {
+      return (
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 800,
+            padding: '2px 8px',
+            borderRadius: '12px',
+            background: '#fffbeb',
+            color: '#b45309',
+            border: '1px solid #fde68a',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <AlertTriangle size={12} style={{ color: '#d97706' }} />
+          <span>حقل فارغ - مطلوب تعبئته</span>
+          {isRequired && <span style={{ color: '#dc2626' }}>*</span>}
+        </span>
+      );
+    }
+    return (
+      <span
+        style={{
+          fontSize: '10.5px',
+          fontWeight: 700,
+          padding: '2px 7px',
+          borderRadius: '12px',
+          background: '#f0fdf4',
+          color: '#15803d',
+          border: '1px solid #bbf7d0',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px'
+        }}
+      >
+        <Check size={11} style={{ color: '#16a34a' }} />
+        <span>مكتمل</span>
+      </span>
+    );
+  };
+
   return (
     <div className="moi-modal-overlay" style={{ zIndex: 100000 }}>
       <div
         className="moi-modal-box"
         style={{
-          maxWidth: '820px',
+          maxWidth: '920px',
           width: '95%',
           maxHeight: '92vh',
-          borderRadius: '16px',
-          overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 60px rgba(10, 25, 47, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.3)'
+          background: '#ffffff',
+          borderRadius: '18px',
+          overflow: 'hidden',
+          boxShadow: '0 25px 60px rgba(10, 25, 47, 0.45)',
+          border: '2px solid #d4af37'
         }}
       >
-        {/* Libyan Sovereign 4-color Ribbon */}
-        <div style={{ height: '5px', width: '100%', display: 'flex' }}>
-          <div style={{ flex: '1', backgroundColor: '#e11d48' }} />
-          <div style={{ flex: '2', backgroundColor: '#0f172a' }} />
-          <div style={{ flex: '1', backgroundColor: '#16a34a' }} />
-        </div>
-
-        {/* Modal Header */}
+        {/* Modal Sovereign Header */}
         <div
           className="moi-modal-header"
           style={{
             background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
-            color: '#fff',
-            borderBottom: '2px solid #d4af37',
-            padding: '16px 20px',
+            color: '#ffffff',
+            padding: '16px 24px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            borderBottom: '3px solid #d4af37',
+            flexShrink: 0
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <img
-              src={MOI_LOGO_BASE64}
-              alt="شعار وزارة الداخلية"
+            <div
               style={{
                 width: '46px',
                 height: '46px',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))'
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.1)',
+                padding: '4px',
+                border: '1.5px solid #d4af37',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
               }}
-            />
+            >
+              <img
+                src="./moi-logo.png"
+                onError={(e) => {
+                  e.currentTarget.src = MOI_LOGO_BASE64;
+                }}
+                alt="شعار وزارة الداخلية"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </div>
             <div>
-              <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: 800, letterSpacing: '0.5px' }}>
-                دولة ليبيا - وزارة الداخلية | مديرية أمن أوباري
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span
+                  style={{
+                    background: 'rgba(212, 175, 55, 0.2)',
+                    border: '1px solid #d4af37',
+                    color: '#d4af37',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 800
+                  }}
+                >
+                  بوابة الخدمة الذاتية للأفراد
+                </span>
+                <span style={{ fontSize: '11px', color: '#cbd5e1' }}>وزارة الداخلية - مديرية أمن أوباري</span>
               </div>
-              <h3 style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 900, color: '#ffffff' }}>
-                بوابة استعلام واستكمال بيانات المنتسبين
-              </h3>
+              <h2 style={{ fontSize: '17px', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>
+                بوابة منتسبي المديرية | استعلام واستكمال الحقول الفارغة
+              </h2>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="moi-modal-close-btn"
             style={{
-              color: '#ffffff',
-              background: 'rgba(255,255,255,0.12)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '8px',
-              padding: '6px'
+              color: '#ffffff',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
             }}
-            title="إغلاق"
+            title="إغلاق النافذة"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="moi-modal-body" style={{ padding: '20px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
-          {/* STEP 1: Search & Sovereign Identity Verification */}
+        {/* Modal Scrollable Body */}
+        <div style={{ padding: '22px 24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
           {!verifiedMember ? (
-            <div>
-              {/* Guidance & Security Banner */}
+            /* STEP 1: Strict Identity Verification & Query Form */
+            <div style={{ maxWidth: '640px', margin: '15px auto', textAlign: 'center' }}>
               <div
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRight: '4px solid #1e3a8a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                  width: '68px',
+                  height: '68px',
+                  borderRadius: '50%',
+                  background: '#eff6ff',
+                  border: '2px solid #bfdbfe',
+                  color: '#1e3a8a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <ShieldCheck size={22} style={{ color: '#1e3a8a' }} />
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
-                    التحقق السيادي من هوية المنتسب
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-                  هذه البوابة مخصصة حصرياً لكافة منتسبي <strong>مديرية أمن أوباري</strong> (ضباط، ضباط صف، أفراد، وموظفون مدنيون) للاستعلام عن ملفاتهم واستكمال بياناتهم الناقصة (أرقام الهواتف، المقاسات العسكرية، الحسابات المصرفية، وفصيلة الدم).
-                </p>
-                <div style={{ marginTop: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '11.5px', color: '#059669', fontWeight: 700 }}>
-                  <span>✓ تحقق مشدد 1-إلى-1 بدون أي تداخل بين السجلات</span>
-                  <span>✓ استعلام فوري سريع بدون ضغط على السيرفر</span>
-                  <span>✓ حماية وتشفير البيانات الرسمية</span>
-                </div>
+                <Search size={34} style={{ color: '#1e3a8a' }} />
               </div>
 
-              {/* Search Box */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '14px',
-                  padding: '24px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.04)'
-                }}
-              >
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', justifyContent: 'center' }}>
+              <h3 style={{ fontSize: '19px', fontWeight: 900, color: '#0a192f', marginBottom: '8px' }}>
+                استعلام عن بيانات المنتسب واستكمال الحقول الفارغة
+              </h3>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.6, marginBottom: '22px' }}>
+                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> أو <strong>الرقم المالي / الوظيفي</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية وتعبئة الحقول الفارغة (اسم الأم، كتيب ورقم قيد العائلة، الهاتف، المقاسات، المصرف) مباشرة.
+              </p>
+
+              <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'center' }}>
                   <button
                     type="button"
                     onClick={() => setSearchFilterType('all')}
                     style={{
                       padding: '6px 14px',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       fontSize: '12px',
                       fontWeight: 700,
-                      cursor: 'pointer',
-                      border: '1px solid',
-                      borderColor: searchFilterType === 'all' ? '#1e3a8a' : '#cbd5e1',
-                      background: searchFilterType === 'all' ? '#1e3a8a' : '#f8fafc',
-                      color: searchFilterType === 'all' ? '#fff' : '#475569'
+                      border: searchFilterType === 'all' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: searchFilterType === 'all' ? '#1e3a8a' : '#ffffff',
+                      color: searchFilterType === 'all' ? '#ffffff' : '#475569',
+                      cursor: 'pointer'
                     }}
                   >
-                    بحث ذكي (الرقم الوطني أو المالي)
+                    بحث شامل (وطني أو مالي)
                   </button>
                   <button
                     type="button"
                     onClick={() => setSearchFilterType('national_id')}
                     style={{
                       padding: '6px 14px',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       fontSize: '12px',
                       fontWeight: 700,
-                      cursor: 'pointer',
-                      border: '1px solid',
-                      borderColor: searchFilterType === 'national_id' ? '#1e3a8a' : '#cbd5e1',
-                      background: searchFilterType === 'national_id' ? '#1e3a8a' : '#f8fafc',
-                      color: searchFilterType === 'national_id' ? '#fff' : '#475569'
+                      border: searchFilterType === 'national_id' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: searchFilterType === 'national_id' ? '#1e3a8a' : '#ffffff',
+                      color: searchFilterType === 'national_id' ? '#ffffff' : '#475569',
+                      cursor: 'pointer'
                     }}
                   >
-                    بالرقم الوطني (12 رقماً)
+                    بالرقم الوطني فقط
                   </button>
                   <button
                     type="button"
                     onClick={() => setSearchFilterType('financial_number')}
                     style={{
                       padding: '6px 14px',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       fontSize: '12px',
                       fontWeight: 700,
-                      cursor: 'pointer',
-                      border: '1px solid',
-                      borderColor: searchFilterType === 'financial_number' ? '#1e3a8a' : '#cbd5e1',
-                      background: searchFilterType === 'financial_number' ? '#1e3a8a' : '#f8fafc',
-                      color: searchFilterType === 'financial_number' ? '#fff' : '#475569'
+                      border: searchFilterType === 'financial_number' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: searchFilterType === 'financial_number' ? '#1e3a8a' : '#ffffff',
+                      color: searchFilterType === 'financial_number' ? '#ffffff' : '#475569',
+                      cursor: 'pointer'
                     }}
                   >
-                    بالرقم المالي / رقم القيد
+                    بالرقم المالي / الوظيفي
                   </button>
                 </div>
 
-                <form onSubmit={handleSearch}>
-                  <div style={{ marginBottom: '16px' }}>
-                    <label
-                      htmlFor="inquiry-input"
-                      style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}
-                    >
-                      {searchFilterType === 'national_id'
-                        ? 'الرقم الوطني المكون من 12 رقماً:'
-                        : searchFilterType === 'financial_number'
-                        ? 'الرقم المالي أو رقم القيد:'
-                        : 'الرقم الوطني أو الرقم المالي الخاص بك:'}
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        id="inquiry-input"
-                        type="text"
-                        dir="ltr"
-                        autoFocus
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        placeholder="مثال: 219960541445 أو 8163151"
-                        style={{
-                          width: '100%',
-                          padding: '14px 16px',
-                          paddingLeft: '44px',
-                          fontSize: '16px',
-                          fontFamily: 'monospace',
-                          fontWeight: 'bold',
-                          borderRadius: '10px',
-                          border: searchError ? '2px solid #ef4444' : '2px solid #94a3b8',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                          background: '#fff',
-                          color: '#0f172a'
-                        }}
-                      />
-                      <Search
-                        size={20}
-                        style={{
-                          position: 'absolute',
-                          left: '14px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#64748b'
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {searchError && (
-                    <div
-                      style={{
-                        padding: '12px 14px',
-                        background: '#fef2f2',
-                        border: '1px solid #fecaca',
-                        borderRadius: '8px',
-                        color: '#b91c1c',
-                        fontSize: '12.5px',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '16px'
-                      }}
-                    >
-                      <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                      <span>{searchError}</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
+                <div style={{ position: 'relative', marginBottom: '14px' }}>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    placeholder="مثال: 119960541445 أو 1084467"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '14px',
-                      background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-                      color: '#d4af37',
-                      border: '1.5px solid #d4af37',
+                      padding: '14px 18px',
+                      paddingLeft: '48px',
                       borderRadius: '10px',
-                      fontSize: '15px',
+                      border: '2px solid #1e3a8a',
+                      fontSize: '16px',
                       fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px',
-                      boxShadow: '0 4px 14px rgba(30, 58, 138, 0.25)',
-                      transition: 'all 0.2s'
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box',
+                      boxShadow: '0 4px 12px rgba(30, 58, 138, 0.08)'
+                    }}
+                    autoFocus
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '14px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#1e3a8a'
                     }}
                   >
-                    <Search size={18} />
-                    <span>استعلام والتحقق من القيد</span>
-                  </button>
-                </form>
+                    <Search size={22} />
+                  </div>
+                </div>
 
-                <div
+                {searchError && (
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      color: '#b91c1c',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '14px'
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                    <span>{searchError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
                   style={{
-                    marginTop: '20px',
-                    paddingTop: '16px',
-                    borderTop: '1px dashed #e2e8f0',
+                    width: '100%',
+                    padding: '14px',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                    color: '#ffffff',
+                    border: '1.5px solid #d4af37',
+                    borderRadius: '10px',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '11px',
-                    color: '#64748b'
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(10, 25, 47, 0.2)'
                   }}
                 >
-                  <span>القوة العمومية المعتمدة: <strong>{forceMembers.length.toLocaleString('ar-LY')}</strong> قيد معتمد</span>
-                  <span>🔒 معتمد من مديرية أمن أوباري</span>
+                  <Search size={18} />
+                  <span>التحقق من الهوية وعرض الملف</span>
+                </button>
+              </form>
+
+              {/* Security Banner */}
+              <div
+                style={{
+                  marginTop: '24px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'right'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 800, fontSize: '12px', marginBottom: '6px' }}>
+                  <ShieldCheck size={16} />
+                  <span>ضمانات الخصوصية والأمان المعتمدة:</span>
                 </div>
+                <ul style={{ margin: 0, paddingRight: '18px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.7 }}>
+                  <li><strong>عزل تام 1-إلى-1:</strong> لا يمكن الاطلاع إلا على بيانات صاحب الرقم الوطني أو المالي بعد مطابقة دقيقة.</li>
+                  <li><strong>حماية الحقول السيادية:</strong> الاسم الكامل، الرتبة، جهة العمل، والوضع الوظيفي مقفلة ومحمية إدارياً.</li>
+                  <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والمقاسات والمصرف.</li>
+                </ul>
               </div>
             </div>
           ) : (
@@ -518,9 +676,9 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                   border: '1.5px solid #d4af37',
                   borderRadius: '14px',
-                  padding: '18px 20px',
-                  marginBottom: '20px',
-                  boxShadow: '0 4px 16px rgba(212, 175, 55, 0.15)',
+                  padding: '16px 20px',
+                  marginBottom: '16px',
+                  boxShadow: '0 4px 16px rgba(212, 175, 55, 0.12)',
                   position: 'relative'
                 }}
               >
@@ -545,117 +703,182 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   <span>تم التحقق من الهوية</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <Lock size={16} style={{ color: '#d4af37' }} />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a' }}>
-                    البيانات السيادية الرسمية المعتمدة (🔒 مقفلة وغير قابلة للتعديل الذاتي):
+                    البيانات السيادية الرسمية (🔒 مقفلة وغير قابلة للتعديل الذاتي):
                   </span>
                 </div>
 
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '12px'
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '10px'
                   }}
                 >
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الاسم الرباعي الرسمي</div>
-                    <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>
                       {verifiedMember.name}
                     </div>
                   </div>
 
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرتبة العسكرية / الصفة</div>
-                    <div style={{ fontSize: '14px', fontWeight: 900, color: '#1e3a8a', marginTop: '2px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#1e3a8a', marginTop: '2px' }}>
                       {verifiedMember.job_title || verifiedMember.type || 'عنصر أمن'}
                     </div>
                   </div>
 
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرقم الوطني المعتمد</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', marginTop: '2px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', marginTop: '2px' }}>
                       {verifiedMember.national_id || '---'}
                     </div>
                   </div>
 
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرقم المالي / رقم القيد</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', marginTop: '2px' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرقم المالي / الوظيفي</div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', marginTop: '2px' }}>
                       {verifiedMember.financial_number || verifiedMember.job_number || '---'}
                     </div>
                   </div>
 
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الإدارة / جهة العمل المعتمدة</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#334155', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155', marginTop: '2px' }}>
                       {verifiedMember.department || 'ديوان مديرية أمن أوباري'}
                     </div>
                   </div>
 
-                  <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الحالة الوظيفية</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
                       {verifiedMember.job_status || 'على رأس العمل'}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Completeness Bar */}
+              {/* Missing Fields Notice & Completeness Bar */}
               <div
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
+                  background: emptyFields.length > 0 ? '#fffbeb' : '#f0fdf4',
+                  border: emptyFields.length > 0 ? '1.5px solid #fde68a' : '1.5px solid #bbf7d0',
                   borderRadius: '12px',
                   padding: '14px 18px',
-                  marginBottom: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  flexWrap: 'wrap'
+                  marginBottom: '16px'
                 }}
               >
-                <div style={{ flex: 1, minWidth: '220px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: 800 }}>
-                    <span style={{ color: '#1e293b' }}>مؤشر اكتمال ملف المنتسب:</span>
-                    <span style={{ color: completeness >= 80 ? '#059669' : '#d97706' }}>
-                      {completeness}% {completeness >= 80 ? '✓ مكتمل بدرجة عالية' : '⚠️ بحاجة لاستكمال بيانات'}
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {emptyFields.length > 0 ? (
+                      <AlertTriangle size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+                    ) : (
+                      <CheckCircle2 size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
+                    )}
+                    <div>
+                      <span style={{ fontSize: '13.5px', fontWeight: 900, color: emptyFields.length > 0 ? '#92400e' : '#166534' }}>
+                        {emptyFields.length > 0
+                          ? `تنبيه الحقول الفارغة: يوجد (${emptyFields.length}) حقول فارغة تحتاج إلى استكمال من المنتسب`
+                          : 'تهانينا! كافة بيانات ملفك الشخصي مكتملة 100%'}
+                      </span>
+                      <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
+                        نسبة اكتمال الملف: <strong>{completeness}%</strong> (تم تعبئة {TRACKED_FIELDS.length - emptyFields.length} من أصل {TRACKED_FIELDS.length} حقول)
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmptyOnly(!showEmptyOnly)}
                       style={{
-                        width: `${completeness}%`,
-                        height: '100%',
-                        background: completeness >= 80 ? '#10b981' : 'linear-gradient(90deg, #f59e0b, #10b981)',
-                        transition: 'width 0.4s ease'
+                        padding: '6px 12px',
+                        background: showEmptyOnly ? '#b45309' : '#ffffff',
+                        color: showEmptyOnly ? '#ffffff' : '#b45309',
+                        border: '1px solid #d97706',
+                        borderRadius: '6px',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
                       }}
-                    />
+                    >
+                      <Filter size={13} />
+                      <span>{showEmptyOnly ? 'عرض كافة الحقول' : `عرض الحقول الفارغة فقط (${emptyFields.length})`}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetSearch}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: '#475569',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      title="البحث عن منتسب آخر"
+                    >
+                      <RotateCcw size={13} />
+                      <span>استعلام آخر</span>
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleResetSearch}
-                  style={{
-                    background: '#f8fafc',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    padding: '8px 14px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#475569',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                  title="البحث عن منتسب آخر"
-                >
-                  <RotateCcw size={14} />
-                  <span>استعلام عن قيد آخر</span>
-                </button>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${completeness}%`,
+                      height: '100%',
+                      background: completeness >= 80 ? '#10b981' : completeness >= 50 ? '#f59e0b' : '#ef4444',
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                </div>
+
+                {/* Quick Empty Fields Badges */}
+                {emptyFields.length > 0 && (
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#78350f' }}>حقول متبقية:</span>
+                    {emptyFields.slice(0, 8).map((f) => (
+                      <button
+                        key={f.key}
+                        type="button"
+                        onClick={() => setActiveTab(f.tab)}
+                        style={{
+                          background: '#fef3c7',
+                          border: '1px solid #fde68a',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#92400e',
+                          cursor: 'pointer'
+                        }}
+                        title={`الانتقال لتعبئة ${f.label}`}
+                      >
+                        + {f.label}
+                      </button>
+                    ))}
+                    {emptyFields.length > 8 && (
+                      <span style={{ fontSize: '11px', color: '#92400e', fontWeight: 700 }}>
+                        +{emptyFields.length - 8} حقول أخرى
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Status Notifications */}
@@ -672,15 +895,15 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    marginBottom: '20px',
+                    marginBottom: '16px',
                     boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
                   }}
                 >
                   <CheckCircle2 size={22} style={{ color: '#059669', flexShrink: 0 }} />
                   <div>
-                    <div>✅ تم حفظ وتحديث بياناتك بنجاح في قاعدة البيانات المركزية!</div>
+                    <div>✅ تم حفظ وتوثيق البيانات بنجاح في قاعدة البيانات المركزية!</div>
                     <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#047857', marginTop: '2px' }}>
-                      تم توثيق التحديثات وربطها برقمك الوطني وقيدك الأمني في مديرية أمن أوباري.
+                      تم اعتماد التحديثات وربطها برقمك الوطني وقيدك الأمني في منظومة مديرية أمن أوباري.
                     </div>
                   </div>
                 </div>
@@ -699,7 +922,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    marginBottom: '20px'
+                    marginBottom: '16px'
                   }}
                 >
                   <AlertCircle size={18} />
@@ -711,13 +934,39 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
               <div
                 style={{
                   display: 'flex',
-                  gap: '8px',
-                  marginBottom: '18px',
+                  gap: '6px',
+                  marginBottom: '16px',
                   borderBottom: '2px solid #e2e8f0',
                   paddingBottom: '8px',
                   overflowX: 'auto'
                 }}
               >
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('family')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: activeTab === 'family' ? '#1e3a8a' : 'transparent',
+                    color: activeTab === 'family' ? '#fff' : '#64748b'
+                  }}
+                >
+                  <BookOpen size={16} />
+                  <span>البيانات العائلية والشخصية</span>
+                  {emptyFields.filter(f => f.tab === 'family').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'family').length}
+                    </span>
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setActiveTab('contact')}
@@ -735,9 +984,39 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     color: activeTab === 'contact' ? '#fff' : '#64748b'
                   }}
                 >
-                  <Phone size={15} />
-                  <span>الاتصال والسكن</span>
-                  {!formData.phone && <span style={{ color: '#f59e0b' }}>⚠️</span>}
+                  <Phone size={16} />
+                  <span>الاتصال والإقامة</span>
+                  {emptyFields.filter(f => f.tab === 'contact').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'contact').length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('education')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: activeTab === 'education' ? '#1e3a8a' : 'transparent',
+                    color: activeTab === 'education' ? '#fff' : '#64748b'
+                  }}
+                >
+                  <GraduationCap size={16} />
+                  <span>المؤهل العلمي واللغات</span>
+                  {emptyFields.filter(f => f.tab === 'education').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'education').length}
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -757,31 +1036,13 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     color: activeTab === 'military' ? '#fff' : '#64748b'
                   }}
                 >
-                  <Award size={15} />
-                  <span>المقاسات العسكرية</span>
-                  {(!formData.suit_number || !formData.shoe_size) && <span style={{ color: '#f59e0b' }}>⚠️</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('medical')}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: activeTab === 'medical' ? '#1e3a8a' : 'transparent',
-                    color: activeTab === 'medical' ? '#fff' : '#64748b'
-                  }}
-                >
-                  <Heart size={15} />
-                  <span>البيانات الاجتماعية والطبية</span>
-                  {!formData.blood_type && <span style={{ color: '#f59e0b' }}>⚠️</span>}
+                  <Scissors size={16} />
+                  <span>المقاسات والتجهيزات العسكرية والبدنية</span>
+                  {emptyFields.filter(f => f.tab === 'military').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'military').length}
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -801,547 +1062,965 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     color: activeTab === 'banking' ? '#fff' : '#64748b'
                   }}
                 >
-                  <CreditCard size={15} />
-                  <span>البيانات المصرفية</span>
-                  {(!formData.bank_name || !formData.account_number) && <span style={{ color: '#f59e0b' }}>⚠️</span>}
-                </button>
-              </div>
-
-              {/* TAB 1: Contact & Residence */}
-              {activeTab === 'contact' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      رقم الهاتف الشخصي المحمول: <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      dir="ltr"
-                      placeholder="091xxxxxxx أو 092xxxxxxx"
-                      value={formData.phone}
-                      onChange={(e) => handleChange('phone', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: !formData.phone ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
-                      ضروري لإرسال الإشعارات والتعليمات العسكرية
+                  <CreditCard size={16} />
+                  <span>البيانات المصرفية والمالية</span>
+                  {emptyFields.filter(f => f.tab === 'banking').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'banking').length}
                     </span>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      رقم هاتف بديل / هاتف الطوارئ:
-                    </label>
-                    <input
-                      type="tel"
-                      dir="ltr"
-                      placeholder="رقم أحد الأقارب أو هاتف أرضي"
-                      value={formData.emergency_contact}
-                      onChange={(e) => handleChange('emergency_contact', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      محل الإقامة الفعلي والسكن بالتفصيل:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="مثال: أوبari - حي المشروع بالقرب من مسجد..."
-                      value={formData.residence}
-                      onChange={(e) => handleChange('residence', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      البلدية / المنطقة:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="أوباري / بنت بيه / الغريفة / وادي الحياة"
-                      value={formData.tribe_city}
-                      onChange={(e) => handleChange('tribe_city', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: Military Clothing & Equipment Sizes */}
-              {activeTab === 'military' && (
-                <div>
-                  <div
-                    style={{
-                      background: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      marginBottom: '16px',
-                      fontSize: '12px',
-                      color: '#1e40af',
-                      fontWeight: 700
-                    }}
-                  >
-                    ℹ️ يتم استخدام هذه المقاسات في حصر وتوزيع القيافة والبدل والأحذية العسكرية المعتمدة لكافة منتسبي المديرية.
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        مقاس البدلة / الزي العسكري:
-                      </label>
-                      <select
-                        value={formData.suit_number}
-                        onChange={(e) => handleChange('suit_number', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: !formData.suit_number ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box',
-                          background: '#fff'
-                        }}
-                      >
-                        <option value="">-- اختر مقاس البدلة --</option>
-                        {SUIT_SIZES.map((s) => (
-                          <option key={s} value={s}>
-                            مقاس {s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        مقاس الحذاء العسكري (البسطار):
-                      </label>
-                      <select
-                        value={formData.shoe_size}
-                        onChange={(e) => handleChange('shoe_size', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: !formData.shoe_size ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box',
-                          background: '#fff'
-                        }}
-                      >
-                        <option value="">-- اختر مقاس الحذاء --</option>
-                        {SHOE_SIZES.map((sz) => (
-                          <option key={sz} value={sz}>
-                            نمرة {sz}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        مقاس القبعة العسكرية / البريهة:
-                      </label>
-                      <select
-                        value={formData.headwear_size}
-                        onChange={(e) => handleChange('headwear_size', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box',
-                          background: '#fff'
-                        }}
-                      >
-                        <option value="">-- اختر مقاس القبعة --</option>
-                        {HEADWEAR_SIZES.map((h) => (
-                          <option key={h} value={h}>
-                            قياس {h} سم
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        مقاس القميص الداخلي / التريكو:
-                      </label>
-                      <select
-                        value={formData.shirt_size}
-                        onChange={(e) => handleChange('shirt_size', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box',
-                          background: '#fff'
-                        }}
-                      >
-                        <option value="">-- اختر مقاس القميص --</option>
-                        {SHIRT_SIZES.map((sh) => (
-                          <option key={sh} value={sh}>
-                            {sh}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: Medical & Social Data */}
-              {activeTab === 'medical' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      فصيلة الدم (Blood Type): <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <select
-                      value={formData.blood_type}
-                      onChange={(e) => handleChange('blood_type', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: !formData.blood_type ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        boxSizing: 'border-box',
-                        background: '#fff'
-                      }}
-                    >
-                      <option value="">-- اختر فصيلة الدم --</option>
-                      {BLOOD_TYPES.map((bt) => (
-                        <option key={bt} value={bt}>
-                          {bt}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      الحالة الاجتماعية:
-                    </label>
-                    <select
-                      value={formData.marital_status}
-                      onChange={(e) => handleChange('marital_status', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box',
-                        background: '#fff'
-                      }}
-                    >
-                      <option value="أعزب">أعزب</option>
-                      <option value="متزوج">متزوج</option>
-                      <option value="مطلق">مطلق</option>
-                      <option value="أرمل">أرمل</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      عدد الأبناء:
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="25"
-                      value={formData.children_count}
-                      onChange={(e) => handleChange('children_count', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      اسم الأم الثلاثي:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="اسم الأم الكامل"
-                      value={formData.mother_name}
-                      onChange={(e) => handleChange('mother_name', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      مكان الميلاد:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="مثال: أوباري"
-                      value={formData.birth_place}
-                      onChange={(e) => handleChange('birth_place', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                      تاريخ الميلاد:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.birth_date}
-                      onChange={(e) => handleChange('birth_date', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: Banking & Financial Data */}
-              {activeTab === 'banking' && (
-                <div>
-                  <div
-                    style={{
-                      background: '#ecfdf5',
-                      border: '1px solid #a7f3d0',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      marginBottom: '16px',
-                      fontSize: '12px',
-                      color: '#065f46',
-                      fontWeight: 700
-                    }}
-                  >
-                    ℹ️ تُعتمد هذه البيانات في إعداد الكشوفات المالية والحوالات وتسوية المرتبات مع المصارف.
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        اسم المصرف المعتمد:
-                      </label>
-                      <input
-                        list="libyan-banks-list"
-                        type="text"
-                        placeholder="اختر أو اكتب اسم المصرف"
-                        value={formData.bank_name}
-                        onChange={(e) => handleChange('bank_name', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: !formData.bank_name ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                      <datalist id="libyan-banks-list">
-                        {LIBYAN_BANKS.map((b) => (
-                          <option key={b} value={b} />
-                        ))}
-                      </datalist>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        فرع المصرف:
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="مثال: فرع أوباري / فرع الغريفة / فرع بنت بيه"
-                        value={formData.bank_branch}
-                        onChange={(e) => handleChange('bank_branch', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-                        رقم الحساب المصرفي (Account Number / IBAN):
-                      </label>
-                      <input
-                        type="text"
-                        dir="ltr"
-                        placeholder="أدخل رقم الحساب المصرفي بدقة..."
-                        value={formData.account_number}
-                        onChange={(e) => handleChange('account_number', e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: !formData.account_number ? '1.5px solid #f59e0b' : '1px solid #cbd5e1',
-                          fontSize: '15px',
-                          fontFamily: 'monospace',
-                          fontWeight: 'bold',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Modal Footer */}
-        <div
-          className="moi-modal-footer"
-          style={{
-            background: '#ffffff',
-            borderTop: '1px solid #e2e8f0',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}
-        >
-          {verifiedMember ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#64748b' }}>
-                <ShieldCheck size={16} style={{ color: '#059669' }} />
-                <span>حفظ آمن ومباشر مربوط بالسجل رقم #{verifiedMember.id}</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#475569',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  إغلاق
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  style={{
-                    padding: '10px 22px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                    color: '#ffffff',
-                    fontSize: '13.5px',
-                    fontWeight: 800,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
-                >
-                  {isSubmitting ? (
-                    <span>جاري الحفظ والتأكيد...</span>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      <span>حفظ وتأكيد استكمال البيانات</span>
-                    </>
                   )}
                 </button>
               </div>
-            </>
-          ) : (
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  padding: '9px 18px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
-                  color: '#475569',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                إغلاق النافذة
-              </button>
+
+              {/* Form Content */}
+              <form onSubmit={handleSubmit}>
+                {/* TAB 1: Family & Personal Data */}
+                {activeTab === 'family' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                    {/* Mother's Full Name */}
+                    {(!showEmptyOnly || isFieldEmpty('mother_name')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('mother_name') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            اسم الأم ثلاثياً:
+                          </label>
+                          <FieldStatusBadge fieldKey="mother_name" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="مثال: خديجة محمد علي"
+                          value={formData.mother_name}
+                          onChange={(e) => handleChange('mother_name', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                          يكتب اسم والدة المنتسب كاملاً كما في قيد العائلة
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Marital Status */}
+                    {(!showEmptyOnly || isFieldEmpty('marital_status')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            الحالة الاجتماعية:
+                          </label>
+                          <FieldStatusBadge fieldKey="marital_status" />
+                        </div>
+                        <select
+                          value={formData.marital_status}
+                          onChange={(e) => handleChange('marital_status', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box',
+                            background: '#fff'
+                          }}
+                        >
+                          <option value="متزوج">متزوج</option>
+                          <option value="أعزب">أعزب</option>
+                          <option value="مطلق">مطلق</option>
+                          <option value="أرمل">أرمل</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Wife's Name (if married) */}
+                    {formData.marital_status === 'متزوج' && (!showEmptyOnly || isFieldEmpty('wife_name')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('wife_name') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            اسم الزوجة:
+                          </label>
+                          <FieldStatusBadge fieldKey="wife_name" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="اسم الزوجة الثلاثي"
+                          value={formData.wife_name}
+                          onChange={(e) => handleChange('wife_name', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Children Count */}
+                    {(!showEmptyOnly || isFieldEmpty('children_count')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('children_count') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            عدد الأبناء:
+                          </label>
+                          <FieldStatusBadge fieldKey="children_count" />
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          max="25"
+                          placeholder="0"
+                          value={formData.children_count}
+                          onChange={(e) => handleChange('children_count', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Family Booklet Number */}
+                    {(!showEmptyOnly || isFieldEmpty('family_book')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('family_book') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            رقم كتيب العائلة:
+                          </label>
+                          <FieldStatusBadge fieldKey="family_book" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="رقم كتيب العائلة..."
+                          value={formData.family_book}
+                          onChange={(e) => handleChange('family_book', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Family Paper Number */}
+                    {(!showEmptyOnly || isFieldEmpty('family_paper')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('family_paper') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            رقم ورقة العائلة:
+                          </label>
+                          <FieldStatusBadge fieldKey="family_paper" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="رقم ورقة العائلة..."
+                          value={formData.family_paper}
+                          onChange={(e) => handleChange('family_paper', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Family Registry Number */}
+                    {(!showEmptyOnly || isFieldEmpty('family_record')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('family_record') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            رقم قيد العائلة (السجل المدني):
+                          </label>
+                          <FieldStatusBadge fieldKey="family_record" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="رقم قيد العائلة..."
+                          value={formData.family_record}
+                          onChange={(e) => handleChange('family_record', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Passport Number */}
+                    {(!showEmptyOnly || isFieldEmpty('passport_number')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('passport_number') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            رقم جواز السفر:
+                          </label>
+                          <FieldStatusBadge fieldKey="passport_number" />
+                        </div>
+                        <input
+                          type="text"
+                          dir="ltr"
+                          placeholder="P0123456"
+                          value={formData.passport_number}
+                          onChange={(e) => handleChange('passport_number', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Birth Place */}
+                    {(!showEmptyOnly || isFieldEmpty('birth_place')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('birth_place') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            مكان الميلاد:
+                          </label>
+                          <FieldStatusBadge fieldKey="birth_place" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="مثال: أوباري"
+                          value={formData.birth_place}
+                          onChange={(e) => handleChange('birth_place', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Birth Date */}
+                    {(!showEmptyOnly || isFieldEmpty('birth_date')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('birth_date') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            تاريخ الميلاد:
+                          </label>
+                          <FieldStatusBadge fieldKey="birth_date" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="يوم/شهر/سنة (مثال: 1985/05/12)"
+                          value={formData.birth_date}
+                          onChange={(e) => handleChange('birth_date', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2: Contact & Residence Data */}
+                {activeTab === 'contact' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                    {/* Phone Number */}
+                    {(!showEmptyOnly || isFieldEmpty('phone')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('phone') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            رقم الهاتف الشخصي المحمول: <span style={{ color: '#ef4444' }}>*</span>
+                          </label>
+                          <FieldStatusBadge fieldKey="phone" isRequired />
+                        </div>
+                        <input
+                          type="tel"
+                          dir="ltr"
+                          placeholder="091xxxxxxx أو 092xxxxxxx"
+                          value={formData.phone}
+                          onChange={(e) => handleChange('phone', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '15px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                          ضروري لإرسال البلاغات والإشعارات العسكرية
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Emergency Contact Phone */}
+                    {(!showEmptyOnly || isFieldEmpty('emergency_contact')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('emergency_contact') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            هاتف الطوارئ (رقم أحد الأقارب):
+                          </label>
+                          <FieldStatusBadge fieldKey="emergency_contact" />
+                        </div>
+                        <input
+                          type="tel"
+                          dir="ltr"
+                          placeholder="هاتف الأخ / الوالد / القريب"
+                          value={formData.emergency_contact}
+                          onChange={(e) => handleChange('emergency_contact', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '15px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                          للتواصل في الحالات الطارئة وأوقات الاستنفار
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Residence Full Address */}
+                    {(!showEmptyOnly || isFieldEmpty('residence')) && (
+                      <div style={{ gridColumn: '1 / -1', background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('residence') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            محل الإقامة والسكن الحالي بالتفصيل:
+                          </label>
+                          <FieldStatusBadge fieldKey="residence" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="مثال: أوباري - محلة المشروع - بالقرب من مدرسة..."
+                          value={formData.residence}
+                          onChange={(e) => handleChange('residence', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Tribe / City */}
+                    {(!showEmptyOnly || isFieldEmpty('tribe_city')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('tribe_city') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            القبيلة / المدينة:
+                          </label>
+                          <FieldStatusBadge fieldKey="tribe_city" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="أوباري / الغريفة / بنت بيه / جرمة..."
+                          value={formData.tribe_city}
+                          onChange={(e) => handleChange('tribe_city', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 3: Education & Languages */}
+                {activeTab === 'education' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    {/* Education Level / Qualification */}
+                    {(!showEmptyOnly || isFieldEmpty('education_level')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('education_level') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            المستوى الدراسي (المؤهل العلمي):
+                          </label>
+                          <FieldStatusBadge fieldKey="education_level" />
+                        </div>
+                        <input
+                          type="text"
+                          list="education-levels-list"
+                          placeholder="اختر أو اكتب المؤهل العلمي..."
+                          value={formData.education_level}
+                          onChange={(e) => handleChange('education_level', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <datalist id="education-levels-list">
+                          {EDUCATION_LEVELS.map((el) => (
+                            <option key={el} value={el} />
+                          ))}
+                        </datalist>
+                        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                          المؤهل الدراسي المعتمد بملف الخدمة بالمديرية
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Languages Spoken */}
+                    {(!showEmptyOnly || isFieldEmpty('languages')) && (
+                      <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('languages') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                            اللغات التي يجيدها المنتسب:
+                          </label>
+                          <FieldStatusBadge fieldKey="languages" />
+                        </div>
+                        <input
+                          type="text"
+                          list="languages-options-list"
+                          placeholder="العربية / الطارقية / الإنجليزية..."
+                          value={formData.languages}
+                          onChange={(e) => handleChange('languages', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <datalist id="languages-options-list">
+                          {LANGUAGES_OPTIONS.map((lang) => (
+                            <option key={lang} value={lang} />
+                          ))}
+                        </datalist>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 4: Military Uniform Sizes & Physical Measurements */}
+                {activeTab === 'military' && (
+                  <div>
+                    <div
+                      style={{
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        marginBottom: '16px',
+                        fontSize: '12px',
+                        color: '#1e40af',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Info size={16} />
+                      <span>
+                        تُستخدم هذه المقاسات مباشرة لصرف البدلات الرسمية، الأحذية العسكرية (البيادة)، والبوريهات من هيئة الإمداد والتموين.
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                      {/* Suit Number / Uniform Size */}
+                      {(!showEmptyOnly || isFieldEmpty('suit_number')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('suit_number') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              مقاس البدلة العسكرية:
+                            </label>
+                            <FieldStatusBadge fieldKey="suit_number" />
+                          </div>
+                          <select
+                            value={formData.suit_number}
+                            onChange={(e) => handleChange('suit_number', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="">-- اختر مقاس البدلة --</option>
+                            {SUIT_SIZES.map((s) => (
+                              <option key={s} value={s}>
+                                مقاس {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Shoe Size */}
+                      {(!showEmptyOnly || isFieldEmpty('shoe_size')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('shoe_size') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              رقم الحذاء العسكري (البيادة):
+                            </label>
+                            <FieldStatusBadge fieldKey="shoe_size" />
+                          </div>
+                          <select
+                            value={formData.shoe_size}
+                            onChange={(e) => handleChange('shoe_size', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="">-- اختر رقم الحذاء --</option>
+                            {SHOE_SIZES.map((sz) => (
+                              <option key={sz} value={sz}>
+                                نمرة {sz}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Headwear Size */}
+                      {(!showEmptyOnly || isFieldEmpty('headwear_size')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('headwear_size') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              مقاس غطاء الرأس (البوريه/القبعة):
+                            </label>
+                            <FieldStatusBadge fieldKey="headwear_size" />
+                          </div>
+                          <select
+                            value={formData.headwear_size}
+                            onChange={(e) => handleChange('headwear_size', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="">-- اختر مقاس غطاء الرأس --</option>
+                            {HEADWEAR_SIZES.map((hs) => (
+                              <option key={hs} value={hs}>
+                                مقاس {hs}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Shirt Size */}
+                      {(!showEmptyOnly || isFieldEmpty('shirt_size')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('shirt_size') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              مقاس القميص العسكري:
+                            </label>
+                            <FieldStatusBadge fieldKey="shirt_size" />
+                          </div>
+                          <select
+                            value={formData.shirt_size}
+                            onChange={(e) => handleChange('shirt_size', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="">-- اختر مقاس القميص --</option>
+                            {SHIRT_SIZES.map((ss) => (
+                              <option key={ss} value={ss}>
+                                {ss}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Blood Type */}
+                      {(!showEmptyOnly || isFieldEmpty('blood_type')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('blood_type') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              فصيلة الدم (Blood Type): <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
+                            <FieldStatusBadge fieldKey="blood_type" isRequired />
+                          </div>
+                          <select
+                            value={formData.blood_type}
+                            onChange={(e) => handleChange('blood_type', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="">-- اختر فصيلة الدم --</option>
+                            {BLOOD_TYPES.map((bt) => (
+                              <option key={bt} value={bt}>
+                                {bt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Height (cm) */}
+                      {(!showEmptyOnly || isFieldEmpty('height')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('height') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              الطول (سم):
+                            </label>
+                            <FieldStatusBadge fieldKey="height" />
+                          </div>
+                          <input
+                            type="number"
+                            min="140"
+                            max="220"
+                            placeholder="مثال: 175"
+                            value={formData.height}
+                            onChange={(e) => handleChange('height', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Weight (kg) */}
+                      {(!showEmptyOnly || isFieldEmpty('weight')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('weight') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              الوزن (كجم):
+                            </label>
+                            <FieldStatusBadge fieldKey="weight" />
+                          </div>
+                          <input
+                            type="number"
+                            min="45"
+                            max="180"
+                            placeholder="مثال: 75"
+                            value={formData.weight}
+                            onChange={(e) => handleChange('weight', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Health Conditions / Diseases */}
+                      {(!showEmptyOnly || isFieldEmpty('diseases')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('diseases') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              الحالة الصحية والأمراض (إن وجدت):
+                            </label>
+                            <FieldStatusBadge fieldKey="diseases" />
+                          </div>
+                          <input
+                            type="text"
+                            list="health-conditions-list"
+                            placeholder="سليم ولائق صحياً..."
+                            value={formData.diseases}
+                            onChange={(e) => handleChange('diseases', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <datalist id="health-conditions-list">
+                            {HEALTH_CONDITIONS.map((c) => (
+                              <option key={c} value={c} />
+                            ))}
+                          </datalist>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 5: Banking & Financial Data */}
+                {activeTab === 'banking' && (
+                  <div>
+                    <div
+                      style={{
+                        background: '#ecfdf5',
+                        border: '1px solid #a7f3d0',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        marginBottom: '16px',
+                        fontSize: '12px',
+                        color: '#065f46',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <ShieldCheck size={16} />
+                      <span>
+                        تُستخدم هذه البيانات بدقة لصرف المرتبات والمستحقات المالية الرسمية عبر منظومة الحسابات المصرفية المعتمدة.
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                      {/* Bank Name */}
+                      {(!showEmptyOnly || isFieldEmpty('bank_name')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('bank_name') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              اسم المصرف التجاري:
+                            </label>
+                            <FieldStatusBadge fieldKey="bank_name" />
+                          </div>
+                          <input
+                            type="text"
+                            list="libyan-banks-list"
+                            placeholder="اختر أو اكتب اسم المصرف..."
+                            value={formData.bank_name}
+                            onChange={(e) => handleChange('bank_name', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <datalist id="libyan-banks-list">
+                            {LIBYAN_BANKS.map((b) => (
+                              <option key={b} value={b} />
+                            ))}
+                          </datalist>
+                        </div>
+                      )}
+
+                      {/* Bank Branch */}
+                      {(!showEmptyOnly || isFieldEmpty('bank_branch')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('bank_branch') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              الفرع المصرفي:
+                            </label>
+                            <FieldStatusBadge fieldKey="bank_branch" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="فرع أوباري / الغريفة / بنت بيه..."
+                            value={formData.bank_branch}
+                            onChange={(e) => handleChange('bank_branch', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Account Number */}
+                      {(!showEmptyOnly || isFieldEmpty('account_number')) && (
+                        <div style={{ gridColumn: '1 / -1', background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('account_number') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              رقم الحساب المصرفي المعتمد:
+                            </label>
+                            <FieldStatusBadge fieldKey="account_number" />
+                          </div>
+                          <input
+                            type="text"
+                            dir="ltr"
+                            placeholder="أدخل رقم الحساب المصرفي بدقة..."
+                            value={formData.account_number}
+                            onChange={(e) => handleChange('account_number', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '12px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '15px',
+                              fontWeight: 'bold',
+                              fontFamily: 'monospace',
+                              letterSpacing: '1px',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                            يرجى التأكد التام من مطابقة رقم الحساب المصرفي الخاص بك لتفادي تأخر المرتبات
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Form Actions Footer */}
+                <div
+                  style={{
+                    marginTop: '24px',
+                    paddingTop: '16px',
+                    borderTop: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}
+                >
+                  <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={16} style={{ color: '#059669' }} />
+                    <span>يتم تحديث وتوثيق البيانات فورياً ومزامنتها بالقاعدة المركزية</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      style={{
+                        padding: '10px 18px',
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: '#475569',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      إلغاء
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      style={{
+                        padding: '10px 24px',
+                        background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                        color: '#d4af37',
+                        border: '1.5px solid #d4af37',
+                        borderRadius: '8px',
+                        fontSize: '13.5px',
+                        fontWeight: 900,
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 14px rgba(10, 25, 47, 0.25)',
+                        opacity: isSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      <Save size={16} />
+                      <span>{isSubmitting ? 'جارٍ حفظ التحديثات...' : 'حفظ وتحديث بياناتي بالمنظومة'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           )}
         </div>
