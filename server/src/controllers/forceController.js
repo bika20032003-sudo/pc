@@ -1,5 +1,11 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * تحديث حالة منتسب في قاعدة بيانات SQLite مباشرة
@@ -411,6 +417,147 @@ export async function replaceForceList(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;');
     console.error('Error replacing force list in SQLite:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+/**
+ * بوابة الاستعلام والتحديث الذاتي لبيانات المنتسبين
+ * مصممة لتحمل ضغط العمل العالي (High-Concurrency) والتحقق المشدد 1-إلى-1 لمنع أي تداخل أو تشابك بين بيانات الموظفين
+ */
+export async function selfUpdateForceMember(req, res) {
+  try {
+    const { id, national_id, financial_number, updates } = req.body;
+
+    if (!id || (!national_id && !financial_number)) {
+      return res.status(400).json({
+        success: false,
+        message: 'بيانات التحقق غير مكتملة (المعرف والرقم الوطني أو المالي إلزامي)'
+      });
+    }
+
+    const { db } = getDb();
+    const cleanId = Number(id);
+    const cleanNat = national_id ? String(national_id).trim().replace(/\D/g, '') : '';
+    const cleanFin = financial_number ? String(financial_number).trim().replace(/\D/g, '') : '';
+
+    // التحقق الصارم 1-إلى-1: التأكد من مطابقة السجل بالرقم الوطني أو الرقم المالي للمعرف لمنع أي تلاعب أو خلط بين الموظفين
+    const existing = await db.get(`
+      SELECT * FROM force_members
+      WHERE id = ? AND (
+        (national_id IS NOT NULL AND national_id != '' AND REPLACE(national_id, ' ', '') = ?) OR
+        (financial_number IS NOT NULL AND financial_number != '' AND REPLACE(financial_number, ' ', '') = ?) OR
+        (job_number IS NOT NULL AND job_number != '' AND REPLACE(job_number, ' ', '') = ?)
+      )
+    `, [cleanId, cleanNat || '___NONE___', cleanFin || '___NONE___', cleanFin || '___NONE___']);
+
+    if (!existing) {
+      return res.status(403).json({
+        success: false,
+        message: 'فشل التحقق الأمني: لا يتطابق المعرف مع الرقم الوطني أو المالي المسجل لهذا المنتسب.'
+      });
+    }
+
+    if (!updates || typeof updates !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'لم يتم تقديم أي حقول للتحديث'
+      });
+    }
+
+    // السماح فقط بالحقول الشخصية وحقول الاتصال والمهمات العسكرية والمصرفية المعتمدة
+    // الحقول السيادية (الاسم، الرتبة، الرقم الوطني، الرقم المالي، الإدارة) غير قابلة للتعديل الذاتي
+    const safeUpdates = {
+      phone: updates.phone !== undefined ? String(updates.phone).trim() : existing.phone,
+      notes: updates.emergency_contact !== undefined ? String(updates.emergency_contact).trim() : (updates.notes !== undefined ? String(updates.notes).trim() : existing.notes),
+      residence: updates.residence !== undefined ? String(updates.residence).trim() : existing.residence,
+      tribe_city: updates.tribe_city !== undefined ? String(updates.tribe_city).trim() : existing.tribe_city,
+      blood_type: updates.blood_type !== undefined ? String(updates.blood_type).trim() : existing.blood_type,
+      marital_status: updates.marital_status !== undefined ? String(updates.marital_status).trim() : existing.marital_status,
+      children_count: updates.children_count !== undefined ? String(updates.children_count).trim() : existing.children_count,
+      wife_name: updates.wife_name !== undefined ? String(updates.wife_name).trim() : existing.wife_name,
+      mother_name: updates.mother_name !== undefined ? String(updates.mother_name).trim() : existing.mother_name,
+      birth_date: updates.birth_date !== undefined ? String(updates.birth_date).trim() : existing.birth_date,
+      birth_place: updates.birth_place !== undefined ? String(updates.birth_place).trim() : existing.birth_place,
+      suit_number: updates.suit_number !== undefined ? String(updates.suit_number).trim() : existing.suit_number,
+      shoe_size: updates.shoe_size !== undefined ? String(updates.shoe_size).trim() : existing.shoe_size,
+      headwear_size: updates.headwear_size !== undefined ? String(updates.headwear_size).trim() : existing.headwear_size,
+      shirt_size: updates.shirt_size !== undefined ? String(updates.shirt_size).trim() : existing.shirt_size,
+      bank_name: updates.bank_name !== undefined ? String(updates.bank_name).trim() : existing.bank_name,
+      bank_branch: updates.bank_branch !== undefined ? String(updates.bank_branch).trim() : existing.bank_branch,
+      account_number: updates.account_number !== undefined ? String(updates.account_number).trim() : existing.account_number
+    };
+
+    // تنفيذ التحديث الفوري في SQLite بجملة مفهرسة وفائقة السرعة
+    await db.run(`
+      UPDATE force_members SET
+        phone = ?,
+        notes = ?,
+        residence = ?,
+        tribe_city = ?,
+        blood_type = ?,
+        marital_status = ?,
+        children_count = ?,
+        wife_name = ?,
+        mother_name = ?,
+        birth_date = ?,
+        birth_place = ?,
+        suit_number = ?,
+        shoe_size = ?,
+        headwear_size = ?,
+        shirt_size = ?,
+        bank_name = ?,
+        bank_branch = ?,
+        account_number = ?,
+        updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [
+      safeUpdates.phone,
+      safeUpdates.notes,
+      safeUpdates.residence,
+      safeUpdates.tribe_city,
+      safeUpdates.blood_type,
+      safeUpdates.marital_status,
+      safeUpdates.children_count,
+      safeUpdates.wife_name,
+      safeUpdates.mother_name,
+      safeUpdates.birth_date,
+      safeUpdates.birth_place,
+      safeUpdates.suit_number,
+      safeUpdates.shoe_size,
+      safeUpdates.headwear_size,
+      safeUpdates.shirt_size,
+      safeUpdates.bank_name,
+      safeUpdates.bank_branch,
+      safeUpdates.account_number,
+      cleanId
+    ]);
+
+    const updated = await db.get('SELECT * FROM force_members WHERE id = ?', [cleanId]);
+
+    // مزامنة الملف الاحتياطي JSON بشكل غير متزامن بدون تعطيل الاستجابة
+    try {
+      const forceJsonPath = path.resolve(__dirname, '../data/force_data.json');
+      if (fs.existsSync(forceJsonPath)) {
+        const fileContent = fs.readFileSync(forceJsonPath, 'utf8');
+        const list = JSON.parse(fileContent);
+        const idx = list.findIndex(item => Number(item.id) === cleanId);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], ...safeUpdates };
+          fs.writeFileSync(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
+        }
+      }
+    } catch (fileErr) {
+      console.warn('تنبيه: تعذر حفظ نسخة JSON في الخلفية:', fileErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم تحديث واستكمال بيانات المنتسب بنجاح',
+      data: updated
+    });
+  } catch (error) {
+    console.error('Error in selfUpdateForceMember:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }

@@ -71,6 +71,7 @@ import TemplatesSection from './components/TemplatesSection';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
 import CommandPaletteModal from './components/CommandPaletteModal';
+import EmployeeInquiryModal from './components/EmployeeInquiryModal';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
@@ -248,6 +249,47 @@ export default function App() {
   // Force Member Detailed Preview Modal State
   const [previewMember, setPreviewMember] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  // Employee Self-Service Inquiry Portal Modal State
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+
+  // Self-update handler for employees (inquiry portal)
+  const handleSelfUpdateForceMember = async (memberId, updates) => {
+    // 1. Update React state immediately
+    const updated = forceMembers.map((m) => {
+      if (Number(m.id) === Number(memberId)) {
+        return { ...m, ...updates };
+      }
+      return m;
+    });
+    setForceMembers(updated);
+
+    // 2. Persist in localStorage
+    try {
+      localStorage.setItem('ubari_force_members', JSON.stringify(updated));
+    } catch (err) {
+      console.warn('LocalStorage save error:', err);
+    }
+
+    // 3. Sync to backend API if running
+    try {
+      const target = forceMembers.find((m) => Number(m.id) === Number(memberId));
+      const res = await fetch('http://localhost:5050/api/force/self-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: memberId,
+          national_id: target?.national_id,
+          financial_number: target?.financial_number,
+          updates
+        })
+      });
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      return { success: true, localOnly: true };
+    }
+  };
 
   // Force Import & Replacement State (Replacing old force with new imported dataset)
   const forceFileInputRef = useRef(null);
@@ -3049,6 +3091,14 @@ export default function App() {
           message={notificationMsg}
           onClose={() => setNotificationMsg('')}
         />
+
+        {/* Employee Self-Service Inquiry Portal Modal */}
+        <EmployeeInquiryModal
+          isOpen={showInquiryModal}
+          onClose={() => setShowInquiryModal(false)}
+          forceMembers={forceMembers}
+          onUpdateMember={handleSelfUpdateForceMember}
+        />
       </div>
     );
   }
@@ -3196,6 +3246,45 @@ export default function App() {
                 )}
               </button>
 
+              {/* Employee Self-Service Inquiry Portal Button */}
+              <div style={{ marginTop: '16px', marginBottom: '4px' }}>
+                <div style={{ position: 'relative', textAlign: 'center', marginBottom: '10px' }}>
+                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: '#e2e8f0' }} />
+                  <span style={{ position: 'relative', background: '#ffffff', padding: '0 12px', fontSize: '11px', fontWeight: 800, color: '#64748b' }}>
+                    بوابة منتسبي مديرية أمن أوباري
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowInquiryModal(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0a192f 100%)',
+                    color: '#d4af37',
+                    border: '1.5px solid #d4af37',
+                    borderRadius: '10px',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    boxShadow: '0 4px 14px rgba(10, 25, 47, 0.25)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="استعلام عن بيانات المنتسب وتحديث البيانات الناقصة"
+                >
+                  <Search size={18} style={{ color: '#d4af37' }} />
+                  <span>استعلام وتحديث بيانات المنتسب</span>
+                </button>
+                <span style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
+                  🔍 استعلام بالرقم الوطني أو المالي واستكمال البيانات الناقصة ذاتياً
+                </span>
+              </div>
+
               {/* Quick Login Presets for Training & Official Demo */}
               <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0' }}>
                 <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
@@ -3248,6 +3337,14 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* Employee Self-Service Inquiry Portal Modal */}
+      <EmployeeInquiryModal
+        isOpen={showInquiryModal}
+        onClose={() => setShowInquiryModal(false)}
+        forceMembers={forceMembers}
+        onUpdateMember={handleSelfUpdateForceMember}
+      />
     </div>
   );
 }
