@@ -500,8 +500,7 @@ export async function selfUpdateForceMember(req, res) {
       start_date: updates.start_date !== undefined ? String(updates.start_date).trim() : existing.start_date,
       last_promotion_decision: updates.last_promotion_decision !== undefined ? String(updates.last_promotion_decision).trim() : existing.last_promotion_decision,
       last_promotion_date: updates.last_promotion_date !== undefined ? String(updates.last_promotion_date).trim() : existing.last_promotion_date,
-      basic_salary: updates.basic_salary !== undefined ? String(updates.basic_salary).trim() : existing.basic_salary,
-      type: updates.type !== undefined ? String(updates.type).trim() : existing.type
+      basic_salary: updates.basic_salary !== undefined ? String(updates.basic_salary).trim() : existing.basic_salary
     };
 
     // تنفيذ التحديث الفوري في SQLite بجملة مفهرسة وفائقة السرعة
@@ -540,7 +539,6 @@ export async function selfUpdateForceMember(req, res) {
         last_promotion_decision = ?,
         last_promotion_date = ?,
         basic_salary = ?,
-        type = ?,
         updated_at = datetime('now', 'localtime')
       WHERE id = ?
     `, [
@@ -577,7 +575,6 @@ export async function selfUpdateForceMember(req, res) {
       safeUpdates.last_promotion_decision,
       safeUpdates.last_promotion_date,
       safeUpdates.basic_salary,
-      safeUpdates.type,
       cleanId
     ]);
 

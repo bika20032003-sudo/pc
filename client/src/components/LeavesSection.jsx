@@ -1757,7 +1757,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                             type="text"
                             value={leaveForm.rank}
                             onChange={(e) => setLeaveForm({ ...leaveForm, rank: e.target.value })}
-                            placeholder="الرتبة العسكرية"
+                            placeholder="الرتبة الشرطية / الوظيفة"
                             style={{ border: 'none', borderBottom: '1px dotted #000', outline: 'none', width: '68%', textAlign: 'center', fontFamily: 'inherit', fontSize: '14px', fontWeight: 800 }}
                           />
                         </td>

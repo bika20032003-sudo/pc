@@ -137,7 +137,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     { key: 'last_promotion_decision', label: 'قرار آخر ترقية', tab: 'career' },
     { key: 'last_promotion_date', label: 'تاريخ آخر ترقية', tab: 'career' },
     { key: 'basic_salary', label: 'المرتب الأساسي', tab: 'career' },
-    { key: 'type', label: 'كادر التبعية (شرطي / مدني)', tab: 'career' },
 
     // Family & Personal (البيانات العائلية والشخصية)
     { key: 'mother_name', label: 'اسم الأم ثلاثياً', tab: 'family' },
@@ -161,10 +160,10 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     { key: 'education_level', label: 'المستوى الدراسي (المؤهل)', tab: 'education' },
     { key: 'languages', label: 'اللغات التي يجيدها', tab: 'education' },
 
-    // Military & Physical Uniform Sizes (المقاسات والتجهيزات العسكرية)
+    // Physical & Uniform Sizes (المقاسات والتجهيزات الرسمية والبدنية)
     { key: 'blood_type', label: 'فصيلة الدم', tab: 'military' },
     { key: 'suit_number', label: 'رقم / مقاس البدلة', tab: 'military' },
-    { key: 'shoe_size', label: 'رقم الحذاء العسكري', tab: 'military' },
+    { key: 'shoe_size', label: 'رقم الحذاء الرسمي (البيادة)', tab: 'military' },
     { key: 'headwear_size', label: 'مقاس غطاء الرأس', tab: 'military' },
     { key: 'shirt_size', label: 'مقاس القميص', tab: 'military' },
     { key: 'height', label: 'الطول (سم)', tab: 'military' },
@@ -252,7 +251,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       last_promotion_decision: match.last_promotion_decision && match.last_promotion_decision !== '-' ? match.last_promotion_decision : '',
       last_promotion_date: match.last_promotion_date && match.last_promotion_date !== '-' ? match.last_promotion_date : '',
       basic_salary: match.basic_salary && match.basic_salary !== '-' ? String(match.basic_salary) : '',
-      type: match.type || 'شرطي',
 
       // Family & Personal
       mother_name: match.mother_name && match.mother_name !== '-' ? match.mother_name : '',
@@ -333,7 +331,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
         last_promotion_decision: formData.last_promotion_decision?.trim() || '',
         last_promotion_date: formData.last_promotion_date?.trim() || '',
         basic_salary: formData.basic_salary?.trim() || '',
-        type: formData.type || 'شرطي',
 
         // Family & Personal
         mother_name: formData.mother_name?.trim() || '',
@@ -780,9 +777,16 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
 
                   <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرتبة العسكرية / الصفة</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرتبة الشرطية / الوظيفة</div>
                     <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#1e3a8a', marginTop: '2px' }}>
-                      {verifiedMember.job_title || verifiedMember.type || 'عنصر أمن'}
+                      {verifiedMember.job_title || (verifiedMember.type === 'مدني' ? 'موظف مدني' : 'عضو هيئة الشرطة')}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الكادر المعتمد بالمديرية</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: verifiedMember.type === 'مدني' ? '#475569' : '#0369a1', marginTop: '2px' }}>
+                      {verifiedMember.type === 'مدني' ? 'كادر الموظفين المدنيين (مدني)' : 'هيئة الشرطة (شرطي)'}
                     </div>
                   </div>
 
@@ -1104,7 +1108,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   )}
                 </button>
 
-                {/* TAB BUTTON: Military & Uniform (المقاسات والتجهيزات العسكرية والبدنية) */}
+                {/* TAB BUTTON: Uniform & Physical Measurements (المقاسات والتجهيزات الرسمية والبدنية) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('military')}
@@ -1123,7 +1127,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   }}
                 >
                   <Scissors size={16} />
-                  <span>المقاسات والتجهيزات العسكرية</span>
+                  <span>المقاسات والتجهيزات والعهد</span>
                   {emptyFields.filter(f => f.tab === 'military').length > 0 && (
                     <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
                       {emptyFields.filter(f => f.tab === 'military').length}
@@ -1286,7 +1290,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                           </div>
                           <input
                             type="text"
-                            placeholder="رقم وتاريخ قرار آخر ترقية عسكرية / مدنية..."
+                            placeholder="رقم وتاريخ قرار آخر ترقية (شرطية أو وظيفية)..."
                             value={formData.last_promotion_decision}
                             onChange={(e) => handleChange('last_promotion_decision', e.target.value)}
                             style={{
@@ -1355,35 +1359,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                               boxSizing: 'border-box'
                             }}
                           />
-                        </div>
-                      )}
-
-                      {/* Type: Police vs Civil */}
-                      {(!showEmptyOnly || isFieldEmpty('type')) && (
-                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
-                              كادر التبعية الوظيفية:
-                            </label>
-                            <FieldStatusBadge fieldKey="type" />
-                          </div>
-                          <select
-                            value={formData.type || 'شرطي'}
-                            onChange={(e) => handleChange('type', e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              borderRadius: '8px',
-                              border: '1px solid #cbd5e1',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
-                              boxSizing: 'border-box',
-                              background: '#fff'
-                            }}
-                          >
-                            <option value="شرطي">كادر هيئة الشرطة (عسكري/نظامي)</option>
-                            <option value="مدني">كادر الموظفين المدنيين</option>
-                          </select>
                         </div>
                       )}
                     </div>
@@ -1706,7 +1681,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                           }}
                         />
                         <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
-                          ضروري لإرسال البلاغات والإشعارات العسكرية
+                          ضروري لإرسال البلاغات والإشعارات والتعميمات الرسمية
                         </span>
                       </div>
                     )}
@@ -1873,7 +1848,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
                 )}
 
-                {/* TAB: Military Uniform Sizes & Physical Measurements (المقاسات والتجهيزات العسكرية) */}
+                {/* TAB: Uniform Sizes & Physical Measurements (المقاسات والتجهيزات الرسمية والبدنية) */}
                 {activeTab === 'military' && (
                   <div>
                     <div
@@ -1892,7 +1867,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     >
                       <Info size={16} />
                       <span>
-                        تُستخدم هذه المقاسات مباشرة لصرف البدلات الرسمية، الأحذية العسكرية (البيادة)، والبوريهات من هيئة الإمداد والتموين.
+                        تُستخدم هذه المقاسات مباشرة لصرف البدلات الرسمية، الأحذية الرسمية (البيادة)، والبوريهات من هيئة الإمداد والتموين.
                       </span>
                     </div>
 
@@ -1902,7 +1877,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                         <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('suit_number') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
-                              مقاس البدلة العسكرية:
+                              مقاس البدلة الرسمية:
                             </label>
                             <FieldStatusBadge fieldKey="suit_number" />
                           </div>
@@ -1935,7 +1910,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                         <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('shoe_size') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
-                              رقم الحذاء العسكري (البيادة):
+                              رقم الحذاء الرسمي (البيادة):
                             </label>
                             <FieldStatusBadge fieldKey="shoe_size" />
                           </div>
@@ -2001,7 +1976,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                         <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('shirt_size') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
-                              مقاس القميص العسكري:
+                              مقاس القميص الرسمي:
                             </label>
                             <FieldStatusBadge fieldKey="shirt_size" />
                           </div>

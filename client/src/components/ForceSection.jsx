@@ -1436,7 +1436,7 @@ export default function ForceSection({
               fontWeight: 700
             }}>
               <ShieldCheck size={14} color="#16a34a" />
-              <span>الترتيب: حسب الرتبة العسكرية (لواء ← شرطي) والمدنيين أبجدياً</span>
+              <span>الترتيب: حسب الرتبة الشرطية (لواء ← شرطي) والمدنيين أبجدياً</span>
             </div>
 
             <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
