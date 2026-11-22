@@ -23,9 +23,9 @@ export default class ErrorBoundary extends React.Component {
         });
       }
     } catch (e) {}
-    const url = new URL(window.location.href);
-    url.searchParams.set('nocache', Date.now().toString());
-    window.location.href = url.toString();
+    // Clean reload without polluting the URL with query parameters
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.location.href = cleanUrl;
   };
 
   handleReset = () => {
