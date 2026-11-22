@@ -385,21 +385,14 @@ export default function ForceSection({
   const handleExportExcel = (targetList = null) => {
     try {
       const listToExport = Array.isArray(targetList) ? targetList : filteredMembers;
-      const headers = ['ت', 'الرقم المالي', 'الاسم الكامل', 'النوع', 'الوظيفة / الرتبة', 'الرقم الوطني', 'التبعية / جهة العمل', 'اسم المصرف', 'الفرع', 'رقم الحساب', 'الهاتف', 'الإقامة', 'الوضع الوظيفي'];
+      const headers = ['ت', 'الاسم', 'الرقم الوطني', 'الرتبة', 'الرقم الوظيفي', 'جهة العمل'];
       const rows = listToExport.map((m, idx) => [
         `"${idx + 1}"`,
-        `"${m.financial_number || m.job_number || ''}"`,
         `"${m.name || ''}"`,
-        `"${m.type || ''}"`,
-        `"${m.rank || m.job_title || ''}"`,
         `"${m.national_id || ''}"`,
-        `"${m.department || ''}"`,
-        `"${m.bank_name || ''}"`,
-        `"${m.bank_branch || ''}"`,
-        `"${m.account_number || ''}"`,
-        `"${m.phone || ''}"`,
-        `"${m.residence || m.tribe_city || ''}"`,
-        `"${m.job_status || m.status || 'على رأس العمل'}"`
+        `"${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}"`,
+        `"${m.job_number || m.financial_number || ''}"`,
+        `"${m.department || 'مديرية أمن أوباري'}"`
       ]);
       const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -529,34 +522,26 @@ export default function ForceSection({
         </div>
 
         <!-- جدول القوة العمومية المعتمد لجميع العناصر -->
-        <table class="roster-data-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: right; border: 1.5px solid #64748b; margin-bottom: 12px; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: auto !important; break-inside: auto !important;">
+        <table class="roster-data-table" style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: right; border: 1.5px solid #0a192f; margin-bottom: 12px; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: auto !important; break-inside: auto !important;">
           <thead>
             <tr style="background: #0a192f; color: #ffffff;">
-              <th style="padding: 5px 3px; border: 1px solid #475569; width: 28px; text-align: center; font-weight: 800;">ت</th>
-              <th style="padding: 5px 6px; border: 1px solid #475569; width: 170px; font-weight: 800;">الاسم الرباعي</th>
-              <th style="padding: 5px 4px; border: 1px solid #475569; width: 75px; text-align: center; font-weight: 800;">الرقم المالي</th>
-              <th style="padding: 5px 4px; border: 1px solid #475569; width: 95px; text-align: center; font-weight: 800;">الرقم الوطني</th>
-              <th style="padding: 5px 5px; border: 1px solid #475569; width: 85px; text-align: center; font-weight: 800;">الرتبة / الصفة</th>
-              <th style="padding: 5px 6px; border: 1px solid #475569; width: 125px; font-weight: 800;">التبعية / جهة العمل</th>
-              <th style="padding: 5px 5px; border: 1px solid #475569; width: 105px; font-weight: 800;">المصرف والفرع</th>
-              <th style="padding: 5px 4px; border: 1px solid #475569; width: 95px; text-align: center; font-weight: 800;">رقم الحساب المصرفي</th>
-              <th style="padding: 5px 5px; border: 1px solid #475569; width: 90px; text-align: center; font-weight: 800;">الهاتف / الإقامة</th>
-              <th style="padding: 5px 4px; border: 1px solid #475569; width: 75px; text-align: center; font-weight: 800;">الحالة الوظيفية</th>
+              <th style="padding: 7px 4px; border: 1px solid #475569; width: 35px; text-align: center; font-weight: 800;">ت</th>
+              <th style="padding: 7px 10px; border: 1px solid #475569; font-weight: 800;">الاسم</th>
+              <th style="padding: 7px 8px; border: 1px solid #475569; width: 140px; text-align: center; font-weight: 800;">الرقم الوطني</th>
+              <th style="padding: 7px 8px; border: 1px solid #475569; width: 125px; text-align: center; font-weight: 800;">الرتبة</th>
+              <th style="padding: 7px 8px; border: 1px solid #475569; width: 110px; text-align: center; font-weight: 800;">الرقم الوظيفي</th>
+              <th style="padding: 7px 10px; border: 1px solid #475569; width: 200px; font-weight: 800;">جهة العمل</th>
             </tr>
           </thead>
           <tbody>
             ${targetList.map((m, idx) => `
               <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; page-break-inside: avoid; break-inside: avoid;">
-                <td style="padding: 3.5px 2px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
-                <td style="padding: 3.5px 6px; border: 1px solid #cbd5e1; font-weight: 800; color: #0a192f; white-space: nowrap;">${m.name}</td>
-                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0284c7; font-weight: 800; font-size: 10px;">${m.financial_number || m.job_number || '---'}</td>
-                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #1e293b; font-weight: 700; font-size: 9.5px;">${m.national_id || '---'}</td>
-                <td style="padding: 3.5px 4px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #1e3a8a;">${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
-                <td style="padding: 3.5px 6px; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">${m.department || 'مديرية أمن أوباري'}</td>
-                <td style="padding: 3.5px 5px; border: 1px solid #cbd5e1; color: #334155; font-size: 9px;">${[m.bank_name, m.bank_branch].filter(Boolean).join(' - ') || '---'}</td>
-                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0f172a; font-weight: 700; font-size: 9.5px;">${m.account_number || '---'}</td>
-                <td style="padding: 3.5px 4px; border: 1px solid #cbd5e1; text-align: center; color: #475569; font-size: 9px;">${m.phone || m.residence || m.tribe_city || '---'}</td>
-                <td style="padding: 3.5px 3px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: ${(m.job_status || m.status || '').includes('إجازة') ? '#d97706' : (m.job_status || m.status || '').includes('موقوف') ? '#dc2626' : '#15803d'}; font-size: 9px;">${m.job_status || m.status || 'على رأس العمل'}</td>
+                <td style="padding: 5px 3px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+                <td style="padding: 5px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #0a192f; white-space: nowrap;">${m.name}</td>
+                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #1e293b; font-weight: 700; font-size: 11px;">${m.national_id || '---'}</td>
+                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #1e3a8a;">${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
+                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0284c7; font-weight: 800; font-size: 11px;">${m.job_number || m.financial_number || '---'}</td>
+                <td style="padding: 5px 10px; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">${m.department || 'مديرية أمن أوباري'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -1361,7 +1346,7 @@ export default function ForceSection({
             <Search size={18} />
             <input
               type="text"
-              placeholder="...بحث سريع باسم الموظف أو الرقم المالي أو الوطني أو المصرف"
+              placeholder="...بحث سريع بالاسم أو الرقم الوطني أو الرتبة أو الرقم الوظيفي أو جهة العمل"
               value={forceSearchTerm}
               onChange={(e) => {
                 setForceSearchTerm(e.target.value);
@@ -1450,13 +1435,11 @@ export default function ForceSection({
           <table className="official-data-table">
             <thead>
               <tr>
-                <th>رقم الموظف / المالي</th>
-                <th>الاسم الكامل</th>
-                <th>النوع</th>
-                <th>الوظيفة / الرتبة</th>
+                <th>الاسم</th>
                 <th>الرقم الوطني</th>
-                <th>اسم المصرف</th>
-                <th>رقم الحساب</th>
+                <th>الرتبة</th>
+                <th>الرقم الوظيفي</th>
+                <th>جهة العمل</th>
                 <th>الوضع الوظيفي</th>
                 <th>إجراءات</th>
               </tr>
@@ -1464,9 +1447,6 @@ export default function ForceSection({
             <tbody>
               {paginatedMembers.map((m) => (
                 <tr key={m.id}>
-                  <td style={{ fontWeight: 800, color: '#1e3a8a' }}>
-                    {m.financial_number || m.job_number || '-'}
-                  </td>
                   <td style={{ fontWeight: 800, color: '#0f172a' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {(() => {
@@ -1507,23 +1487,17 @@ export default function ForceSection({
                     <span>{m.name}</span>
                     </div>
                   </td>
-                  <td>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '6px',
-                      background: m.type === 'شرطي' ? '#eff6ff' : '#f8fafc',
-                      color: m.type === 'شرطي' ? '#1e3a8a' : '#64748b',
-                      fontWeight: 700,
-                      fontSize: '12px'
-                    }}>
-                      {m.type}
-                    </span>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b' }}>
+                    {m.national_id || '-'}
                   </td>
-                  <td style={{ fontWeight: 700, color: '#1e293b' }}>{m.job_title || '-'}</td>
-                  <td>{m.national_id || '-'}</td>
-                  <td>{m.bank_name || '-'}</td>
-                  <td style={{ direction: 'ltr', textAlign: 'right', fontWeight: 600 }}>
-                    {m.account_number || '-'}
+                  <td style={{ fontWeight: 800, color: '#1e3a8a' }}>
+                    {m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}
+                  </td>
+                  <td style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>
+                    {m.job_number || m.financial_number || '-'}
+                  </td>
+                  <td style={{ fontWeight: 600, color: '#334155' }}>
+                    {m.department || 'مديرية أمن أوباري'}
                   </td>
                   <td>
                     <select
@@ -1942,7 +1916,7 @@ export default function ForceSection({
                   <Search size={16} style={{ position: 'absolute', right: '12px', color: '#94a3b8' }} />
                   <input
                     type="text"
-                    placeholder="تصفية سريعة داخل الكشف بالاسم أو الرقم المالي أو الوطني أو المصرف أو جهة العمل..."
+                    placeholder="تصفية سريعة داخل الكشف بالاسم أو الرقم الوطني أو الرتبة أو الرقم الوظيفي أو جهة العمل..."
                     value={rosterModalSearch}
                     onChange={(e) => setRosterModalSearch(e.target.value)}
                     style={{
@@ -1980,16 +1954,12 @@ export default function ForceSection({
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'right' }}>
                     <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                       <tr style={{ background: '#0a192f', color: '#ffffff' }}>
-                        <th style={{ padding: '8px 6px', borderBottom: '2px solid #d4af37', width: '38px', textAlign: 'center' }}>ت</th>
-                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>الاسم الرباعي</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '90px' }}>الرقم المالي</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '110px' }}>الرقم الوطني</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '100px' }}>الرتبة / الصفة</th>
-                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>التبعية / جهة العمل</th>
-                        <th style={{ padding: '8px 10px', borderBottom: '2px solid #d4af37' }}>المصرف والفرع</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '110px' }}>رقم الحساب</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '100px' }}>الهاتف / الإقامة</th>
-                        <th style={{ padding: '8px 8px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '90px' }}>الحالة</th>
+                        <th style={{ padding: '9px 6px', borderBottom: '2px solid #d4af37', width: '45px', textAlign: 'center' }}>ت</th>
+                        <th style={{ padding: '9px 12px', borderBottom: '2px solid #d4af37' }}>الاسم</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '140px' }}>الرقم الوطني</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '130px' }}>الرتبة</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '120px' }}>الرقم الوظيفي</th>
+                        <th style={{ padding: '9px 12px', borderBottom: '2px solid #d4af37' }}>جهة العمل</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2000,14 +1970,12 @@ export default function ForceSection({
                               const term = rosterModalSearch.toLowerCase();
                               return (
                                 (m.name && m.name.toLowerCase().includes(term)) ||
-                                (m.financial_number && String(m.financial_number).includes(term)) ||
-                                (m.job_number && String(m.job_number).toLowerCase().includes(term)) ||
                                 (m.national_id && String(m.national_id).includes(term)) ||
-                                (m.bank_name && m.bank_name.toLowerCase().includes(term)) ||
-                                (m.account_number && String(m.account_number).includes(term)) ||
-                                (m.department && m.department.toLowerCase().includes(term)) ||
+                                (m.rank && m.rank.toLowerCase().includes(term)) ||
                                 (m.job_title && m.job_title.toLowerCase().includes(term)) ||
-                                (m.rank && m.rank.toLowerCase().includes(term))
+                                (m.job_number && String(m.job_number).toLowerCase().includes(term)) ||
+                                (m.financial_number && String(m.financial_number).includes(term)) ||
+                                (m.department && m.department.toLowerCase().includes(term))
                               );
                             })
                           : baseList;
@@ -2020,23 +1988,12 @@ export default function ForceSection({
                               borderBottom: '1px solid #f1f5f9'
                             }}
                           >
-                            <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 800, color: '#64748b' }}>{idx + 1}</td>
-                            <td style={{ padding: '6px 10px', fontWeight: 800, color: '#0a192f' }}>{m.name}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#0284c7', fontWeight: 800 }}>{m.financial_number || m.job_number || '---'}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#1e293b', fontWeight: 700 }}>{m.national_id || '---'}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>{m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
-                            <td style={{ padding: '6px 10px', color: '#334155' }}>{m.department || 'مديرية أمن أوباري'}</td>
-                            <td style={{ padding: '6px 10px', color: '#334155', fontSize: '11.5px' }}>{[m.bank_name, m.bank_branch].filter(Boolean).join(' - ') || '---'}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center', fontFamily: 'monospace', color: '#0f172a', fontWeight: 700 }}>{m.account_number || '---'}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center', color: '#475569', fontSize: '11px' }}>{m.phone || m.residence || m.tribe_city || '---'}</td>
-                            <td style={{
-                              padding: '6px 8px',
-                              textAlign: 'center',
-                              fontWeight: 800,
-                              color: (m.job_status || m.status || '').includes('إجازة') ? '#d97706' : (m.job_status || m.status || '').includes('موقوف') ? '#dc2626' : '#15803d'
-                            }}>
-                              {m.job_status || m.status || 'على رأس العمل'}
-                            </td>
+                            <td style={{ padding: '7px 6px', textAlign: 'center', fontWeight: 800, color: '#64748b' }}>{idx + 1}</td>
+                            <td style={{ padding: '7px 12px', fontWeight: 800, color: '#0a192f' }}>{m.name}</td>
+                            <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#1e293b', fontWeight: 700 }}>{m.national_id || '---'}</td>
+                            <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>{m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
+                            <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#0284c7', fontWeight: 800 }}>{m.job_number || m.financial_number || '---'}</td>
+                            <td style={{ padding: '7px 12px', color: '#334155', fontWeight: 600 }}>{m.department || 'مديرية أمن أوباري'}</td>
                           </tr>
                         ));
                       })()}
