@@ -7,6 +7,7 @@ import {
   UploadCloud,
   FileSpreadsheet,
   Printer,
+  RefreshCw,
   Plus,
   X,
   Save,
@@ -106,8 +107,10 @@ export default function ForceSection({
   setNotificationMsg,
   externalEditingMember = null,
   clearExternalEditingMember,
-  onOpenInquiry
+  onOpenInquiry,
+  onSyncForce
 }) {
+  const [isSyncing, setIsSyncing] = useState(false);
   const [showForceForm, setShowForceForm] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [forceFormData, setForceFormData] = useState(EMPTY_FORCE_FORM);
@@ -145,6 +148,17 @@ export default function ForceSection({
     setForceFormData({ ...member });
     setShowForceForm(true);
     window.scrollTo({ top: 180, behavior: 'smooth' });
+  };
+
+  // Handle Manual Server Sync
+  const handleManualSync = async () => {
+    if (!onSyncForce || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await onSyncForce(false);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Instant Live Status Change for Member
@@ -664,6 +678,33 @@ export default function ForceSection({
             >
               <Search size={15} />
               <span>استعلام المنتسبين (خدمة ذاتية)</span>
+            </button>
+          )}
+
+          {onSyncForce && (
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              title="مزامنة فورية وتحديث بيانات القوة مع السيرفر المركزي"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                background: isSyncing ? '#f1f5f9' : '#f0fdf4',
+                color: isSyncing ? '#64748b' : '#166534',
+                border: '1.5px solid #86efac',
+                padding: '9px 15px',
+                borderRadius: '10px',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: isSyncing ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={15} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isSyncing ? 'جاري المزامنة...' : 'مزامنة السيرفر المركزي'}</span>
             </button>
           )}
 
@@ -1328,6 +1369,33 @@ export default function ForceSection({
             >
               <Search size={15} />
               <span>استعلام المنتسبين (خدمة ذاتية)</span>
+            </button>
+          )}
+
+          {onSyncForce && (
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              title="مزامنة فورية وتحديث بيانات القوة مع السيرفر المركزي"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                background: isSyncing ? '#f1f5f9' : '#f0fdf4',
+                color: isSyncing ? '#64748b' : '#166534',
+                border: '1.5px solid #86efac',
+                padding: '9px 15px',
+                borderRadius: '10px',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: isSyncing ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={15} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isSyncing ? 'جاري المزامنة...' : 'مزامنة السيرفر المركزي'}</span>
             </button>
           )}
         </div>

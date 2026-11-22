@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { normalizeArabicText } from './utils/arabicUtils.js';
 import {
   LayoutDashboard,
@@ -267,9 +267,31 @@ export default function App() {
   // Employee Self-Service Inquiry Portal Modal State
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
+  // Live Central Force Synchronization Handler across all connected devices
+  const fetchForceFromServer = useCallback(async (silent = true) => {
+    try {
+      const res = await fetch('/api/force');
+      if (!res.ok) return false;
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
+      if (list && list.length > 0) {
+        setForceMembers(list);
+        localStorage.setItem('ubari_force_members', JSON.stringify(list));
+        if (!silent && setNotificationMsg) {
+          setNotificationMsg(`تمت المزامنة الحية بنجاح مع السيرفر المركزي (${list.length.toLocaleString('ar-LY')} قيد)`);
+          setTimeout(() => setNotificationMsg(''), 4000);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }, [setNotificationMsg]);
+
   // Self-update handler for employees (inquiry portal)
   const handleSelfUpdateForceMember = async (memberId, updates) => {
-    // 1. Update React state immediately
+    // 1. Update React state immediately on this device
     const updated = forceMembers.map((m) => {
       if (Number(m.id) === Number(memberId)) {
         return { ...m, ...updates };
@@ -285,7 +307,7 @@ export default function App() {
       console.warn('LocalStorage save error:', err);
     }
 
-    // 3. Sync to backend API if running
+    // 3. Sync to central backend API (Node.js / cPanel)
     try {
       const target = forceMembers.find((m) => Number(m.id) === Number(memberId));
       const res = await fetch('/api/force/self-update', {
@@ -299,6 +321,8 @@ export default function App() {
         })
       });
       const data = await res.json();
+      // Re-sync from server to confirm central update across all fields
+      fetchForceFromServer(true);
       return data;
     } catch (err) {
       return { success: true, localOnly: true };
@@ -445,18 +469,14 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // Fetch sync force from API if available
+  // Fetch sync force from API if available & enable live 15-second background sync across all devices
   useEffect(() => {
-    fetch('/api/force')
-      .then(res => res.json())
-      .then(json => {
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setForceMembers(json.data);
-          localStorage.setItem('ubari_force_members', JSON.stringify(json.data));
-        }
-      })
-      .catch(() => {});
-  }, []);
+    fetchForceFromServer(true);
+    const syncInterval = setInterval(() => {
+      fetchForceFromServer(true);
+    }, 15000);
+    return () => clearInterval(syncInterval);
+  }, [fetchForceFromServer]);
 
   // Auto Advance Carousel
   useEffect(() => {
@@ -1620,7 +1640,11 @@ export default function App() {
           setNotificationMsg={setNotificationMsg}
           externalEditingMember={externalEditingMember}
           clearExternalEditingMember={() => setExternalEditingMember(null)}
-          onOpenInquiry={() => setShowInquiryModal(true)}
+          onOpenInquiry={() => {
+            fetchForceFromServer(true);
+            setShowInquiryModal(true);
+          }}
+          onSyncForce={fetchForceFromServer}
         />
       );
     }
@@ -2067,7 +2091,10 @@ export default function App() {
               {/* Sovereign Quick Access: Employee Self-Service Inquiry Portal */}
               <button
                 type="button"
-                onClick={() => setShowInquiryModal(true)}
+                onClick={() => {
+                  fetchForceFromServer(true);
+                  setShowInquiryModal(true);
+                }}
                 title="بوابة استعلام وتحديث بيانات الموظفين والمنتسبين"
                 style={{
                   display: 'inline-flex',
@@ -3303,7 +3330,10 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={() => setShowInquiryModal(true)}
+                  onClick={() => {
+                    fetchForceFromServer(true);
+                    setShowInquiryModal(true);
+                  }}
                   style={{
                     width: '100%',
                     padding: '12px 16px',

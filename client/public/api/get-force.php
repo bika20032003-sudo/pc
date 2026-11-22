@@ -1,6 +1,7 @@
 <?php
 /**
- * جلب سجلات القوة العمومية المركزية - مديرية أمن أوباري
+ * جلب سجلات القوة العمومية المركزية - وزارة الداخلية - مديرية أمن أوباري
+ * مخصص لخوادم واستضافات cPanel المشتركة والخاصة
  */
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -13,17 +14,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataFile = __DIR__ . '/data/force_data.json';
+
 if (!file_exists($dataFile)) {
-    // ملف احتياطي في حال عدم إنشاء ملف البيانات الجديد
-    $fallbackPath = __DIR__ . '/../../server/src/data/force_data.json';
-    if (file_exists($fallbackPath)) {
-        $dataFile = $fallbackPath;
+    $dataDir = __DIR__ . '/data';
+    if (!is_dir($dataDir)) {
+        @mkdir($dataDir, 0755, true);
     }
 }
 
 if (file_exists($dataFile)) {
     $content = file_get_contents($dataFile);
-    echo $content;
+    $data = json_decode($content, true);
+    if (!is_array($data)) {
+        $data = [];
+    }
+    echo json_encode([
+        'success' => true,
+        'total' => count($data),
+        'data' => $data,
+        'server_time' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 } else {
-    echo json_encode([], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success' => true,
+        'total' => 0,
+        'data' => [],
+        'server_time' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
 }

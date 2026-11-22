@@ -19,6 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+function normalizeDigits($str) {
+    if (!$str) return '';
+    $arabic = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    $english = ['0','1','2','3','4','5','6','7','8','9'];
+    $str = str_replace($arabic, $english, strval($str));
+    return preg_replace('/[^0-9]/', '', $str);
+}
+
 $rawInput = file_get_contents('php://input');
 $body = json_decode($rawInput, true);
 
@@ -29,7 +37,7 @@ if (!$body || empty($body['id']) || empty($body['updates'])) {
 }
 
 $memberId = intval($body['id']);
-$nationalId = preg_replace('/\D/', '', $body['national_id'] ?? '');
+$nationalId = normalizeDigits($body['national_id'] ?? '');
 $updates = $body['updates'];
 
 // مسار حفظ وتخزين بيانات القوة العمومية على خادم cPanel
@@ -40,16 +48,7 @@ if (!is_dir($dataDir)) {
 
 $dataFile = $dataDir . '/force_data.json';
 
-// في حال عدم وجود الملف في مجلد data، يتم نسخ النسخة الأصلية
 if (!file_exists($dataFile)) {
-    $fallbackPath = __DIR__ . '/../../server/src/data/force_data.json';
-    if (file_exists($fallbackPath)) {
-        @copy($fallbackPath, $dataFile);
-    }
-}
-
-if (!file_exists($dataFile)) {
-    // محاولة إنشاء ملف أولي فارغ
     file_put_contents($dataFile, '[]');
 }
 
@@ -64,10 +63,12 @@ if ($fp && flock($fp, LOCK_EX)) {
     }
 
     $found = false;
+    $updatedItem = null;
+
     foreach ($list as &$item) {
         if (intval($item['id']) === $memberId) {
             // التحقق من الهوية برقم الهوية الوطني (12 رقماً) أو الإداري (10 أرقام)
-            $itemNat = preg_replace('/\D/', '', $item['national_id'] ?? '');
+            $itemNat = normalizeDigits($item['national_id'] ?? '');
             if (!empty($nationalId) && $itemNat !== $nationalId) {
                 flock($fp, LOCK_UN);
                 fclose($fp);
@@ -92,6 +93,7 @@ if ($fp && flock($fp, LOCK_EX)) {
 
             $item['updated_at'] = date('Y-m-d H:i:s');
             $found = true;
+            $updatedItem = $item;
             break;
         }
     }
@@ -108,6 +110,7 @@ if ($fp && flock($fp, LOCK_EX)) {
             'success' => true,
             'message' => 'تم حفظ وتحديث واستكمال بيانات المنتسب بنجاح في قاعدة البيانات المركزية',
             'memberId' => $memberId,
+            'data' => $updatedItem,
             'updated_at' => date('Y-m-d H:i:s')
         ], JSON_UNESCAPED_UNICODE);
         exit;
