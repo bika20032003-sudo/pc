@@ -105,7 +105,8 @@ export default function ForceSection({
   notificationMsg,
   setNotificationMsg,
   externalEditingMember = null,
-  clearExternalEditingMember
+  clearExternalEditingMember,
+  onOpenInquiry
 }) {
   const [showForceForm, setShowForceForm] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState(null);
@@ -654,6 +655,32 @@ export default function ForceSection({
             <Printer size={16} />
             <span>طباعة القوة العمومية</span>
           </button>
+
+          {onOpenInquiry && (
+            <button
+              type="button"
+              onClick={onOpenInquiry}
+              title="بوابة استعلام وتحديث بيانات المنتسبين واستكمال الحقول الفارغة"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
+                color: '#d4af37',
+                border: '1.5px solid #d4af37',
+                padding: '9px 15px',
+                borderRadius: '10px',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 10px rgba(10,25,47,0.25)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Search size={15} />
+              <span>استعلام المنتسبين (خدمة ذاتية)</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -1292,6 +1319,32 @@ export default function ForceSection({
             <Printer size={16} />
             <span>طباعة القوة العمومية</span>
           </button>
+
+          {onOpenInquiry && (
+            <button
+              type="button"
+              onClick={onOpenInquiry}
+              title="بوابة استعلام وتحديث بيانات المنتسبين واستكمال الحقول الفارغة"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
+                color: '#d4af37',
+                border: '1.5px solid #d4af37',
+                padding: '9px 15px',
+                borderRadius: '10px',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 10px rgba(10,25,47,0.25)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Search size={15} />
+              <span>استعلام المنتسبين (خدمة ذاتية)</span>
+            </button>
+          )}
         </div>
 
         {/* Quick Search Bar + Filter */}

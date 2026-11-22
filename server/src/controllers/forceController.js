@@ -494,7 +494,14 @@ export async function selfUpdateForceMember(req, res) {
       shirt_size: updates.shirt_size !== undefined ? String(updates.shirt_size).trim() : existing.shirt_size,
       bank_name: updates.bank_name !== undefined ? String(updates.bank_name).trim() : existing.bank_name,
       bank_branch: updates.bank_branch !== undefined ? String(updates.bank_branch).trim() : existing.bank_branch,
-      account_number: updates.account_number !== undefined ? String(updates.account_number).trim() : existing.account_number
+      account_number: updates.account_number !== undefined ? String(updates.account_number).trim() : existing.account_number,
+      appointment_decision: updates.appointment_decision !== undefined ? String(updates.appointment_decision).trim() : existing.appointment_decision,
+      appointment_date: updates.appointment_date !== undefined ? String(updates.appointment_date).trim() : existing.appointment_date,
+      start_date: updates.start_date !== undefined ? String(updates.start_date).trim() : existing.start_date,
+      last_promotion_decision: updates.last_promotion_decision !== undefined ? String(updates.last_promotion_decision).trim() : existing.last_promotion_decision,
+      last_promotion_date: updates.last_promotion_date !== undefined ? String(updates.last_promotion_date).trim() : existing.last_promotion_date,
+      basic_salary: updates.basic_salary !== undefined ? String(updates.basic_salary).trim() : existing.basic_salary,
+      type: updates.type !== undefined ? String(updates.type).trim() : existing.type
     };
 
     // تنفيذ التحديث الفوري في SQLite بجملة مفهرسة وفائقة السرعة
@@ -527,6 +534,13 @@ export async function selfUpdateForceMember(req, res) {
         bank_name = ?,
         bank_branch = ?,
         account_number = ?,
+        appointment_decision = ?,
+        appointment_date = ?,
+        start_date = ?,
+        last_promotion_decision = ?,
+        last_promotion_date = ?,
+        basic_salary = ?,
+        type = ?,
         updated_at = datetime('now', 'localtime')
       WHERE id = ?
     `, [
@@ -557,6 +571,13 @@ export async function selfUpdateForceMember(req, res) {
       safeUpdates.bank_name,
       safeUpdates.bank_branch,
       safeUpdates.account_number,
+      safeUpdates.appointment_decision,
+      safeUpdates.appointment_date,
+      safeUpdates.start_date,
+      safeUpdates.last_promotion_decision,
+      safeUpdates.last_promotion_date,
+      safeUpdates.basic_salary,
+      safeUpdates.type,
       cleanId
     ]);
 

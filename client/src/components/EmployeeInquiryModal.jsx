@@ -29,7 +29,8 @@ import {
   FileText,
   Check,
   AlertTriangle,
-  Filter
+  Filter,
+  Briefcase
 } from 'lucide-react';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
@@ -116,8 +117,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
   // Editable Form Data
   const [formData, setFormData] = useState({});
 
-  // Active Tab for Form: 'family' | 'contact' | 'education' | 'military' | 'banking'
-  const [activeTab, setActiveTab] = useState('family');
+  // Active Tab: 'family' | 'career' | 'contact' | 'education' | 'military' | 'banking'
+  const [activeTab, setActiveTab] = useState('career');
 
   // Filter to show empty fields only
   const [showEmptyOnly, setShowEmptyOnly] = useState(false);
@@ -127,12 +128,18 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // Definition of all editable fields to track completeness & empty status
+  // Complete exhaustive list of all 34 editable / completable fields
   const TRACKED_FIELDS = useMemo(() => [
-    { key: 'phone', label: 'رقم الهاتف الشخصي', tab: 'contact' },
-    { key: 'emergency_contact', label: 'هاتف الطوارئ / قريب', tab: 'contact' },
-    { key: 'residence', label: 'محل الإقامة الفعلي', tab: 'contact' },
-    { key: 'tribe_city', label: 'القبيلة / المدينة', tab: 'contact' },
+    // Career & Appointment (التعيين والترقيات والبيانات الوظيفية)
+    { key: 'appointment_decision', label: 'قرار التعيين', tab: 'career' },
+    { key: 'appointment_date', label: 'تاريخ التعيين', tab: 'career' },
+    { key: 'start_date', label: 'تاريخ المباشرة الفعلية', tab: 'career' },
+    { key: 'last_promotion_decision', label: 'قرار آخر ترقية', tab: 'career' },
+    { key: 'last_promotion_date', label: 'تاريخ آخر ترقية', tab: 'career' },
+    { key: 'basic_salary', label: 'المرتب الأساسي', tab: 'career' },
+    { key: 'type', label: 'كادر التبعية (شرطي / مدني)', tab: 'career' },
+
+    // Family & Personal (البيانات العائلية والشخصية)
     { key: 'mother_name', label: 'اسم الأم ثلاثياً', tab: 'family' },
     { key: 'marital_status', label: 'الحالة الاجتماعية', tab: 'family' },
     { key: 'wife_name', label: 'اسم الزوجة', tab: 'family', conditional: (d) => d.marital_status === 'متزوج' },
@@ -143,8 +150,18 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     { key: 'passport_number', label: 'رقم الجواز', tab: 'family' },
     { key: 'birth_place', label: 'مكان الميلاد', tab: 'family' },
     { key: 'birth_date', label: 'تاريخ الميلاد', tab: 'family' },
+
+    // Contact & Residence (الاتصال والإقامة)
+    { key: 'phone', label: 'رقم الهاتف الشخصي', tab: 'contact' },
+    { key: 'emergency_contact', label: 'هاتف الطوارئ / قريب', tab: 'contact' },
+    { key: 'residence', label: 'محل الإقامة الفعلي', tab: 'contact' },
+    { key: 'tribe_city', label: 'القبيلة / المدينة', tab: 'contact' },
+
+    // Education & Languages (المؤهل العلمي واللغات)
     { key: 'education_level', label: 'المستوى الدراسي (المؤهل)', tab: 'education' },
     { key: 'languages', label: 'اللغات التي يجيدها', tab: 'education' },
+
+    // Military & Physical Uniform Sizes (المقاسات والتجهيزات العسكرية)
     { key: 'blood_type', label: 'فصيلة الدم', tab: 'military' },
     { key: 'suit_number', label: 'رقم / مقاس البدلة', tab: 'military' },
     { key: 'shoe_size', label: 'رقم الحذاء العسكري', tab: 'military' },
@@ -153,6 +170,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     { key: 'height', label: 'الطول (سم)', tab: 'military' },
     { key: 'weight', label: 'الوزن (كجم)', tab: 'military' },
     { key: 'diseases', label: 'الحالة الصحية / الأمراض', tab: 'military' },
+
+    // Banking & Financial (البيانات المصرفية)
     { key: 'bank_name', label: 'اسم المصرف', tab: 'banking' },
     { key: 'bank_branch', label: 'فرع المصرف', tab: 'banking' },
     { key: 'account_number', label: 'رقم الحساب المصرفي', tab: 'banking' }
@@ -226,10 +245,16 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     // Strict 1-to-1 isolation: clone the record into detached state
     setVerifiedMember(match);
     setFormData({
-      phone: match.phone && match.phone !== '-' ? match.phone : '',
-      emergency_contact: match.emergency_contact || match.notes || '',
-      residence: match.residence && match.residence !== '-' ? match.residence : '',
-      tribe_city: match.tribe_city && match.tribe_city !== '-' ? match.tribe_city : '',
+      // Career & Appointment
+      appointment_decision: match.appointment_decision && match.appointment_decision !== '-' ? match.appointment_decision : '',
+      appointment_date: match.appointment_date && match.appointment_date !== '-' ? match.appointment_date : '',
+      start_date: match.start_date && match.start_date !== '-' ? match.start_date : '',
+      last_promotion_decision: match.last_promotion_decision && match.last_promotion_decision !== '-' ? match.last_promotion_decision : '',
+      last_promotion_date: match.last_promotion_date && match.last_promotion_date !== '-' ? match.last_promotion_date : '',
+      basic_salary: match.basic_salary && match.basic_salary !== '-' ? String(match.basic_salary) : '',
+      type: match.type || 'شرطي',
+
+      // Family & Personal
       mother_name: match.mother_name && match.mother_name !== '-' ? match.mother_name : '',
       marital_status: match.marital_status && match.marital_status !== '-' ? match.marital_status : 'متزوج',
       wife_name: match.wife_name && match.wife_name !== '-' ? match.wife_name : '',
@@ -240,8 +265,18 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       passport_number: match.passport_number && match.passport_number !== '-' ? match.passport_number : '',
       birth_place: match.birth_place && match.birth_place !== '-' ? match.birth_place : '',
       birth_date: match.birth_date && match.birth_date !== '-' ? match.birth_date : '',
+
+      // Contact & Residence
+      phone: match.phone && match.phone !== '-' ? match.phone : '',
+      emergency_contact: match.emergency_contact || match.notes || '',
+      residence: match.residence && match.residence !== '-' ? match.residence : '',
+      tribe_city: match.tribe_city && match.tribe_city !== '-' ? match.tribe_city : '',
+
+      // Education & Languages
       education_level: match.education_level && match.education_level !== '-' ? match.education_level : '',
       languages: match.languages && match.languages !== '-' ? match.languages : 'العربية',
+
+      // Military Uniform & Physical
       blood_type: match.blood_type && match.blood_type !== '-' ? match.blood_type : '',
       suit_number: match.suit_number && match.suit_number !== '-' ? match.suit_number : '',
       shoe_size: match.shoe_size && match.shoe_size !== '-' ? match.shoe_size : '',
@@ -250,13 +285,15 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       height: match.height && match.height !== '-' ? match.height : '',
       weight: match.weight && match.weight !== '-' ? match.weight : '',
       diseases: match.diseases && match.diseases !== '-' ? match.diseases : 'سليم ولائق صحياً',
+
+      // Banking
       bank_name: match.bank_name && match.bank_name !== '-' ? match.bank_name : '',
       bank_branch: match.bank_branch && match.bank_branch !== '-' ? match.bank_branch : '',
       account_number: match.account_number && match.account_number !== '-' ? match.account_number : ''
     });
 
-    // Default active tab to where the first empty field resides
-    setActiveTab('family');
+    // Default active tab to career (appointment) to easily inspect and complete appointment details
+    setActiveTab('career');
   };
 
   // Reset to search another employee
@@ -287,13 +324,18 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitError(null);
 
     try {
-      // Build clean update payload containing all non-sovereign personnel details
+      // Build clean update payload containing all 34 editable personnel details
       const updates = {
-        phone: formData.phone?.trim() || '',
-        emergency_contact: formData.emergency_contact?.trim() || '',
-        notes: formData.emergency_contact?.trim() || '',
-        residence: formData.residence?.trim() || '',
-        tribe_city: formData.tribe_city?.trim() || '',
+        // Career & Appointment
+        appointment_decision: formData.appointment_decision?.trim() || '',
+        appointment_date: formData.appointment_date?.trim() || '',
+        start_date: formData.start_date?.trim() || '',
+        last_promotion_decision: formData.last_promotion_decision?.trim() || '',
+        last_promotion_date: formData.last_promotion_date?.trim() || '',
+        basic_salary: formData.basic_salary?.trim() || '',
+        type: formData.type || 'شرطي',
+
+        // Family & Personal
         mother_name: formData.mother_name?.trim() || '',
         marital_status: formData.marital_status || '',
         wife_name: formData.wife_name?.trim() || '',
@@ -304,8 +346,19 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
         passport_number: formData.passport_number?.trim() || '',
         birth_place: formData.birth_place?.trim() || '',
         birth_date: formData.birth_date || '',
+
+        // Contact & Residence
+        phone: formData.phone?.trim() || '',
+        emergency_contact: formData.emergency_contact?.trim() || '',
+        notes: formData.emergency_contact?.trim() || '',
+        residence: formData.residence?.trim() || '',
+        tribe_city: formData.tribe_city?.trim() || '',
+
+        // Education & Languages
         education_level: formData.education_level?.trim() || '',
         languages: formData.languages?.trim() || '',
+
+        // Military & Physical
         blood_type: formData.blood_type || '',
         suit_number: formData.suit_number || '',
         shoe_size: formData.shoe_size || '',
@@ -314,6 +367,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
         height: formData.height || '',
         weight: formData.weight || '',
         diseases: formData.diseases || '',
+
+        // Banking
         bank_name: formData.bank_name || '',
         bank_branch: formData.bank_branch?.trim() || '',
         account_number: formData.account_number?.trim() || ''
@@ -390,7 +445,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       <div
         className="moi-modal-box"
         style={{
-          maxWidth: '920px',
+          maxWidth: '960px',
           width: '95%',
           maxHeight: '92vh',
           display: 'flex',
@@ -458,7 +513,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 <span style={{ fontSize: '11px', color: '#cbd5e1' }}>وزارة الداخلية - مديرية أمن أوباري</span>
               </div>
               <h2 style={{ fontSize: '17px', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>
-                بوابة منتسبي المديرية | استعلام واستكمال الحقول الفارغة
+                بوابة منتسبي المديرية | استعلام واستكمال الحقول الفارغة (تاريخ التعيين، القرارات، البيانات العائلية والمقاسات)
               </h2>
             </div>
           </div>
@@ -511,7 +566,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 استعلام عن بيانات المنتسب واستكمال الحقول الفارغة
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.6, marginBottom: '22px' }}>
-                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> أو <strong>الرقم المالي / الوظيفي</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية وتعبئة الحقول الفارغة (اسم الأم، كتيب ورقم قيد العائلة، الهاتف، المقاسات، المصرف) مباشرة.
+                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> أو <strong>الرقم المالي / الوظيفي</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية وتعبئة الحقول الفارغة (تاريخ وقرار التعيين، تاريخ المباشرة، اسم الأم، كتيب العائلة، الهاتف، المقاسات، والمصرف) مباشرة.
               </p>
 
               <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
@@ -663,7 +718,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 <ul style={{ margin: 0, paddingRight: '18px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.7 }}>
                   <li><strong>عزل تام 1-إلى-1:</strong> لا يمكن الاطلاع إلا على بيانات صاحب الرقم الوطني أو المالي بعد مطابقة دقيقة.</li>
                   <li><strong>حماية الحقول السيادية:</strong> الاسم الكامل، الرتبة، جهة العمل، والوضع الوظيفي مقفلة ومحمية إدارياً.</li>
-                  <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والمقاسات والمصرف.</li>
+                  <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والوظيفية والمالية.</li>
                 </ul>
               </div>
             </div>
@@ -852,7 +907,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 {emptyFields.length > 0 && (
                   <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: '#78350f' }}>حقول متبقية:</span>
-                    {emptyFields.slice(0, 8).map((f) => (
+                    {emptyFields.slice(0, 10).map((f) => (
                       <button
                         key={f.key}
                         type="button"
@@ -872,9 +927,9 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                         + {f.label}
                       </button>
                     ))}
-                    {emptyFields.length > 8 && (
+                    {emptyFields.length > 10 && (
                       <span style={{ fontSize: '11px', color: '#92400e', fontWeight: 700 }}>
-                        +{emptyFields.length - 8} حقول أخرى
+                        +{emptyFields.length - 10} حقول أخرى
                       </span>
                     )}
                   </div>
@@ -903,7 +958,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   <div>
                     <div>✅ تم حفظ وتوثيق البيانات بنجاح في قاعدة البيانات المركزية!</div>
                     <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#047857', marginTop: '2px' }}>
-                      تم اعتماد التحديثات وربطها برقمك الوطني وقيدك الأمني في منظومة مديرية أمن أوباري.
+                      تم اعتماد التحديثات (التعيين، الترقيات، البيانات العائلية والمقاسات) وربطها برقمك الوطني وقيدك الأمني في منظومة مديرية أمن أوباري.
                     </div>
                   </div>
                 </div>
@@ -930,7 +985,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 </div>
               )}
 
-              {/* Form Navigation Tabs */}
+              {/* Form Navigation Tabs (6 Complete Categories) */}
               <div
                 style={{
                   display: 'flex',
@@ -941,6 +996,34 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   overflowX: 'auto'
                 }}
               >
+                {/* TAB BUTTON: Career & Appointment (التعيين والترقيات والبيانات الوظيفية) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('career')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: activeTab === 'career' ? '#1e3a8a' : 'transparent',
+                    color: activeTab === 'career' ? '#fff' : '#64748b'
+                  }}
+                >
+                  <Award size={16} />
+                  <span>التعيين والترقيات والبيانات الوظيفية</span>
+                  {emptyFields.filter(f => f.tab === 'career').length > 0 && (
+                    <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
+                      {emptyFields.filter(f => f.tab === 'career').length}
+                    </span>
+                  )}
+                </button>
+
+                {/* TAB BUTTON: Family & Personal (البيانات العائلية والشخصية) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('family')}
@@ -967,6 +1050,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   )}
                 </button>
 
+                {/* TAB BUTTON: Contact & Residence (الاتصال والإقامة) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('contact')}
@@ -993,6 +1077,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   )}
                 </button>
 
+                {/* TAB BUTTON: Education & Languages (المؤهل العلمي واللغات) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('education')}
@@ -1019,6 +1104,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   )}
                 </button>
 
+                {/* TAB BUTTON: Military & Uniform (المقاسات والتجهيزات العسكرية والبدنية) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('military')}
@@ -1037,7 +1123,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   }}
                 >
                   <Scissors size={16} />
-                  <span>المقاسات والتجهيزات العسكرية والبدنية</span>
+                  <span>المقاسات والتجهيزات العسكرية</span>
                   {emptyFields.filter(f => f.tab === 'military').length > 0 && (
                     <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }}>
                       {emptyFields.filter(f => f.tab === 'military').length}
@@ -1045,6 +1131,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   )}
                 </button>
 
+                {/* TAB BUTTON: Banking & Finance (البيانات المصرفية والمالية) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('banking')}
@@ -1074,7 +1161,236 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
 
               {/* Form Content */}
               <form onSubmit={handleSubmit}>
-                {/* TAB 1: Family & Personal Data */}
+                {/* TAB: Career, Appointment & Promotion (التعيين والترقيات والبيانات الوظيفية) */}
+                {activeTab === 'career' && (
+                  <div>
+                    <div
+                      style={{
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        marginBottom: '16px',
+                        fontSize: '12px',
+                        color: '#1e40af',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Award size={16} />
+                      <span>
+                        بيانات التعيين الرسمي، المباشرة الفعلية بالعمل، وقرارات الترقية الصادرة من وزارة الداخلية لحفظ الأقدمية والاستحقاقات الوظيفية.
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                      {/* Appointment Date */}
+                      {(!showEmptyOnly || isFieldEmpty('appointment_date')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('appointment_date') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              تاريخ التعيين (يوم/شهر/سنة):
+                            </label>
+                            <FieldStatusBadge fieldKey="appointment_date" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="يوم/شهر/سنة (مثال: 2012/03/15)"
+                            value={formData.appointment_date}
+                            onChange={(e) => handleChange('appointment_date', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                            تاريخ صدور قرار التعيين المعتمد بملف الخدمة
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Appointment Decision */}
+                      {(!showEmptyOnly || isFieldEmpty('appointment_decision')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('appointment_decision') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              قرار التعيين الرسمي:
+                            </label>
+                            <FieldStatusBadge fieldKey="appointment_decision" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="مثال: قرار وزير الداخلية رقم (142) لسنة 2012م"
+                            value={formData.appointment_decision}
+                            onChange={(e) => handleChange('appointment_decision', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                            رقم وتاريخ قرار التعيين الصادر من الوزارة
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Actual Start Date */}
+                      {(!showEmptyOnly || isFieldEmpty('start_date')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('start_date') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              تاريخ المباشرة الفعلية بالعمل (يوم/شهر/سنة):
+                            </label>
+                            <FieldStatusBadge fieldKey="start_date" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="يوم/شهر/سنة (مثال: 2012/04/01)"
+                            value={formData.start_date}
+                            onChange={(e) => handleChange('start_date', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                            تاريخ استلام العمل والمباشرة الفعلية بالمديرية
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Last Promotion Decision */}
+                      {(!showEmptyOnly || isFieldEmpty('last_promotion_decision')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('last_promotion_decision') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              قرار آخر ترقية:
+                            </label>
+                            <FieldStatusBadge fieldKey="last_promotion_decision" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="رقم وتاريخ قرار آخر ترقية عسكرية / مدنية..."
+                            value={formData.last_promotion_decision}
+                            onChange={(e) => handleChange('last_promotion_decision', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Last Promotion Date */}
+                      {(!showEmptyOnly || isFieldEmpty('last_promotion_date')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('last_promotion_date') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              تاريخ سريان آخر ترقية:
+                            </label>
+                            <FieldStatusBadge fieldKey="last_promotion_date" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="يوم/شهر/سنة (مثال: 2022/01/01)"
+                            value={formData.last_promotion_date}
+                            onChange={(e) => handleChange('last_promotion_date', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Basic Salary */}
+                      {(!showEmptyOnly || isFieldEmpty('basic_salary')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('basic_salary') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              المرتب الأساسي (د.ل):
+                            </label>
+                            <FieldStatusBadge fieldKey="basic_salary" />
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="مثال: 1250"
+                            value={formData.basic_salary}
+                            onChange={(e) => handleChange('basic_salary', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Type: Police vs Civil */}
+                      {(!showEmptyOnly || isFieldEmpty('type')) && (
+                        <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                              كادر التبعية الوظيفية:
+                            </label>
+                            <FieldStatusBadge fieldKey="type" />
+                          </div>
+                          <select
+                            value={formData.type || 'شرطي'}
+                            onChange={(e) => handleChange('type', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              boxSizing: 'border-box',
+                              background: '#fff'
+                            }}
+                          >
+                            <option value="شرطي">كادر هيئة الشرطة (عسكري/نظامي)</option>
+                            <option value="مدني">كادر الموظفين المدنيين</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB: Family & Personal Data (البيانات العائلية والشخصية) */}
                 {activeTab === 'family' && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                     {/* Mother's Full Name */}
@@ -1360,7 +1676,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
                 )}
 
-                {/* TAB 2: Contact & Residence Data */}
+                {/* TAB: Contact & Residence Data (الاتصال والإقامة) */}
                 {activeTab === 'contact' && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                     {/* Phone Number */}
@@ -1483,7 +1799,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
                 )}
 
-                {/* TAB 3: Education & Languages */}
+                {/* TAB: Education & Languages (المؤهل العلمي واللغات) */}
                 {activeTab === 'education' && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                     {/* Education Level / Qualification */}
@@ -1557,7 +1873,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
                 )}
 
-                {/* TAB 4: Military Uniform Sizes & Physical Measurements */}
+                {/* TAB: Military Uniform Sizes & Physical Measurements (المقاسات والتجهيزات العسكرية) */}
                 {activeTab === 'military' && (
                   <div>
                     <div
@@ -1840,7 +2156,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
                 )}
 
-                {/* TAB 5: Banking & Financial Data */}
+                {/* TAB: Banking & Financial Data (البيانات المصرفية والمالية) */}
                 {activeTab === 'banking' && (
                   <div>
                     <div

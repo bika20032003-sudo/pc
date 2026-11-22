@@ -1602,6 +1602,7 @@ export default function App() {
           setNotificationMsg={setNotificationMsg}
           externalEditingMember={externalEditingMember}
           clearExternalEditingMember={() => setExternalEditingMember(null)}
+          onOpenInquiry={() => setShowInquiryModal(true)}
         />
       );
     }
@@ -2044,6 +2045,31 @@ export default function App() {
               <span className="topbar-date-text" style={{ fontSize: '14px', color: '#475569', fontWeight: 700 }}>
                 {currentTime} | {new Date().toLocaleDateString('ar-LY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
+
+              {/* Sovereign Quick Access: Employee Self-Service Inquiry Portal */}
+              <button
+                type="button"
+                onClick={() => setShowInquiryModal(true)}
+                title="بوابة استعلام وتحديث بيانات الموظفين والمنتسبين"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                  color: '#d4af37',
+                  border: '1.5px solid #d4af37',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(10, 25, 47, 0.15)'
+                }}
+              >
+                <Search size={15} />
+                <span>استعلام المنتسبين</span>
+              </button>
+
               <button onClick={handleLogout} className="logout-btn" title="تسجيل الخروج" style={{ fontSize: '14.5px', padding: '8px 16px' }}>
                 <LogOut size={18} />
                 <span>خروج</span>
