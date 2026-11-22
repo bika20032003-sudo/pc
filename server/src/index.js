@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { initDatabase } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import forceRoutes from './routes/forceRoutes.js';
@@ -21,7 +24,11 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:5050',
   'http://127.0.0.1:5050',
-  'https://bika20032003-sudo.github.io'
+  'https://bika20032003-sudo.github.io',
+  'https://ubarighatroad.ly',
+  'http://ubarighatroad.ly',
+  'https://www.ubarighatroad.ly',
+  'http://www.ubarighatroad.ly'
 ];
 
 app.use(cors({
@@ -76,6 +83,28 @@ app.get('/api/health', (req, res) => {
     serverTime: new Date().toISOString()
   });
 });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve Static Frontend Assets (Single Page App) if present
+const possibleStaticDirs = [
+  path.join(__dirname, '../public'),
+  path.join(__dirname, '../dist'),
+  path.join(__dirname, '../../client/dist'),
+  path.join(process.cwd(), 'dist'),
+  path.join(process.cwd(), 'public_html')
+];
+
+let staticDir = possibleStaticDirs.find((d) => fs.existsSync(d) && fs.existsSync(path.join(d, 'index.html')));
+
+if (staticDir) {
+  app.use(express.static(staticDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
+}
 
 // 404 Route handler for API
 app.use('/api/*', (req, res) => {
