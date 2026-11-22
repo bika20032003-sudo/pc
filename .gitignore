@@ -21,6 +21,7 @@ Thumbs.db
 # SQLite Temporary WAL Files
 *.db-shm
 *.db-wal
+*.zip
 
 # Environment (keep example)
 # server/.env
