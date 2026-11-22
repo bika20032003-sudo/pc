@@ -3309,7 +3309,7 @@ export default function App() {
                   <span>استعلام وتحديث بيانات المنتسب</span>
                 </button>
                 <span style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-                  🔍 استعلام بالرقم الوطني أو المالي واستكمال البيانات الناقصة ذاتياً
+                  🔍 استعلام حصري بالرقم الوطني (12 رقماً) واستكمال البيانات الناقصة ذاتياً
                 </span>
               </div>
 

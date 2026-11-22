@@ -106,9 +106,8 @@ const HEALTH_CONDITIONS = [
 ];
 
 export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [], onUpdateMember }) {
-  // Search States
+  // Search States (Strictly National ID)
   const [searchInput, setSearchInput] = useState('');
-  const [searchFilterType, setSearchFilterType] = useState('all'); // 'all' | 'national_id' | 'financial_number'
   const [searchError, setSearchError] = useState(null);
 
   // Active Verified Employee
@@ -206,7 +205,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     return !val || String(val).trim() === '' || String(val).trim() === '-';
   };
 
-  // Handle Search Verification - Strictly 1-to-1 matching to prevent mixups
+  // Handle Search Verification - Strictly 1-to-1 matching via National ID ONLY
   const handleSearch = (e) => {
     if (e) e.preventDefault();
     setSearchError(null);
@@ -214,29 +213,19 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitError(null);
 
     const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length < 3) {
-      setSearchError('يرجى إدخال الرقم الوطني (12 رقماً) أو الرقم المالي الصحيح للاستعلام.');
+    if (!clean || clean.length !== 12) {
+      setSearchError('يرجى إدخال الرقم الوطني الصحيح المكون من 12 رقماً للاستعلام عن الملف.');
       return;
     }
 
-    // High performance in-memory lookup across all roster elements
+    // High performance in-memory lookup strictly by National ID (12 digits)
     const match = forceMembers.find((m) => {
       const nat = sanitizeDigits(m.national_id);
-      const fin = sanitizeDigits(m.financial_number);
-      const job = sanitizeDigits(m.job_number);
-
-      if (searchFilterType === 'national_id') {
-        return nat === clean;
-      }
-      if (searchFilterType === 'financial_number') {
-        return fin === clean || job === clean;
-      }
-      // 'all': match either National ID or Financial / Job number strictly
-      return nat === clean || fin === clean || job === clean;
+      return nat === clean;
     });
 
     if (!match) {
-      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم المدخل [${searchInput}]. يرجى التأكد من صحة الرقم الوطني أو الرقم المالي الخاص بك.`);
+      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم الوطني المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم الوطني بشكل صحيح.`);
       setVerifiedMember(null);
       return;
     }
@@ -560,69 +549,25 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
               </div>
 
               <h3 style={{ fontSize: '19px', fontWeight: 900, color: '#0a192f', marginBottom: '8px' }}>
-                استعلام عن بيانات المنتسب واستكمال الحقول الفارغة
+                استعلام عن بيانات المنتسب بالرقم الوطني
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.6, marginBottom: '22px' }}>
-                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> أو <strong>الرقم المالي / الوظيفي</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية وتعبئة الحقول الفارغة (تاريخ وقرار التعيين، تاريخ المباشرة، اسم الأم، كتيب العائلة، الهاتف، المقاسات، والمصرف) مباشرة.
+                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية واستكمال الحقول الفارغة (تاريخ وقرار التعيين، تاريخ المباشرة، اسم الأم، كتيب العائلة، الهاتف، المقاسات، والمصرف) مباشرة وبشكل آمن.
               </p>
 
               <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSearchFilterType('all')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      border: searchFilterType === 'all' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
-                      background: searchFilterType === 'all' ? '#1e3a8a' : '#ffffff',
-                      color: searchFilterType === 'all' ? '#ffffff' : '#475569',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    بحث شامل (وطني أو مالي)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSearchFilterType('national_id')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      border: searchFilterType === 'national_id' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
-                      background: searchFilterType === 'national_id' ? '#1e3a8a' : '#ffffff',
-                      color: searchFilterType === 'national_id' ? '#ffffff' : '#475569',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    بالرقم الوطني فقط
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSearchFilterType('financial_number')}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      border: searchFilterType === 'financial_number' ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1',
-                      background: searchFilterType === 'financial_number' ? '#1e3a8a' : '#ffffff',
-                      color: searchFilterType === 'financial_number' ? '#ffffff' : '#475569',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    بالرقم المالي / الوظيفي
-                  </button>
+                <div style={{ marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                    الرقم الوطني المعتمد (12 رقماً):
+                  </label>
                 </div>
 
                 <div style={{ position: 'relative', marginBottom: '14px' }}>
                   <input
                     type="text"
                     dir="ltr"
-                    placeholder="مثال: 119960541445 أو 1084467"
+                    maxLength={12}
+                    placeholder="مثال: 119960541445"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     style={{
@@ -693,7 +638,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   }}
                 >
                   <Search size={18} />
-                  <span>التحقق من الهوية وعرض الملف</span>
+                  <span>التحقق بالرقم الوطني وعرض الملف</span>
                 </button>
               </form>
 
@@ -713,7 +658,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   <span>ضمانات الخصوصية والأمان المعتمدة:</span>
                 </div>
                 <ul style={{ margin: 0, paddingRight: '18px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.7 }}>
-                  <li><strong>عزل تام 1-إلى-1:</strong> لا يمكن الاطلاع إلا على بيانات صاحب الرقم الوطني أو المالي بعد مطابقة دقيقة.</li>
+                  <li><strong>استعلام حصري بالرقم الوطني:</strong> لا يمكن الاطلاع إلا برقمك الوطني المعتمد (12 رقماً) لعزل البيانات ومنع أي تشابك.</li>
                   <li><strong>حماية الحقول السيادية:</strong> الاسم الكامل، الرتبة، جهة العمل، والوضع الوظيفي مقفلة ومحمية إدارياً.</li>
                   <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والوظيفية والمالية.</li>
                 </ul>
