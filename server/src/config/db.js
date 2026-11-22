@@ -33,10 +33,12 @@ export async function initDatabase() {
 
     // ضبط إعدادات التزامن العالي وتحمل الضغط الميداني
     await dbInstance.exec('PRAGMA journal_mode = WAL;');
-    await dbInstance.exec('PRAGMA busy_timeout = 5000;');
+    await dbInstance.exec('PRAGMA busy_timeout = 10000;');
     await dbInstance.exec('PRAGMA synchronous = NORMAL;');
     await dbInstance.exec('PRAGMA foreign_keys = ON;');
     await dbInstance.exec('PRAGMA cache_size = -64000;'); // 64MB Cache
+    await dbInstance.exec('PRAGMA temp_store = MEMORY;');
+    await dbInstance.exec('PRAGMA mmap_size = 268435456;'); // 256MB zero-copy memory-mapped I/O
 
     // 1. جدول المستخدمين والصلاحيات
     await dbInstance.exec(`
@@ -249,6 +251,7 @@ export async function initDatabase() {
     await dbInstance.exec(`
       CREATE INDEX IF NOT EXISTS idx_force_national_id ON force_members(national_id);
       CREATE INDEX IF NOT EXISTS idx_force_job_number ON force_members(job_number);
+      CREATE INDEX IF NOT EXISTS idx_force_financial_number ON force_members(financial_number);
       CREATE INDEX IF NOT EXISTS idx_force_name_norm ON force_members(name_normalized);
       CREATE INDEX IF NOT EXISTS idx_force_dept ON force_members(department);
       CREATE INDEX IF NOT EXISTS idx_force_status ON force_members(job_status);

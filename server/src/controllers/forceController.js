@@ -7,6 +7,46 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// طابور ذكي غير متزامن ومجمّع لتحديث ملف force_data.json في الخلفية دون تعطيل استجابة الخادم
+const pendingJsonUpdates = new Map();
+let jsonBatchTimer = null;
+let isFlushingJson = false;
+
+function scheduleJsonSync(id, updates) {
+  pendingJsonUpdates.set(Number(id), updates);
+  if (jsonBatchTimer) return;
+
+  jsonBatchTimer = setTimeout(async () => {
+    jsonBatchTimer = null;
+    if (isFlushingJson || pendingJsonUpdates.size === 0) return;
+    isFlushingJson = true;
+
+    try {
+      const forceJsonPath = path.resolve(__dirname, '../data/force_data.json');
+      if (fs.existsSync(forceJsonPath)) {
+        const fileContent = await fs.promises.readFile(forceJsonPath, 'utf8');
+        const list = JSON.parse(fileContent);
+        
+        // تطبيق كافة التحديثات المجمعة دفعة واحدة في الذاكرة
+        for (const [memberId, fields] of pendingJsonUpdates.entries()) {
+          const idx = list.findIndex(item => Number(item.id) === memberId);
+          if (idx !== -1) {
+            list[idx] = { ...list[idx], ...fields };
+          }
+        }
+        pendingJsonUpdates.clear();
+
+        // كتابة الملف دفعة واحدة بشكل غير متزامن (Asynchronous Non-blocking Write)
+        await fs.promises.writeFile(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
+      }
+    } catch (err) {
+      console.warn('تنبيه: تعذر مزامنة نسخة JSON بالخلفية:', err.message);
+    } finally {
+      isFlushingJson = false;
+    }
+  }, 1000); // تجميع كافة الطلبات التي تصل خلال ثانية واحدة في عملية كتابة قرصية واحدة
+}
+
 /**
  * تحديث حالة منتسب في قاعدة بيانات SQLite مباشرة
  */
@@ -580,21 +620,8 @@ export async function selfUpdateForceMember(req, res) {
 
     const updated = await db.get('SELECT * FROM force_members WHERE id = ?', [cleanId]);
 
-    // مزامنة الملف الاحتياطي JSON بشكل غير متزامن بدون تعطيل الاستجابة
-    try {
-      const forceJsonPath = path.resolve(__dirname, '../data/force_data.json');
-      if (fs.existsSync(forceJsonPath)) {
-        const fileContent = fs.readFileSync(forceJsonPath, 'utf8');
-        const list = JSON.parse(fileContent);
-        const idx = list.findIndex(item => Number(item.id) === cleanId);
-        if (idx !== -1) {
-          list[idx] = { ...list[idx], ...safeUpdates };
-          fs.writeFileSync(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
-        }
-      }
-    } catch (fileErr) {
-      console.warn('تنبيه: تعذر حفظ نسخة JSON في الخلفية:', fileErr.message);
-    }
+    // مزامنة الملف الاحتياطي JSON بشكل غير متزامن ومجمّع في الخلفية دون تعطيل الاستجابة الفورية للمنتسب
+    scheduleJsonSync(cleanId, safeUpdates);
 
     return res.status(200).json({
       success: true,
