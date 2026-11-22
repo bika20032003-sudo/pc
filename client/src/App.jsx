@@ -241,6 +241,9 @@ export default function App() {
     new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' })
   );
 
+  // Global Notification Banner State
+  const [notificationMsg, setNotificationMsg] = useState('');
+
   // General Force: All 2,211 personnel from قوه 2222.xlsx
   const [forceMembers, setForceMembers] = useState(() => {
     const saved = localStorage.getItem('ubari_force_members');
@@ -277,7 +280,7 @@ export default function App() {
       if (list && list.length > 0) {
         setForceMembers(list);
         localStorage.setItem('ubari_force_members', JSON.stringify(list));
-        if (!silent && setNotificationMsg) {
+        if (!silent) {
           setNotificationMsg(`تمت المزامنة الحية بنجاح مع السيرفر المركزي (${list.length.toLocaleString('ar-LY')} قيد)`);
           setTimeout(() => setNotificationMsg(''), 4000);
         }
@@ -287,7 +290,7 @@ export default function App() {
     } catch (e) {
       return false;
     }
-  }, [setNotificationMsg]);
+  }, []);
 
   // Self-update handler for employees (inquiry portal)
   const handleSelfUpdateForceMember = async (memberId, updates) => {
@@ -452,9 +455,6 @@ export default function App() {
     confirm_password: ''
   });
 
-
-
-  const [notificationMsg, setNotificationMsg] = useState('');
 
   // Fetch sync users from API
   useEffect(() => {
