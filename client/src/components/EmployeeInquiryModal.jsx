@@ -205,7 +205,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     return !val || String(val).trim() === '' || String(val).trim() === '-';
   };
 
-  // Handle Search Verification - Strictly 1-to-1 matching via National ID ONLY
+  // Handle Search Verification - Strictly 1-to-1 matching via National ID or Administrative Number (الرقم الوطني أو الرقم الإداري)
   const handleSearch = (e) => {
     if (e) e.preventDefault();
     setSearchError(null);
@@ -213,19 +213,19 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitError(null);
 
     const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length !== 12) {
-      setSearchError('يرجى إدخال الرقم الوطني الصحيح المكون من 12 رقماً للاستعلام عن الملف.');
+    if (!clean || clean.length < 10 || clean.length > 12) {
+      setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري (10 أرقام) الصحيح للاستعلام عن الملف.');
       return;
     }
 
-    // High performance in-memory lookup strictly by National ID (12 digits)
+    // High performance in-memory lookup strictly by National ID or Administrative Number (10 - 12 digits)
     const match = forceMembers.find((m) => {
       const nat = sanitizeDigits(m.national_id);
       return nat === clean;
     });
 
     if (!match) {
-      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم الوطني المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم الوطني بشكل صحيح.`);
+      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم الوطني أو الإداري المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم بشكل صحيح.`);
       setVerifiedMember(null);
       return;
     }
@@ -549,16 +549,16 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
               </div>
 
               <h3 style={{ fontSize: '19px', fontWeight: 900, color: '#0a192f', marginBottom: '8px' }}>
-                استعلام عن بيانات المنتسب بالرقم الوطني
+                استعلام عن بيانات المنتسب (بالرقم الوطني أو الرقم الإداري)
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.6, marginBottom: '22px' }}>
-                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية واستكمال الحقول الفارغة (تاريخ وقرار التعيين، تاريخ المباشرة، اسم الأم، كتيب العائلة، الهاتف، المقاسات، والمصرف) مباشرة وبشكل آمن.
+                أدخل <strong>الرقم الوطني المعتمد (12 رقماً)</strong> أو <strong>الرقم الإداري (10 أرقام)</strong> الخاص بك للاطلاع على ملفك بالقوة العمومية واستكمال الحقول الفارغة (تاريخ وقرار التعيين، تاريخ المباشرة، اسم الأم، كتيب العائلة، الهاتف، المقاسات، والمصرف) مباشرة وبشكل آمن.
               </p>
 
               <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
                 <div style={{ marginBottom: '8px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                    الرقم الوطني المعتمد (12 رقماً):
+                    الرقم الوطني أو الرقم الإداري المعتمد (10 - 12 رقماً):
                   </label>
                 </div>
 
@@ -567,7 +567,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     type="text"
                     dir="ltr"
                     maxLength={12}
-                    placeholder="مثال: 119960541445"
+                    placeholder="مثال: 119960541445 أو 5198606410"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     style={{
@@ -638,7 +638,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   }}
                 >
                   <Search size={18} />
-                  <span>التحقق بالرقم الوطني وعرض الملف</span>
+                  <span>التحقق من الهوية وعرض الملف</span>
                 </button>
               </form>
 
@@ -658,7 +658,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   <span>ضمانات الخصوصية والأمان المعتمدة:</span>
                 </div>
                 <ul style={{ margin: 0, paddingRight: '18px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.7 }}>
-                  <li><strong>استعلام حصري بالرقم الوطني:</strong> لا يمكن الاطلاع إلا برقمك الوطني المعتمد (12 رقماً) لعزل البيانات ومنع أي تشابك.</li>
+                  <li><strong>استعلام حصري بالرقم الوطني أو الإداري:</strong> لا يمكن الاطلاع إلا برقمك الوطني (12 رقماً) أو الإداري (10 أرقام) المعتمد لعزل البيانات ومنع أي تشابك.</li>
                   <li><strong>حماية الحقول السيادية:</strong> الاسم الكامل، الرتبة، جهة العمل، والوضع الوظيفي مقفلة ومحمية إدارياً.</li>
                   <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والوظيفية والمالية.</li>
                 </ul>
@@ -736,7 +736,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   </div>
 
                   <div style={{ background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرقم الوطني المعتمد</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الرقم الوطني / الإداري المعتمد</div>
                     <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', marginTop: '2px' }}>
                       {verifiedMember.national_id || '---'}
                     </div>
