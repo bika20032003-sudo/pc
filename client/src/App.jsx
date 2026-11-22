@@ -140,10 +140,17 @@ const SLIDES = [
 
 export default function App() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('moi_user');
-    const generalAvatar = localStorage.getItem('ubari_user_avatar') || '';
-    if (saved) {
-      try {
+    // Strictly show the official Login Screen upon opening the system
+    try {
+      const sessionActive = sessionStorage.getItem('moi_session_active');
+      if (!sessionActive) {
+        localStorage.removeItem('moi_user');
+        localStorage.removeItem('moi_token');
+        return null;
+      }
+      const saved = localStorage.getItem('moi_user');
+      const generalAvatar = localStorage.getItem('ubari_user_avatar') || '';
+      if (saved) {
         let parsed = JSON.parse(saved);
         if (parsed.username === 'admin' || parsed.id === 1 || !parsed.full_name) {
           parsed.full_name = parsed.full_name || 'سيادة اللواء / موسى سعد محمد البدين';
@@ -182,14 +189,21 @@ export default function App() {
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
         return parsed;
-      } catch (e) {
-        return DEFAULT_SYSTEM_USERS[0];
       }
+    } catch (e) {
+      return null;
     }
-    // Default to Super Admin (سيادة اللواء / موسى سعد محمد البدين) so user lands directly on Dashboard
-    return DEFAULT_SYSTEM_USERS[0];
+    // Default to NULL so Login Screen ALWAYS appears when opening the system
+    return null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('moi_token') || '');
+  const [token, setToken] = useState(() => {
+    try {
+      if (!sessionStorage.getItem('moi_session_active')) return '';
+      return localStorage.getItem('moi_token') || '';
+    } catch (e) {
+      return '';
+    }
+  });
 
   // Active Navigation Section - default to 'dashboard'
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -525,6 +539,7 @@ export default function App() {
         setActiveSection(userSections[0] || 'force');
         const tok = data.token || `moi-token-${loggedUser.id}-${Date.now()}`;
         setToken(tok);
+        sessionStorage.setItem('moi_session_active', 'true');
         localStorage.setItem('moi_token', tok);
         localStorage.setItem('moi_user', JSON.stringify(loggedUser));
         setIsLoading(false);
@@ -626,6 +641,7 @@ export default function App() {
         setActiveSection('dashboard');
         const tokenVal = `local-token-${authenticatedUser.id}-${Date.now()}`;
         setToken(tokenVal);
+        sessionStorage.setItem('moi_session_active', 'true');
         localStorage.setItem('moi_token', tokenVal);
         localStorage.setItem('moi_user', JSON.stringify(authenticatedUser));
         setIsLoading(false);
@@ -658,6 +674,7 @@ export default function App() {
       setActiveSection('dashboard');
       const tokenVal = `moi-admin-token-${Date.now()}`;
       setToken(tokenVal);
+      sessionStorage.setItem('moi_session_active', 'true');
       localStorage.setItem('moi_token', tokenVal);
       localStorage.setItem('moi_user', JSON.stringify(adminUser));
       setIsLoading(false);
@@ -671,6 +688,7 @@ export default function App() {
   const handleLogout = () => {
     setUser(null);
     setToken('');
+    sessionStorage.removeItem('moi_session_active');
     localStorage.removeItem('moi_token');
     localStorage.removeItem('moi_user');
     setIsMobileMenuOpen(false);
