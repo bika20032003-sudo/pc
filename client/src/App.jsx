@@ -3330,39 +3330,6 @@ export default function App() {
                   🔍 استعلام حصري بالرقم الوطني (12 رقماً) واستكمال البيانات الناقصة ذاتياً
                 </span>
               </div>
-
-              {/* Quick Login Presets for Training & Official Demo */}
-              <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0' }}>
-                <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '8px', textAlign: 'center' }}>
-                  حسابات الدخول المعتمدة للمنظومة:
-                </span>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setIdentifier('admin'); setPassword('admin123'); }}
-                    style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#1e3a8a', cursor: 'pointer' }}
-                    title="مدير عام المنظومة (صلاحيات كاملة)"
-                  >
-                    👑 سيادة اللواء (admin)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setIdentifier('ali.ahmed'); setPassword('123456'); }}
-                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#334155', cursor: 'pointer' }}
-                    title="نائب مدير المديرية"
-                  >
-                    👮‍♂️ نائب المدير
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setIdentifier('abdulsamad'); setPassword('123456'); }}
-                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 800, color: '#334155', cursor: 'pointer' }}
-                    title="مسؤول القوة العمومية"
-                  >
-                    📋 شؤون القوة
-                  </button>
-                </div>
-              </div>
             </form>
 
             {/* Links and Directorate Social */}
