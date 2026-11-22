@@ -3326,9 +3326,6 @@ export default function App() {
                   <Search size={18} style={{ color: '#d4af37' }} />
                   <span>استعلام وتحديث بيانات المنتسب</span>
                 </button>
-                <span style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-                  🔍 استعلام حصري بالرقم الوطني (12 رقماً) واستكمال البيانات الناقصة ذاتياً
-                </span>
               </div>
             </form>
 
