@@ -642,26 +642,38 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                 </button>
               </form>
 
-              {/* Security Banner */}
+              {/* Official Advisory & Employee Appreciation Banner */}
               <div
                 style={{
                   marginTop: '24px',
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'right'
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+                  border: '1.5px solid #d4af37',
+                  borderRadius: '12px',
+                  padding: '16px 18px',
+                  textAlign: 'right',
+                  boxShadow: '0 2px 10px rgba(212, 175, 55, 0.08)'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 800, fontSize: '12px', marginBottom: '6px' }}>
-                  <ShieldCheck size={16} />
-                  <span>ضمانات الخصوصية والأمان المعتمدة:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e3a8a', fontWeight: 800, fontSize: '13px', marginBottom: '8px' }}>
+                  <Info size={18} style={{ color: '#d4af37' }} />
+                  <span>تنويه إداري هام لجميع المنتسبين:</span>
                 </div>
-                <ul style={{ margin: 0, paddingRight: '18px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.7 }}>
-                  <li><strong>استعلام حصري بالرقم الوطني أو الإداري:</strong> لا يمكن الاطلاع إلا برقمك الوطني (12 رقماً) أو الإداري (10 أرقام) المعتمد لعزل البيانات ومنع أي تشابك.</li>
-                  <li><strong>حماية الحقول السيادية:</strong> الاسم الكامل، الرتبة، جهة العمل، والوضع الوظيفي مقفلة ومحمية إدارياً.</li>
-                  <li><strong>استكمال الحقول الفارغة:</strong> تقتصر التعبئة الذاتية على الحقول الشخصية والعائلية والوظيفية والمالية.</li>
-                </ul>
+                <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: '#334155', lineHeight: 1.8, fontWeight: 600 }}>
+                  يرجى التأكد التام من إدخال البيانات بشكل صحيح ودقيق، والالتزام بتعبئة واستيفاء كافة الحقول المطلوبة لضمان اكتمال وتحديث ملفك الشخصي بالقوة العمومية.
+                </p>
+                <div style={{
+                  paddingTop: '10px',
+                  borderTop: '1px dashed #cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#065f46',
+                  fontWeight: 800,
+                  fontSize: '12px'
+                }}>
+                  <Award size={16} style={{ color: '#059669', flexShrink: 0 }} />
+                  <span>تتقدم إدارة المنظومة بخالص الشكر والتقدير لجميع الموظفين والمنتسبين على حسن تعاونهم والتزامهم.</span>
+                </div>
               </div>
             </div>
           ) : (
