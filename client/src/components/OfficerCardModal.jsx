@@ -24,6 +24,7 @@ import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 import initialPenalties from '../data/penalties_data.json';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import IndictmentSheetModal from './IndictmentSheetModal';
 
 export default function OfficerCardModal({
   member,
@@ -51,6 +52,8 @@ export default function OfficerCardModal({
   const [photoFeedback, setPhotoFeedback] = useState('');
   const [currentPhoto, setCurrentPhoto] = useState(member.photo || '');
   const [printTarget, setPrintTarget] = useState('card'); // 'card' or 'dossier'
+  const [isIndictmentOpen, setIsIndictmentOpen] = useState(false);
+  const [selectedIndictmentPenalty, setSelectedIndictmentPenalty] = useState(null);
   const fileInputRef = useRef(null);
 
   // Disciplinary history for this officer
@@ -2026,41 +2029,96 @@ export default function OfficerCardModal({
 
                 <div>
                   {officerPenalties.length > 0 ? (
-                    <span
-                      style={{
-                        background: '#fee2e2',
-                        color: '#b91c1c',
-                        border: '1.5px solid #f87171',
-                        padding: '5px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: 800,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                    >
-                      <AlertCircle size={14} />
-                      مسجل بحقه ({officerPenalties.length}) عقوبة تأديبية
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: '1.5px solid #f87171',
+                          padding: '5px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <AlertCircle size={14} />
+                        مسجل بحقه ({officerPenalties.length}) عقوبة تأديبية
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedIndictmentPenalty(officerPenalties[0]);
+                          setIsIndictmentOpen(true);
+                        }}
+                        style={{
+                          background: '#b91c1c',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '5px 12px',
+                          borderRadius: '8px',
+                          fontSize: '11.5px',
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          boxShadow: '0 2px 6px rgba(185, 28, 28, 0.25)'
+                        }}
+                        title="فتح وإصدار صحيفة اتهام للحالات الموجزة"
+                      >
+                        <FileText size={13} />
+                        <span>صحيفة اتهام للمنتسب</span>
+                      </button>
+                    </div>
                   ) : (
-                    <span
-                      style={{
-                        background: '#dcfce7',
-                        color: '#15803d',
-                        border: '1.5px solid #86efac',
-                        padding: '5px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: 800,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                    >
-                      <CheckCircle2 size={14} />
-                      السجل الانضباطي نظيف تماماً
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          background: '#dcfce7',
+                          color: '#15803d',
+                          border: '1.5px solid #86efac',
+                          padding: '5px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <CheckCircle2 size={14} />
+                        السجل الانضباطي نظيف تماماً
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedIndictmentPenalty(null);
+                          setIsIndictmentOpen(true);
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          color: '#b91c1c',
+                          border: '1.5px solid #b91c1c',
+                          padding: '5px 12px',
+                          borderRadius: '8px',
+                          fontSize: '11.5px',
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        title="تحرير صحيفة اتهام لهذا المنتسب"
+                      >
+                        <FileText size={13} />
+                        <span>تحرير صحيفة اتهام</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -2163,6 +2221,31 @@ export default function OfficerCardModal({
                           >
                             <Printer size={13} />
                             <span>طباعة القرار</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedIndictmentPenalty(pen);
+                              setIsIndictmentOpen(true);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: '1.5px solid #b91c1c',
+                              background: '#fef2f2',
+                              color: '#b91c1c',
+                              fontSize: '11px',
+                              fontWeight: 900,
+                              cursor: 'pointer'
+                            }}
+                            title="عرض وطباعة صحيفة اتهام للحالات الموجزة"
+                          >
+                            <FileText size={13} />
+                            <span>صحيفة اتهام</span>
                           </button>
                         </div>
                       </div>
@@ -2702,6 +2785,18 @@ export default function OfficerCardModal({
           </div>
         )}
       </div>
+
+      {/* Indictment Sheet Modal */}
+      {isIndictmentOpen && (
+        <IndictmentSheetModal
+          member={member}
+          penalty={selectedIndictmentPenalty}
+          onClose={() => {
+            setIsIndictmentOpen(false);
+            setSelectedIndictmentPenalty(null);
+          }}
+        />
+      )}
     </div>
   );
 }

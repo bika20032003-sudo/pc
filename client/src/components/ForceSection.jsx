@@ -24,6 +24,7 @@ import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import initialPenalties from '../data/penalties_data.json';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import IndictmentSheetModal from './IndictmentSheetModal';
 
 const EMPTY_FORCE_FORM = {
   type: 'شرطي', // شرطي أو مدني
@@ -270,6 +271,7 @@ export default function ForceSection({
   };
 
   // Disciplinary penalties fast lookup map
+  const [indictmentTarget, setIndictmentTarget] = useState(null);
   const penalizedMembersMap = useMemo(() => {
     let list = initialPenalties;
     try {
@@ -1664,6 +1666,10 @@ export default function ForceSection({
                               penalizedMembersMap.get(normalizeArabicText(m.name || ''));
                             return penalty ? (
                               <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIndictmentTarget({ member: m, penalty });
+                                }}
                                 style={{
                                   background: '#fee2e2',
                                   color: '#b91c1c',
@@ -1674,9 +1680,10 @@ export default function ForceSection({
                                   fontWeight: 800,
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '3px'
+                                  gap: '3px',
+                                  cursor: 'pointer'
                                 }}
-                                title={`عقوبة مسجلة: ${penalty.PenaltyType} - ${penalty.Reason || ''} (${penalty.PenaltyDate})`}
+                                title={`عقوبة مسجلة: ${penalty.PenaltyType} - ${penalty.Reason || ''} (${penalty.PenaltyDate}) - انقر لفتح صحيفة الاتهام`}
                               >
                                 ⚖️ {penalty.PenaltyType}
                                 {penalty.DeductionDays > 0 ? ` (${penalty.DeductionDays} أيام)` : ''}
@@ -2276,6 +2283,15 @@ export default function ForceSection({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Indictment Sheet Modal */}
+      {indictmentTarget && (
+        <IndictmentSheetModal
+          member={indictmentTarget.member}
+          penalty={indictmentTarget.penalty}
+          onClose={() => setIndictmentTarget(null)}
+        />
       )}
     </div>
   );

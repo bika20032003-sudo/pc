@@ -24,6 +24,7 @@ import initialPenalties from '../data/penalties_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import IndictmentSheetModal from './IndictmentSheetModal';
 
 export default function PenaltiesSection({ forceMembers = [], user = {} }) {
   // State for penalties ledger
@@ -53,6 +54,30 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
   const [selectedPenaltyType, setSelectedPenaltyType] = useState('all');
   const [viewScope, setViewScope] = useState('all'); // 'all' (كافة عقوبات المديرية) or 'member' (عقوبات المنتسب المحدد)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [indictmentModal, setIndictmentModal] = useState({ isOpen: false, member: null, penalty: null });
+
+  // Open Indictment Sheet for specific penalty
+  const handleOpenIndictment = (penalty) => {
+    const member = forceMembers.find(m => 
+      (penalty.NationalNumber && m.national_id === penalty.NationalNumber) ||
+      (penalty.MilitaryNumber && m.military_number === penalty.MilitaryNumber) ||
+      (penalty.FullName && normalizeArabicText(m.name) === normalizeArabicText(penalty.FullName))
+    ) || selectedMember || { name: penalty.FullName, military_number: penalty.MilitaryNumber, national_id: penalty.NationalNumber };
+
+    setIndictmentModal({ isOpen: true, member, penalty });
+  };
+
+  // Open Indictment Sheet for currently selected or target member
+  const handleOpenIndictmentForMember = (member) => {
+    if (!member) return;
+    const memberPenalty = penalties.find(p => 
+      (member.national_id && p.NationalNumber === member.national_id) ||
+      (member.military_number && p.MilitaryNumber === member.military_number) ||
+      normalizeArabicText(p.FullName) === normalizeArabicText(member.name)
+    ) || null;
+
+    setIndictmentModal({ isOpen: true, member, penalty: memberPenalty });
+  };
 
   // Live API Fetching & Synchronization
   const fetchLivePenalties = async () => {
@@ -786,6 +811,16 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
             </button>
 
             <button
+              type="button"
+              onClick={() => handleOpenIndictmentForMember(selectedMember)}
+              style={{ padding: '9px 14px', borderRadius: '8px', border: '1.5px solid #b91c1c', background: '#fef2f2', color: '#b91c1c', fontWeight: 900, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="إصدار وطباعة صحيفة اتهام للحالات الموجزة لهذا المنتسب"
+            >
+              <FileText size={15} />
+              <span>صحيفة اتهام للمنتسب</span>
+            </button>
+
+            <button
               onClick={() => setIsAddModalOpen(true)}
               style={{ padding: '9px 16px', borderRadius: '8px', background: '#b91c1c', color: '#ffffff', border: 'none', fontWeight: 800, fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
@@ -928,6 +963,16 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
                       >
                         <Printer size={13} />
                         <span>قرار العقوبة</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenIndictment(pen)}
+                        style={{ padding: '4px 10px', borderRadius: '6px', border: '1.5px solid #b91c1c', background: '#ffffff', color: '#b91c1c', fontSize: '11px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 1px 3px rgba(185,28,28,0.1)' }}
+                        title="عرض وطباعة صحيفة الاتهام للحالات الموجزة"
+                      >
+                        <FileText size={13} />
+                        <span>صحيفة اتهام</span>
                       </button>
                       <button
                         onClick={() => handleDeletePenalty(pen.PenaltyID)}
@@ -1078,6 +1123,15 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Indictment Sheet Modal */}
+      {indictmentModal.isOpen && (
+        <IndictmentSheetModal
+          member={indictmentModal.member}
+          penalty={indictmentModal.penalty}
+          onClose={() => setIndictmentModal({ isOpen: false, member: null, penalty: null })}
+        />
       )}
     </div>
   );
