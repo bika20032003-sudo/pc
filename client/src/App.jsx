@@ -292,6 +292,7 @@ export default function App() {
 
   // Employee Self-Service Inquiry Portal Modal State
   const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [startWithGoogle, setStartWithGoogle] = useState(false);
 
   // Live Central Force Synchronization Handler across all connected devices
   const fetchForceFromServer = useCallback(async (silent = true) => {
@@ -3192,9 +3193,13 @@ export default function App() {
         {showInquiryModal && (
           <EmployeeInquiryModal
             isOpen={showInquiryModal}
-            onClose={() => setShowInquiryModal(false)}
+            onClose={() => {
+              setShowInquiryModal(false);
+              setStartWithGoogle(false);
+            }}
             forceMembers={forceMembers}
             onUpdateMember={handleSelfUpdateForceMember}
+            autoTriggerGoogle={startWithGoogle}
           />
         )}
       </div>
@@ -3352,6 +3357,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     fetchForceFromServer(true);
+                    setStartWithGoogle(false);
                     setShowInquiryModal(true);
                   }}
                   style={{
@@ -3382,6 +3388,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     fetchForceFromServer(true);
+                    setStartWithGoogle(true);
                     setShowInquiryModal(true);
                   }}
                   style={{
@@ -3576,9 +3583,13 @@ export default function App() {
       {showInquiryModal && (
         <EmployeeInquiryModal
           isOpen={showInquiryModal}
-          onClose={() => setShowInquiryModal(false)}
+          onClose={() => {
+            setShowInquiryModal(false);
+            setStartWithGoogle(false);
+          }}
           forceMembers={forceMembers}
           onUpdateMember={handleSelfUpdateForceMember}
+          autoTriggerGoogle={startWithGoogle}
         />
       )}
     </div>
