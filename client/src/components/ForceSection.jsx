@@ -289,8 +289,14 @@ export default function ForceSection({
         (m.financial_number && String(m.financial_number).includes(term)) ||
         (m.job_number && String(m.job_number).toLowerCase().includes(term)) ||
         (m.national_id && String(m.national_id).includes(term)) ||
+        (m.phone && String(m.phone).includes(term)) ||
+        (m.mother_name && m.mother_name.toLowerCase().includes(term)) ||
+        (m.wife_name && m.wife_name.toLowerCase().includes(term)) ||
+        (m.residence && m.residence.toLowerCase().includes(term)) ||
+        (m.tribe_city && m.tribe_city.toLowerCase().includes(term)) ||
         (m.bank_name && m.bank_name.toLowerCase().includes(term)) ||
         (m.account_number && String(m.account_number).includes(term)) ||
+        (m.appointment_decision && m.appointment_decision.toLowerCase().includes(term)) ||
         (m.job_title && m.job_title.toLowerCase().includes(term)) ||
         (m.department && m.department.toLowerCase().includes(term)) ||
         (m.job_status && m.job_status.toLowerCase().includes(term))
@@ -845,6 +851,7 @@ export default function ForceSection({
                     onSelect={(member) => {
                       setForceFormData({
                         ...forceFormData,
+                        ...member,
                         name: member.name,
                         job_number: member.job_number || member.financial_number || '',
                         national_id: member.national_id || '',
@@ -867,7 +874,24 @@ export default function ForceSection({
                         basic_salary: member.basic_salary || '',
                         bank_name: member.bank_name || '',
                         bank_branch: member.bank_branch || '',
-                        account_number: member.account_number || ''
+                        account_number: member.account_number || '',
+                        family_book: member.family_book || '',
+                        family_paper: member.family_paper || '',
+                        family_record: member.family_record || '',
+                        passport_number: member.passport_number || '',
+                        suit_number: member.suit_number || '',
+                        shoe_size: member.shoe_size || '42',
+                        headwear_size: member.headwear_size || '58',
+                        shirt_size: member.shirt_size || 'L',
+                        blood_type: member.blood_type || 'O+',
+                        diseases: member.diseases || 'سليم ولائق صحياً',
+                        height: member.height || '175',
+                        weight: member.weight || '75',
+                        start_date: member.start_date || '',
+                        appointment_decision: member.appointment_decision || '',
+                        appointment_date: member.appointment_date || '',
+                        last_promotion_decision: member.last_promotion_decision || '',
+                        last_promotion_date: member.last_promotion_date || ''
                       });
                     }}
                     forceMembers={forceMembers}
@@ -1514,7 +1538,16 @@ export default function ForceSection({
             </thead>
             <tbody>
               {paginatedMembers.map((m) => (
-                <tr key={m.id}>
+                <tr
+                  key={m.id}
+                  style={{ cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                  onClick={(e) => {
+                    if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+                      onOpenPreview && onOpenPreview(m);
+                    }
+                  }}
+                  title="اضغط على الصف لعرض الملف الشامل وبطاقة المنتسب"
+                >
                   <td style={{ fontWeight: 800, color: '#0f172a' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {(() => {
@@ -1552,7 +1585,49 @@ export default function ForceSection({
                         </span>
                       );
                     })()}
-                    <span>{m.name}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{m.name}</span>
+                          {(m.self_updated || m.self_updated_at || m.mother_name || m.phone || m.bank_name) && (
+                            <span
+                              style={{
+                                background: '#dcfce7',
+                                color: '#15803d',
+                                border: '1px solid #bbf7d0',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                              title="قام المنتسب باستكمال وتحديث بياناته ذاتياً بنجاح"
+                            >
+                              ✓ تم استكمال وتحديث البيانات
+                            </span>
+                          )}
+                        </div>
+                        {(m.phone || m.mother_name || m.residence) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                            {m.phone && (
+                              <span style={{ color: '#0284c7', direction: 'ltr', fontWeight: 700 }}>
+                                📞 {m.phone}
+                              </span>
+                            )}
+                            {m.mother_name && (
+                              <span style={{ color: '#475569' }}>
+                                الأم: {m.mother_name}
+                              </span>
+                            )}
+                            {m.residence && (
+                              <span style={{ color: '#64748b' }}>
+                                📍 {m.residence}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b' }}>

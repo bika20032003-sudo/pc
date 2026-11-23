@@ -274,6 +274,7 @@ export default function App() {
 
   // General Force: All 2,211 personnel from قوه 2222.xlsx
   const [forceMembers, setForceMembers] = useState(() => {
+    let initialList = importedForceData || [];
     const saved = localStorage.getItem('ubari_force_members');
     if (saved) {
       try {
@@ -281,11 +282,31 @@ export default function App() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Strictly filter out any corrupted entries without a real name
           const valid = parsed.filter(m => m && m.name && String(m.name).trim().length > 1);
-          if (valid.length > 0) return valid;
+          if (valid.length > 0) initialList = valid;
         }
       } catch (e) {}
     }
-    return importedForceData || [];
+
+    // Always re-apply saved self-updates from the resilient registry
+    try {
+      const registryRaw = localStorage.getItem('ubari_self_updates_registry');
+      if (registryRaw) {
+        const registry = JSON.parse(registryRaw);
+        if (registry && typeof registry === 'object') {
+          initialList = initialList.map(m => {
+            const mNat = m.national_id ? String(m.national_id).replace(/\D/g, '') : '';
+            const mFin = m.financial_number ? String(m.financial_number).replace(/\D/g, '') : '';
+            const updateEntry = registry[String(m.id)] || (mNat && registry[mNat]) || (mFin && registry[mFin]);
+            if (updateEntry && updateEntry.updates) {
+              return { ...m, ...updateEntry.updates, self_updated: true, self_updated_at: updateEntry.updated_at };
+            }
+            return m;
+          });
+        }
+      }
+    } catch (e) {}
+
+    return initialList;
   });
 
   // External Edit State for ForceSection
@@ -302,13 +323,78 @@ export default function App() {
   // Live Central Force Synchronization Handler across all connected devices
   const fetchForceFromServer = useCallback(async (silent = true) => {
     try {
-      const res = await fetch('/api/force');
-      if (!res.ok) return false;
+      // Support both relative & absolute endpoints and direct PHP endpoints
+      const endpoints = ['api/force', '/api/force', 'api/get-force.php', '/api/get-force.php'];
+      let res = null;
+      for (const ep of endpoints) {
+        try {
+          const r = await fetch(ep);
+          if (r.ok) {
+            res = r;
+            break;
+          }
+        } catch (e) {}
+      }
+      if (!res) return false;
       const json = await res.json();
       const list = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
       if (list && list.length > 0) {
-        setForceMembers(list);
-        localStorage.setItem('ubari_force_members', JSON.stringify(list));
+        setForceMembers((prevMembers) => {
+          const currentMap = new Map();
+          (prevMembers || []).forEach(m => {
+            if (m.id) currentMap.set(Number(m.id), m);
+            const nat = m.national_id ? String(m.national_id).replace(/\D/g, '') : '';
+            if (nat) currentMap.set(nat, m);
+          });
+
+          // Read resilient registry of self-updates
+          let registry = {};
+          try {
+            const raw = localStorage.getItem('ubari_self_updates_registry');
+            if (raw) registry = JSON.parse(raw);
+          } catch (e) {}
+
+          const merged = list.map((serverMember) => {
+            const sNat = serverMember.national_id ? String(serverMember.national_id).replace(/\D/g, '') : '';
+            const sFin = serverMember.financial_number ? String(serverMember.financial_number).replace(/\D/g, '') : '';
+            const local = currentMap.get(Number(serverMember.id)) || (sNat ? currentMap.get(sNat) : null);
+            const regUpdate = registry[String(serverMember.id)] || (sNat && registry[sNat]) || (sFin && registry[sFin]);
+
+            let mergedItem = { ...serverMember };
+
+            // Merge local fields: never allow a server empty string to wipe out non-empty local fields
+            if (local) {
+              Object.keys(local).forEach((key) => {
+                const localVal = local[key];
+                const serverVal = serverMember[key];
+                const isServerEmpty = serverVal === undefined || serverVal === null || String(serverVal).trim() === '' || String(serverVal).trim() === '-';
+                const isLocalFilled = localVal !== undefined && localVal !== null && String(localVal).trim() !== '' && String(localVal).trim() !== '-';
+
+                if (isServerEmpty && isLocalFilled) {
+                  mergedItem[key] = localVal;
+                }
+              });
+            }
+
+            // Always apply registry updates
+            if (regUpdate && regUpdate.updates) {
+              mergedItem = {
+                ...mergedItem,
+                ...regUpdate.updates,
+                self_updated: true,
+                self_updated_at: regUpdate.updated_at || mergedItem.self_updated_at
+              };
+            }
+
+            return mergedItem;
+          });
+
+          try {
+            localStorage.setItem('ubari_force_members', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        });
+
         if (!silent) {
           setNotificationMsg(`تمت المزامنة الحية بنجاح مع السيرفر المركزي (${list.length.toLocaleString('ar-LY')} قيد)`);
           setTimeout(() => setNotificationMsg(''), 4000);
@@ -323,39 +409,91 @@ export default function App() {
 
   // Self-update handler for employees (inquiry portal)
   const handleSelfUpdateForceMember = async (memberId, updates) => {
-    // 1. Update React state immediately on this device
+    // 0. Locate target member
+    const target = forceMembers.find((m) =>
+      (memberId && (Number(m.id) === Number(memberId) || m.id === memberId))
+    );
+    const natKey = target?.national_id ? String(target.national_id).replace(/\D/g, '') : '';
+    const finKey = target?.financial_number ? String(target.financial_number).replace(/\D/g, '') : '';
+
+    // 1. Update React state immediately on this device with self-update flags
     const updated = forceMembers.map((m) => {
-      if (Number(m.id) === Number(memberId)) {
-        return { ...m, ...updates };
+      const isMatch =
+        (memberId && (Number(m.id) === Number(memberId) || m.id === memberId)) ||
+        (natKey && m.national_id && String(m.national_id).replace(/\D/g, '') === natKey) ||
+        (finKey && m.financial_number && String(m.financial_number).replace(/\D/g, '') === finKey);
+
+      if (isMatch) {
+        return {
+          ...m,
+          ...updates,
+          self_updated: true,
+          self_updated_at: new Date().toISOString()
+        };
       }
       return m;
     });
     setForceMembers(updated);
 
-    // 2. Persist in localStorage
+    // 2. Persist in localStorage and update resilient registry
     try {
       localStorage.setItem('ubari_force_members', JSON.stringify(updated));
+
+      const registry = JSON.parse(localStorage.getItem('ubari_self_updates_registry') || '{}');
+      const regEntry = {
+        memberId,
+        national_id: target?.national_id,
+        financial_number: target?.financial_number,
+        updates,
+        updated_at: new Date().toISOString()
+      };
+      if (memberId) registry[String(memberId)] = regEntry;
+      if (natKey) registry[natKey] = regEntry;
+      if (finKey) registry[finKey] = regEntry;
+      localStorage.setItem('ubari_self_updates_registry', JSON.stringify(registry));
     } catch (err) {
       console.warn('LocalStorage save error:', err);
     }
 
-    // 3. Sync to central backend API (Node.js / cPanel)
+    // 3. Sync to central backend API (Node.js / cPanel / PHP)
     try {
-      const target = forceMembers.find((m) => Number(m.id) === Number(memberId));
-      const res = await fetch('/api/force/self-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: memberId,
-          national_id: target?.national_id,
-          financial_number: target?.financial_number,
-          updates
-        })
-      });
-      const data = await res.json();
-      // Re-sync from server to confirm central update across all fields
-      fetchForceFromServer(true);
-      return data;
+      const payload = {
+        id: memberId,
+        national_id: target?.national_id,
+        financial_number: target?.financial_number,
+        updates
+      };
+
+      const apiEndpoints = [
+        'api/force/self-update',
+        '/api/force/self-update',
+        'api/force-update.php',
+        '/api/force-update.php'
+      ];
+
+      let res = null;
+      for (const ep of apiEndpoints) {
+        try {
+          const r = await fetch(ep, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (r.ok) {
+            res = r;
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (res) {
+        const data = await res.json();
+        if (data && data.success) {
+          fetchForceFromServer(true);
+        }
+        return data;
+      }
+      return { success: true, localOnly: true };
     } catch (err) {
       return { success: true, localOnly: true };
     }

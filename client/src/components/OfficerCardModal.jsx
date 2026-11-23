@@ -829,6 +829,18 @@ export default function OfficerCardModal({
               >
                 <FileText size={14} />
                 <span>الملف والسجل الشامل</span>
+                {(member.self_updated || member.self_updated_at || member.phone || member.mother_name) && (
+                  <span style={{
+                    background: activeTab === 'dossier' ? '#22c55e' : '#dcfce7',
+                    color: activeTab === 'dossier' ? '#ffffff' : '#15803d',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontSize: '9.5px',
+                    fontWeight: 900
+                  }}>
+                    محدث
+                  </span>
+                )}
               </button>
             </div>
 
@@ -1462,18 +1474,18 @@ export default function OfficerCardModal({
                         </div>
 
                         <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#64748b' }}>هاتف الطوارئ / الاتصال: </span>
-                          <strong style={{ color: '#0284c7', direction: 'ltr', display: 'inline-block' }}>{member.phone || '092-0000000'}</strong>
+                          <span style={{ color: '#64748b' }}>هاتف الاتصال: </span>
+                          <strong style={{ color: '#0284c7', direction: 'ltr', display: 'inline-block' }}>{member.phone || 'غير مسجل'}</strong>
                         </div>
 
                         <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#64748b' }}>المصرف والفرع: </span>
-                          <strong style={{ color: '#0f172a' }}>{member.bank_name || 'الصحاري'} - {member.bank_branch || 'أوباري'}</strong>
+                          <span style={{ color: '#64748b' }}>اسم الأم: </span>
+                          <strong style={{ color: '#0f172a' }}>{member.mother_name || 'غير مسجل'}</strong>
                         </div>
 
                         <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#64748b' }}>قرار التعيين: </span>
-                          <strong style={{ color: '#1e3a8a' }}>{member.appointment_decision || 'قرار وزاري رسمي'}</strong>
+                          <span style={{ color: '#64748b' }}>المصرف والحساب: </span>
+                          <strong style={{ color: '#0f172a' }}>{member.bank_name ? `${member.bank_name} (${member.account_number || ''})` : 'الصحاري'}</strong>
                         </div>
                       </div>
                     </div>

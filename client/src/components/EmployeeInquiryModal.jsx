@@ -299,19 +299,21 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     }
 
     const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length < 10 || clean.length > 12) {
-      setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري (10 أرقام) الصحيح للاستعلام عن الملف.');
+    if (!clean || clean.length < 5 || clean.length > 12) {
+      setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري (10 أرقام) أو الرقم المالي الصحيح للاستعلام عن الملف.');
       return;
     }
 
-    // High performance in-memory lookup strictly by National ID or Administrative Number (10 - 12 digits)
+    // High performance in-memory lookup by National ID, Administrative Number, or Financial/Job Number
     const match = forceMembers.find((m) => {
       const nat = sanitizeDigits(m.national_id);
-      return nat === clean;
+      const fin = sanitizeDigits(m.financial_number);
+      const job = sanitizeDigits(m.job_number);
+      return (nat && nat === clean) || (fin && fin === clean) || (job && job === clean);
     });
 
     if (!match) {
-      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم الوطني أو الإداري المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم بشكل صحيح.`);
+      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم بشكل صحيح.`);
       setVerifiedMember(null);
       return;
     }
@@ -345,18 +347,20 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     }
   };
 
-  // Google Pairing with National/Admin ID
+  // Google Pairing with National/Admin/Financial ID
   const handlePairGoogle = (e) => {
     if (e) e.preventDefault();
     const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length < 10 || clean.length > 12) {
-      setSearchError('يرجى إدخال الرقم الوطني (12 رقماً) أو الإداري (10 أرقام) لربط حساب Google.');
+    if (!clean || clean.length < 5 || clean.length > 12) {
+      setSearchError('يرجى إدخال الرقم الوطني (12 رقماً) أو الإداري (10 أرقام) أو الرقم المالي لربط حساب Google.');
       return;
     }
 
     const match = forceMembers.find((m) => {
       const nat = sanitizeDigits(m.national_id);
-      return nat === clean;
+      const fin = sanitizeDigits(m.financial_number);
+      const job = sanitizeDigits(m.job_number);
+      return (nat && nat === clean) || (fin && fin === clean) || (job && job === clean);
     });
 
     if (!match) {

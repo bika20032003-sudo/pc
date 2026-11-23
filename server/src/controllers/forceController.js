@@ -22,23 +22,30 @@ function scheduleJsonSync(id, updates) {
     isFlushingJson = true;
 
     try {
-      const forceJsonPath = path.resolve(__dirname, '../data/force_data.json');
-      if (fs.existsSync(forceJsonPath)) {
-        const fileContent = await fs.promises.readFile(forceJsonPath, 'utf8');
-        const list = JSON.parse(fileContent);
-        
-        // تطبيق كافة التحديثات المجمعة دفعة واحدة في الذاكرة
-        for (const [memberId, fields] of pendingJsonUpdates.entries()) {
-          const idx = list.findIndex(item => Number(item.id) === memberId);
-          if (idx !== -1) {
-            list[idx] = { ...list[idx], ...fields };
-          }
-        }
-        pendingJsonUpdates.clear();
+      const pathsToSync = [
+        path.resolve(__dirname, '../data/force_data.json'),
+        path.resolve(__dirname, '../../../client/public/api/data/force_data.json'),
+        path.resolve(__dirname, '../../../client/src/data/force_data.json')
+      ];
 
-        // كتابة الملف دفعة واحدة بشكل غير متزامن (Asynchronous Non-blocking Write)
-        await fs.promises.writeFile(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
+      for (const forceJsonPath of pathsToSync) {
+        if (fs.existsSync(forceJsonPath)) {
+          try {
+            const fileContent = await fs.promises.readFile(forceJsonPath, 'utf8');
+            const list = JSON.parse(fileContent);
+            if (Array.isArray(list)) {
+              for (const [memberId, fields] of pendingJsonUpdates.entries()) {
+                const idx = list.findIndex(item => Number(item.id) === memberId);
+                if (idx !== -1) {
+                  list[idx] = { ...list[idx], ...fields, self_updated: true };
+                }
+              }
+              await fs.promises.writeFile(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
+            }
+          } catch (e) {}
+        }
       }
+      pendingJsonUpdates.clear();
     } catch (err) {
       console.warn('تنبيه: تعذر مزامنة نسخة JSON بالخلفية:', err.message);
     } finally {
@@ -481,15 +488,21 @@ export async function selfUpdateForceMember(req, res) {
     const cleanNat = national_id ? String(national_id).trim().replace(/\D/g, '') : '';
     const cleanFin = financial_number ? String(financial_number).trim().replace(/\D/g, '') : '';
 
-    // التحقق الصارم 1-إلى-1: التأكد من مطابقة السجل بالرقم الوطني أو الرقم المالي للمعرف لمنع أي تلاعب أو خلط بين الموظفين
+    // التحقق المرن والصارم 1-إلى-1: التأكد من مطابقة السجل بالمعرف أو الرقم الوطني أو الرقم المالي لمنع أي خطأ وتحديث السجل بدقة
     const existing = await db.get(`
       SELECT * FROM force_members
-      WHERE id = ? AND (
-        (national_id IS NOT NULL AND national_id != '' AND REPLACE(national_id, ' ', '') = ?) OR
-        (financial_number IS NOT NULL AND financial_number != '' AND REPLACE(financial_number, ' ', '') = ?) OR
-        (job_number IS NOT NULL AND job_number != '' AND REPLACE(job_number, ' ', '') = ?)
+      WHERE (id = ? AND ? > 0) OR (
+        (national_id IS NOT NULL AND national_id != '' AND (REPLACE(national_id, ' ', '') = ? OR REPLACE(national_id, ' ', '') = ?)) OR
+        (financial_number IS NOT NULL AND financial_number != '' AND (REPLACE(financial_number, ' ', '') = ? OR REPLACE(financial_number, ' ', '') = ?)) OR
+        (job_number IS NOT NULL AND job_number != '' AND (REPLACE(job_number, ' ', '') = ? OR REPLACE(job_number, ' ', '') = ?))
       )
-    `, [cleanId, cleanNat || '___NONE___', cleanFin || '___NONE___', cleanFin || '___NONE___']);
+      LIMIT 1
+    `, [
+      cleanId, cleanId,
+      cleanNat || '___NONE___', cleanFin || '___NONE___',
+      cleanFin || '___NONE___', cleanNat || '___NONE___',
+      cleanFin || '___NONE___', cleanNat || '___NONE___'
+    ]);
 
     if (!existing) {
       return res.status(403).json({
@@ -615,13 +628,13 @@ export async function selfUpdateForceMember(req, res) {
       safeUpdates.last_promotion_decision,
       safeUpdates.last_promotion_date,
       safeUpdates.basic_salary,
-      cleanId
+      existing.id
     ]);
 
-    const updated = await db.get('SELECT * FROM force_members WHERE id = ?', [cleanId]);
+    const updated = await db.get('SELECT * FROM force_members WHERE id = ?', [existing.id]);
 
     // مزامنة الملف الاحتياطي JSON بشكل غير متزامن ومجمّع في الخلفية دون تعطيل الاستجابة الفورية للمنتسب
-    scheduleJsonSync(cleanId, safeUpdates);
+    scheduleJsonSync(existing.id, safeUpdates);
 
     return res.status(200).json({
       success: true,
