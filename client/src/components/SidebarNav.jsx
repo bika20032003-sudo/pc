@@ -7,6 +7,7 @@ import {
   Shield,
   Users,
   Car,
+  Fuel,
   Radio,
   Mail,
   Share2,
@@ -36,10 +37,10 @@ export const SECTION_DIVISIONS = [
   },
   {
     id: 'field_ops',
-    title: 'الانتشار الميداني والآليات والعهد',
+    title: 'الانتشار الميداني والآليات والمحروقات والعهد',
     icon: Car,
     color: '#b91c1c',
-    itemIds: ['vehicles', 'weapons']
+    itemIds: ['vehicles', 'fuel', 'weapons']
   },
   {
     id: 'comms',

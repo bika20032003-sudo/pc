@@ -59,6 +59,7 @@ import {
 
 import importedForceData from './data/force_data.json';
 import VehiclesSection from './components/VehiclesSection';
+import FuelSection from './components/FuelSection';
 import WeaponsSection from './components/WeaponsSection';
 import ForceSection from './components/ForceSection';
 import DashboardSection from './components/DashboardSection';
@@ -84,6 +85,7 @@ export const SECTIONS = [
   { id: 'operations', name: 'غرفة العمليات', icon: Radio },
   { id: 'force', name: 'القوة العمومية', icon: Users },
   { id: 'vehicles', name: 'الآليات والمركبات', icon: Car },
+  { id: 'fuel', name: 'قسم الوقود والمحروقات', icon: Fuel },
   { id: 'weapons', name: 'الأسلحة والذخائر والعهد', icon: Crosshair },
   { id: 'leaves', name: 'سجل الإجازات', icon: Plane },
   { id: 'mail', name: 'البريد والمراسلات', icon: Mail },
@@ -187,7 +189,7 @@ export default function App() {
           }
 
           if (isAbdulSamad) {
-            parsed.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'leaves', 'mail', 'referred', 'letters', 'user_management'];
+            parsed.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'mail', 'referred', 'letters', 'user_management'];
           }
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
@@ -1763,6 +1765,10 @@ export default function App() {
 
     if (activeSection === 'vehicles') {
       return <VehiclesSection user={user} forceMembers={forceMembers} />;
+    }
+
+    if (activeSection === 'fuel') {
+      return <FuelSection user={user} forceMembers={forceMembers} />;
     }
 
     if (activeSection === 'weapons') {
