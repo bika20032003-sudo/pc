@@ -3469,9 +3469,6 @@ export default function App() {
                       </svg>
                       <span>تسجيل الدخول بواسطة Google للوصول للاستعلام</span>
                     </button>
-                    <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
-                      🔒 أيقونة وبوابة الاستعلام محمية وتظهر تلقائياً بعد تأكيد تسجيل الدخول عبر Google
-                    </div>
                   </div>
                 ) : (
                   /* Condition 2: Verified via Google -> REVEAL the Inquiry Portal Button & Icon! */
