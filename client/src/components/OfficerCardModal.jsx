@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
 import {
   Shield,
@@ -14,12 +14,16 @@ import {
   User,
   BadgeCheck,
   CheckCircle2,
-  FileText
+  FileText,
+  Scale,
+  AlertCircle
 } from 'lucide-react';
 
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
+import initialPenalties from '../data/penalties_data.json';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 export default function OfficerCardModal({
   member,
@@ -39,7 +43,7 @@ export default function OfficerCardModal({
   const statusColor = isSuspended ? '#b91c1c' : (isLeave ? '#b45309' : '#15803d');
   const statusDot = isSuspended ? '🔴' : (isLeave ? '🟡' : '🟢');
 
-  // Tabs: 'card' (البطاقة الأمنية الذكية) | 'dossier' (السجل والملف الوظيفي الشامل)
+  // Tabs: 'card' (البطاقة الأمنية الذكية) | 'dossier' (السجل والملف الوظيفي الشامل) | 'penalties' (سجل الانضباط والجزاءات)
   const [activeTab, setActiveTab] = useState('card');
   const [isFlipped, setIsFlipped] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -48,6 +52,118 @@ export default function OfficerCardModal({
   const [currentPhoto, setCurrentPhoto] = useState(member.photo || '');
   const [printTarget, setPrintTarget] = useState('card'); // 'card' or 'dossier'
   const fileInputRef = useRef(null);
+
+  // Disciplinary history for this officer
+  const officerPenalties = useMemo(() => {
+    let list = initialPenalties;
+    try {
+      const saved = localStorage.getItem('ubari_penalties');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+      }
+    } catch (e) {}
+
+    const memName = normalizeArabicText(member.name || '');
+    const memNat = String(member.national_id || '').trim();
+    const memMil = String(member.military_number || '').trim();
+    const memJob = String(member.financial_number || member.job_number || '').trim();
+
+    return list.filter(p => {
+      const pName = normalizeArabicText(p.FullName || '');
+      const pNat = String(p.NationalNumber || '').trim();
+      const pMil = String(p.MilitaryNumber || '').trim();
+      const pJob = String(p.JobNumber || '').trim();
+
+      return (
+        (memNat && pNat && memNat === pNat) ||
+        (memMil && pMil && memMil === pMil) ||
+        (memName && pName && (memName.includes(pName) || pName.includes(memName))) ||
+        (memJob && pJob && memJob === pJob)
+      );
+    });
+  }, [member]);
+
+  // Dedicated Print for Individual Penalty Decree
+  const handlePrintDecree = (penalty) => {
+    const printHtml = `
+      <div style="width: 100%; max-width: 720px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a; padding: 20px; border: 2px solid #1e3a8a; border-radius: 12px; background: #ffffff;">
+        <div style="height: 6px; width: 100%; display: flex; border-radius: 3px; overflow: hidden; margin-bottom: 14px;">
+          <div style="flex: 1; background: #e11d48;"></div>
+          <div style="flex: 2; background: #000000;"></div>
+          <div style="flex: 1; background: #16a34a;"></div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 16px;">
+          <tr>
+            <td style="text-align: right; vertical-align: middle;">
+              <div style="font-size: 14px; font-weight: 900; color: #1e3a8a;">دولة ليبيا • وزارة الداخلية</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">مديرية أمن أوباري</div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748b;">قسم التفتيش والمتابعة والانضباط</div>
+            </td>
+            <td style="text-align: center; vertical-align: middle; width: 80px;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار الوزارة" style="width: 60px; height: 60px; object-fit: contain; margin: 0 auto; display: block;" />
+            </td>
+            <td style="text-align: left; direction: ltr; vertical-align: middle;">
+              <div style="font-size: 11px; font-weight: 800; color: #1e3a8a;">Ministry of Interior</div>
+              <div style="font-size: 10px; font-weight: 700; color: #0f172a;">Ubari Security Directorate</div>
+              <div style="font-size: 9px; color: #64748b;">Discipline & Sanctions Office</div>
+            </td>
+          </tr>
+        </table>
+        <div style="text-align: center; margin-bottom: 18px;">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 900; color: #b91c1c;">
+            قرار جزاء تأديبي رقم (${penalty.DecisionNumber || penalty.decision_number || '2026/ق.ت/01'})
+          </h2>
+          <div style="font-size: 11px; color: #64748b; font-weight: 700; margin-top: 4px;">
+            تاريخ الإجراء: ${penalty.PenaltyDate || penalty.penalty_date || '---'} | قيد المنظومة: MOI-UBR-DISC-${penalty.PenaltyID}
+          </div>
+        </div>
+        <div style="line-height: 1.8; font-size: 12.5px; margin-bottom: 20px;">
+          <p style="margin: 0 0 10px 0;"><strong>بناءً على أحكام قانون هيئة الشرطة واللوائح الانضباطية المعمول بها في وزارة الداخلية:</strong></p>
+          <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <tr>
+                <td style="padding: 4px 8px; color: #64748b; width: 25%;">اسم المنتسب المعاقب:</td>
+                <td style="padding: 4px 8px; font-weight: 900; color: #0f172a;">${penalty.FullName || member.name}</td>
+                <td style="padding: 4px 8px; color: #64748b; width: 25%;">الرقم الوطني:</td>
+                <td style="padding: 4px 8px; font-weight: 800;">${penalty.NationalNumber || member.national_id || '---'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; color: #64748b;">الرقم المالي:</td>
+                <td style="padding: 4px 8px; font-weight: 800; color: #0284c7;">${penalty.JobNumber || member.financial_number || member.job_number || '---'}</td>
+                <td style="padding: 4px 8px; color: #64748b;">الرقم العسكري:</td>
+                <td style="padding: 4px 8px; font-weight: 800;">${penalty.MilitaryNumber || member.military_number || '---'}</td>
+              </tr>
+            </table>
+          </div>
+          <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-weight: 900; color: #991b1b; font-size: 13.5px; margin-bottom: 6px;">
+              مادة (1): تقرر توقيع جزاء [ ${penalty.PenaltyType} ] ${penalty.DeductionDays > 0 ? `بخصم (${penalty.DeductionDays}) أيام من المرتب الشهري` : ''}.
+            </div>
+            <div style="font-size: 12px; color: #7f1d1d; font-weight: 700;">
+              <strong>الموجبات والأسباب القانونية:</strong> ${penalty.Reason || 'عدم الانضباط ومخالفة التعليمات'}
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 11.5px; color: #475569;">
+            مادة (2): يودع هذا القرار بملف الخدمة للمنتسب وتخطر به الشؤون المالية لتنفيذ الاستقطاع، وتخطر جهة عمله للتنفيذ.
+          </p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+          <tr>
+            <td style="width: 50%; text-align: center;">
+              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">رئيس قسم التفتيش والانضباط</div>
+              <div style="font-weight: 700; border-top: 1px dashed #94a3b8; display: inline-block; padding-top: 4px;">عقيد / رئيس لجنة الانضباط</div>
+            </td>
+            <td style="width: 50%; text-align: center;">
+              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير مديرية أمن أوباري</div>
+              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; display: inline-block; padding-top: 4px;">لواء / موسى سعد محمد</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+    printDocumentInIframe(printHtml, `قرار جزاء - ${penalty.FullName || member.name}`);
+  };
 
   // Dedicated Print Triggers ensuring single-page print
   const handlePrintCard = () => {
@@ -842,6 +958,41 @@ export default function OfficerCardModal({
                   </span>
                 )}
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('penalties')}
+                style={{
+                  background: activeTab === 'penalties' ? 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)' : 'transparent',
+                  color: activeTab === 'penalties' ? '#ffffff' : '#334155',
+                  border: 'none',
+                  padding: '6px 14px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: activeTab === 'penalties' ? '0 2px 6px rgba(220,38,38,0.3)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Scale size={14} />
+                <span>سجل الانضباط</span>
+                {officerPenalties.length > 0 && (
+                  <span style={{
+                    background: activeTab === 'penalties' ? '#ffffff' : '#fee2e2',
+                    color: activeTab === 'penalties' ? '#b91c1c' : '#991b1b',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontSize: '9.5px',
+                    fontWeight: 900
+                  }}>
+                    {officerPenalties.length} جزاء
+                  </span>
+                )}
+              </button>
             </div>
 
             <button
@@ -1570,7 +1721,7 @@ export default function OfficerCardModal({
                 </button>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'dossier' ? (
             /* ══════════════════════════════════════════════════════════════
                TAB 2: COMPREHENSIVE DOSSIER (White Theme)
                ══════════════════════════════════════════════════════════════ */
@@ -1826,6 +1977,204 @@ export default function OfficerCardModal({
                   </div>
                 </div>
               </div>
+            </div>
+          ) : (
+            /* ══════════════════════════════════════════════════════════════
+               TAB 3: DISCIPLINE & PENALTIES DOSSIER
+               ══════════════════════════════════════════════════════════════ */
+            <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+              {/* Header Card */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #fecaca',
+                  borderRadius: '14px',
+                  padding: '18px 22px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  marginBottom: '20px',
+                  boxShadow: '0 2px 8px rgba(185,28,28,0.06)',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      background: officerPenalties.length > 0 ? '#fee2e2' : '#dcfce7',
+                      color: officerPenalties.length > 0 ? '#b91c1c' : '#15803d',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Scale size={24} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                      السجل الانضباطي وقرارات الجزاءات
+                    </h3>
+                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>
+                      المنتسب: {member.name} | الرقم الوطني: {member.national_id || '---'} | الرقم المالي: {financialId}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {officerPenalties.length > 0 ? (
+                    <span
+                      style={{
+                        background: '#fee2e2',
+                        color: '#b91c1c',
+                        border: '1.5px solid #f87171',
+                        padding: '5px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <AlertCircle size={14} />
+                      مسجل بحقه ({officerPenalties.length}) عقوبة تأديبية
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        background: '#dcfce7',
+                        color: '#15803d',
+                        border: '1.5px solid #86efac',
+                        padding: '5px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <CheckCircle2 size={14} />
+                      السجل الانضباطي نظيف تماماً
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Penalties Content */}
+              {officerPenalties.length === 0 ? (
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '14px',
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      background: '#dcfce7',
+                      color: '#16a34a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 14px'
+                    }}
+                  >
+                    <ShieldCheck size={32} />
+                  </div>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                    لا توجد أي عقوبات أو مخالفات تأديبية مسجلة
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+                    هذا المنتسب يتمتع بسجل انضباطي سليم ولائق، ولم يصدر بحقه أي قرار لفت نظر، خصم، أو إحالة لمجلس تأديبي.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {officerPenalties.map((pen, idx) => (
+                    <div
+                      key={pen.PenaltyID || idx}
+                      style={{
+                        background: '#ffffff',
+                        border: '1.5px solid #fecaca',
+                        borderRadius: '12px',
+                        padding: '16px 20px',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px', borderBottom: '1px solid #fee2e2', paddingBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#b91c1c', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: '#991b1b' }}>
+                              {pen.PenaltyType}
+                              {pen.DeductionDays > 0 ? ` (${pen.DeductionDays} أيام خصم)` : ''}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
+                              قرار رقم: {pen.DecisionNumber || '2026/ق.ت/01'} | بتاريخ: {pen.PenaltyDate || '---'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span
+                            style={{
+                              background: pen.IsApplied ? '#dcfce7' : '#fef3c7',
+                              color: pen.IsApplied ? '#15803d' : '#b45309',
+                              border: `1px solid ${pen.IsApplied ? '#86efac' : '#fde68a'}`,
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: 800
+                            }}
+                          >
+                            {pen.IsApplied ? '✓ تم تنفيذ الجزاء' : '⏳ قيد المتابعة والإحالة'}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handlePrintDecree(pen)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: '1px solid #1e3a8a',
+                              background: '#eff6ff',
+                              color: '#1e3a8a',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                            title="طباعة القرار التأديبي الرسمي"
+                          >
+                            <Printer size={13} />
+                            <span>طباعة القرار</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}>
+                        <span style={{ fontWeight: 800, color: '#475569' }}>الموجبات والأسباب القانونية: </span>
+                        <span style={{ color: '#0f172a', fontWeight: 700 }}>{pen.Reason || '---'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

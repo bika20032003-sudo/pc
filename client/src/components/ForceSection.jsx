@@ -16,11 +16,14 @@ import {
   Edit,
   Trash2,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Scale
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import initialPenalties from '../data/penalties_data.json';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
 
 const EMPTY_FORCE_FORM = {
   type: 'شرطي', // شرطي أو مدني
@@ -266,6 +269,35 @@ export default function ForceSection({
     }
   };
 
+  // Disciplinary penalties fast lookup map
+  const penalizedMembersMap = useMemo(() => {
+    let list = initialPenalties;
+    try {
+      const saved = localStorage.getItem('ubari_penalties');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+      }
+    } catch (e) {}
+
+    const map = new Map();
+    list.forEach(p => {
+      if (p.NationalNumber && p.NationalNumber !== '---') {
+        map.set(String(p.NationalNumber).trim(), p);
+      }
+      if (p.MilitaryNumber && p.MilitaryNumber !== '---') {
+        map.set(String(p.MilitaryNumber).trim(), p);
+      }
+      if (p.JobNumber && p.JobNumber !== '---') {
+        map.set(String(p.JobNumber).trim(), p);
+      }
+      if (p.FullName) {
+        map.set(normalizeArabicText(p.FullName), p);
+      }
+    });
+    return map;
+  }, []);
+
   // Filtered & Sorted Members
   const filteredMembers = useMemo(() => {
     const term = forceSearchTerm.trim().toLowerCase();
@@ -273,15 +305,24 @@ export default function ForceSection({
       const matchesType = typeFilter === 'الكل' || m.type === typeFilter;
       if (!matchesType) return false;
 
-      const rawSt = (m.job_status || m.status || 'على رأس العمل').trim();
-      const matchesStatus =
-        statusFilter === 'الكل' ||
-        (statusFilter === 'على رأس العمل' && !rawSt.includes('إجازة') && !rawSt.includes('موقوف') && !rawSt.includes('إيقاف') && !rawSt.includes('معلق')) ||
-        (statusFilter === 'إجازة' && rawSt.includes('إجازة')) ||
-        (statusFilter === 'موقوف' && (rawSt.includes('موقوف') || rawSt.includes('إيقاف') || rawSt.includes('معلق'))) ||
-        rawSt === statusFilter;
+      if (statusFilter === 'معاقبين') {
+        const isPenalized =
+          penalizedMembersMap.has(String(m.national_id || '').trim()) ||
+          penalizedMembersMap.has(String(m.military_number || '').trim()) ||
+          penalizedMembersMap.has(String(m.financial_number || m.job_number || '').trim()) ||
+          penalizedMembersMap.has(normalizeArabicText(m.name || ''));
+        if (!isPenalized) return false;
+      } else {
+        const rawSt = (m.job_status || m.status || 'على رأس العمل').trim();
+        const matchesStatus =
+          statusFilter === 'الكل' ||
+          (statusFilter === 'على رأس العمل' && !rawSt.includes('إجازة') && !rawSt.includes('موقوف') && !rawSt.includes('إيقاف') && !rawSt.includes('معلق')) ||
+          (statusFilter === 'إجازة' && rawSt.includes('إجازة')) ||
+          (statusFilter === 'موقوف' && (rawSt.includes('موقوف') || rawSt.includes('إيقاف') || rawSt.includes('معلق'))) ||
+          rawSt === statusFilter;
 
-      if (!matchesStatus) return false;
+        if (!matchesStatus) return false;
+      }
 
       if (!term) return true;
       return (
@@ -315,19 +356,26 @@ export default function ForceSection({
       const nameB = b.name ? String(b.name).trim() : '';
       return nameA.localeCompare(nameB, 'ar-LY', { sensitivity: 'base' });
     });
-  }, [forceMembers, forceSearchTerm, typeFilter, statusFilter]);
+  }, [forceMembers, forceSearchTerm, typeFilter, statusFilter, penalizedMembersMap]);
 
   // Live Status Stats across all members
   const statusStats = useMemo(() => {
-    let onDuty = 0, onLeave = 0, onSuspended = 0;
+    let onDuty = 0, onLeave = 0, onSuspended = 0, penalizedCount = 0;
     forceMembers.forEach(m => {
       const st = (m.job_status || m.status || 'على رأس العمل').trim();
       if (st.includes('إجازة')) onLeave++;
       else if (st.includes('موقوف') || st.includes('إيقاف') || st.includes('معلق')) onSuspended++;
       else onDuty++;
+
+      const isPenalized =
+        penalizedMembersMap.has(String(m.national_id || '').trim()) ||
+        penalizedMembersMap.has(String(m.military_number || '').trim()) ||
+        penalizedMembersMap.has(String(m.financial_number || m.job_number || '').trim()) ||
+        penalizedMembersMap.has(normalizeArabicText(m.name || ''));
+      if (isPenalized) penalizedCount++;
     });
-    return { onDuty, onLeave, onSuspended };
-  }, [forceMembers]);
+    return { onDuty, onLeave, onSuspended, penalizedCount };
+  }, [forceMembers, penalizedMembersMap]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredMembers.length / rowsPerPage) || 1;
@@ -1495,6 +1543,7 @@ export default function ForceSection({
                 <option value="على رأس العمل">🟢 على رأس العمل ({statusStats.onDuty})</option>
                 <option value="إجازة">🟡 إجازات رسمية ({statusStats.onLeave})</option>
                 <option value="موقوف">🔴 موقوف مؤقتاً ({statusStats.onSuspended})</option>
+                <option value="معاقبين">⚖️ مطلوبين للتحقيق / معاقبين تأديبياً ({statusStats.penalizedCount})</option>
               </select>
             </div>
           </div>
@@ -1607,6 +1656,33 @@ export default function ForceSection({
                               ✓ تم استكمال وتحديث البيانات
                             </span>
                           )}
+                          {(() => {
+                            const penalty =
+                              penalizedMembersMap.get(String(m.national_id || '').trim()) ||
+                              penalizedMembersMap.get(String(m.military_number || '').trim()) ||
+                              penalizedMembersMap.get(String(m.financial_number || m.job_number || '').trim()) ||
+                              penalizedMembersMap.get(normalizeArabicText(m.name || ''));
+                            return penalty ? (
+                              <span
+                                style={{
+                                  background: '#fee2e2',
+                                  color: '#b91c1c',
+                                  border: '1px solid #fca5a5',
+                                  padding: '1px 7px',
+                                  borderRadius: '10px',
+                                  fontSize: '10px',
+                                  fontWeight: 800,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}
+                                title={`عقوبة مسجلة: ${penalty.PenaltyType} - ${penalty.Reason || ''} (${penalty.PenaltyDate})`}
+                              >
+                                ⚖️ {penalty.PenaltyType}
+                                {penalty.DeductionDays > 0 ? ` (${penalty.DeductionDays} أيام)` : ''}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
                         {(m.phone || m.mother_name || m.residence) && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#64748b', marginTop: '3px' }}>

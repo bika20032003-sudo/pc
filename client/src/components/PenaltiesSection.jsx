@@ -32,7 +32,12 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       const saved = localStorage.getItem('ubari_penalties');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Verify that real initial penalties are preserved
+          const existingIds = new Set(parsed.map(p => p.PenaltyID || p.NationalNumber));
+          const missingInitial = initialPenalties.filter(p => !existingIds.has(p.PenaltyID) && !existingIds.has(p.NationalNumber));
+          return [...missingInitial, ...parsed];
+        }
       }
     } catch (e) {
       console.warn('Failed to parse ubari_penalties from storage', e);
@@ -40,12 +45,68 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
     return initialPenalties;
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('جاهز');
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedPenaltyType, setSelectedPenaltyType] = useState('all');
   const [viewScope, setViewScope] = useState('all'); // 'all' (كافة عقوبات المديرية) or 'member' (عقوبات المنتسب المحدد)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Live API Fetching & Synchronization
+  const fetchLivePenalties = async () => {
+    try {
+      setIsLoading(true);
+      setSyncStatus('جارٍ المزامنة...');
+      // 1. Try Node.js Express server
+      let res = await fetch('/api/penalties').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.penalties) && data.penalties.length > 0) {
+          setPenalties(data.penalties);
+          localStorage.setItem('ubari_penalties', JSON.stringify(data.penalties));
+          setSyncStatus('متزامن مع الخادم المركزي');
+          return;
+        }
+      }
+
+      // 2. Try PHP backend endpoint (cPanel / Hostinger / Apache)
+      res = await fetch('api/get-penalties.php').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.penalties) && data.penalties.length > 0) {
+          setPenalties(data.penalties);
+          localStorage.setItem('ubari_penalties', JSON.stringify(data.penalties));
+          setSyncStatus('متزامن عبر بوابة cPanel');
+          return;
+        }
+      }
+
+      // 3. Try Static JSON endpoint in public directory
+      res = await fetch('api/data/penalties_data.json').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setPenalties(data);
+          localStorage.setItem('ubari_penalties', JSON.stringify(data));
+          setSyncStatus('متزامن مع البيانات المعتمدة');
+          return;
+        }
+      }
+
+      setSyncStatus('قاعدة البيانات المحلية المعتمدة');
+    } catch (err) {
+      console.warn('Notice: loading live penalties failed, using local ledger:', err);
+      setSyncStatus('قاعدة البيانات المحلية');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLivePenalties();
+  }, []);
 
   // New Penalty Form State
   const [penaltyForm, setPenaltyForm] = useState({
@@ -100,7 +161,7 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
   };
 
   // Save New Penalty
-  const handleSavePenalty = (e) => {
+  const handleSavePenalty = async (e) => {
     e.preventDefault();
     if (!selectedMember) {
       alert('يرجى تحديد المنتسب أولاً من شريط البحث أو القائمة');
@@ -128,6 +189,7 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       CreatedAt: new Date().toISOString()
     };
 
+    // Optimistic UI update
     setPenalties(prev => [newPenalty, ...prev]);
     setIsAddModalOpen(false);
     setPenaltyForm({
@@ -138,22 +200,88 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       decision_number: '2026/ق.ت/' + Math.floor(100 + Math.random() * 900),
       is_applied: false
     });
+
+    // Sync to backend and PHP API
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/penalties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(newPenalty)
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        // Fallback to PHP script
+        await fetch('api/penalties-update.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', penalty: newPenalty })
+        }).catch(err => console.warn('PHP sync notice:', err));
+      }
+    } catch (err) {
+      console.warn('Network sync notice on save penalty:', err);
+    }
   };
 
   // Toggle IsApplied
-  const handleToggleApplied = (id) => {
+  const handleToggleApplied = async (id) => {
     setPenalties(prev => prev.map(p => {
       if (p.PenaltyID === id) {
         return { ...p, IsApplied: !p.IsApplied };
       }
       return p;
     }));
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/penalties/${id}/toggle-applied`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        await fetch('api/penalties-update.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'toggle_applied', penalty_id: id })
+        }).catch(err => console.warn('PHP toggle notice:', err));
+      }
+    } catch (err) {
+      console.warn('Network sync notice on toggle applied:', err);
+    }
   };
 
   // Delete penalty
-  const handleDeletePenalty = (id) => {
+  const handleDeletePenalty = async (id) => {
     if (confirm('هل أنت متأكد من رغبتك في حذف هذا القيد من سجل العقوبات والانضباط؟')) {
       setPenalties(prev => prev.filter(p => p.PenaltyID !== id));
+
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch(`/api/penalties/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        }).catch(() => null);
+
+        if (!res || !res.ok) {
+          await fetch('api/penalties-update.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', penalty_id: id })
+          }).catch(err => console.warn('PHP delete notice:', err));
+        }
+      } catch (err) {
+        console.warn('Network sync notice on delete penalty:', err);
+      }
     }
   };
 
@@ -466,7 +594,18 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={fetchLivePenalties}
+            disabled={isLoading}
+            title="إعادة تحميل ومزامنة العقوبات من الخادم المركزي"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}
+          >
+            <span style={{ display: 'inline-block', transform: isLoading ? 'rotate(180deg)' : 'none', transition: 'all 0.4s' }}>🔄</span>
+            <span>{syncStatus}</span>
+          </button>
+
           <button
             onClick={handleExportExcel}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1.5px solid #059669', background: '#ecfdf5', color: '#059669', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer' }}

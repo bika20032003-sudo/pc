@@ -25,10 +25,12 @@ import {
   Layers,
   Mail,
   Send,
-  CheckCircle2
+  CheckCircle2,
+  Scale
 } from 'lucide-react';
 import './FinanceDashboard.css';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import initialPenalties from '../data/penalties_data.json';
 
 export default function DashboardSection({
   user,
@@ -512,6 +514,25 @@ export default function DashboardSection({
                     <span className="moi-service-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>نشط 24/7</span>
                   </div>
                   <div className="moi-service-desc">رصد الإشارات اللاسلكية وتنسيق البلاغات الميدانية الفورية</div>
+                </div>
+                <ChevronLeft size={20} style={{ color: '#94a3b8' }} />
+              </div>
+
+              {/* Pillar 5: Penalties & Discipline */}
+              <div
+                className="moi-service-card"
+                onClick={() => setActiveSection && setActiveSection('penalties')}
+                title="الانتقال إلى سجل الانضباط والعقوبات"
+              >
+                <div className="moi-service-icon-box" style={{ background: '#fef2f2', color: '#b91c1c' }}>
+                  <Scale size={28} />
+                </div>
+                <div className="moi-service-info">
+                  <div className="moi-service-title">
+                    <span>الانضباط والجزاءات التأديبية</span>
+                    <span className="moi-service-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>8 قيود معتمدة</span>
+                  </div>
+                  <div className="moi-service-desc">متابعة مجالس التأديب، الخصومات المالية، وقرارات لفت النظر الموثقة</div>
                 </div>
                 <ChevronLeft size={20} style={{ color: '#94a3b8' }} />
               </div>
