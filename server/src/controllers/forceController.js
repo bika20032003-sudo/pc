@@ -42,7 +42,7 @@ function scheduleJsonSync(id, updates) {
               }
               await fs.promises.writeFile(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
       pendingJsonUpdates.clear();

@@ -30,10 +30,10 @@ export const SECTION_DIVISIONS = [
   },
   {
     id: 'hr_force',
-    title: 'شؤون القوة والذاتية',
+    title: 'شؤون القوة والذاتية والخدمة',
     icon: Users,
     color: '#047857',
-    itemIds: ['force', 'leaves']
+    itemIds: ['force', 'leaves', 'penalties']
   },
   {
     id: 'field_ops',
