@@ -7,20 +7,16 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-// مفتاح الأمان لحماية السكريبت من الاستدعاء غير المصرح به
-$SECURITY_TOKEN = 'ubari_moi_auto_sync_2026';
+// مفتاح الأمان لحماية السكريبت من الاستدعاء غير المصرح به (يدعم متغير البيئة DEPLOY_SECRET)
+$SECURITY_TOKEN = getenv('DEPLOY_SECRET') ?: 'ubari_moi_auto_sync_2026';
 
 // التحقق من مفتاح الأمان (عبر GET أو POST أو Header)
 $receivedToken = $_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_X_HUB_SIGNATURE'] ?? '';
 
-// إذا كان الطلب من GitHub Webhook برأس مخصص
-if (empty($receivedToken) && isset($_SERVER['HTTP_X_GITHUB_EVENT'])) {
-    $rawInput = file_get_contents('php://input');
-    $payload = json_decode($rawInput, true);
-    // السماح إذا كان هناك توكن في الرابط
-}
+// مقارنة التوكن بطريقة آمنة زمنياً لمنع هجمات التوقيت
+$isAuthorized = (!empty($receivedToken) && hash_equals($SECURITY_TOKEN, strval($receivedToken)));
 
-if ($receivedToken !== $SECURITY_TOKEN && (!isset($_GET['token']) || $_GET['token'] !== $SECURITY_TOKEN)) {
+if (!$isAuthorized) {
     http_response_code(403);
     echo json_encode([
         'success' => false,
@@ -66,7 +62,7 @@ curl_setopt($ch, CURLOPT_URL, $zipUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Ubari-MOI-AutoDeploy/1.0');
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 $zipData = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

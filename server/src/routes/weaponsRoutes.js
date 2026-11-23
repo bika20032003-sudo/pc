@@ -7,14 +7,15 @@ import {
   deleteWeapon,
   importWeapons
 } from '../controllers/weaponsController.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', getWeapons);
 router.get('/:id', getWeaponById);
-router.post('/', createWeapon);
-router.put('/:id', updateWeapon);
-router.delete('/:id', deleteWeapon);
-router.post('/import', importWeapons);
+router.post('/', authenticateToken, createWeapon);
+router.put('/:id', authenticateToken, updateWeapon);
+router.delete('/:id', authenticateToken, requireAdmin, deleteWeapon);
+router.post('/import', authenticateToken, requireAdmin, importWeapons);
 
 export default router;

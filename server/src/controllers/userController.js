@@ -4,11 +4,28 @@ import { getDb } from '../config/db.js';
 export async function getAllUsers(req, res) {
   try {
     const { db } = getDb();
-    const users = await db.all(`
-      SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login, created_at
+    const rawUsers = await db.all(`
+      SELECT id, username, email, full_name, badge_number, rank_title, department, role, allowed_sections, status, avatar, last_login, created_at
       FROM users
       ORDER BY id ASC
     `);
+
+    const users = rawUsers.map(u => {
+      let sections = ['dashboard', 'force'];
+      if (u.allowed_sections) {
+        try {
+          sections = typeof u.allowed_sections === 'string' ? JSON.parse(u.allowed_sections) : u.allowed_sections;
+        } catch (_) {
+          sections = ['dashboard', 'force'];
+        }
+      } else if (u.role === 'super_admin' || u.username === 'admin') {
+        sections = ['all'];
+      }
+      return {
+        ...u,
+        allowed_sections: sections
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -23,7 +40,7 @@ export async function getAllUsers(req, res) {
 
 export async function createUser(req, res) {
   try {
-    const { username, email, password, full_name, badge_number, rank_title, department, role, status } = req.body;
+    const { username, email, password, full_name, badge_number, rank_title, department, role, status, allowed_sections } = req.body;
 
     if (!username || !password || !full_name) {
       return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور والاسم الكامل حقول إلزامية' });
@@ -38,9 +55,11 @@ export async function createUser(req, res) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const sectionsJson = JSON.stringify(Array.isArray(allowed_sections) ? allowed_sections : (role === 'super_admin' ? ['all'] : ['dashboard', 'force']));
+
     const result = await db.run(`
-      INSERT INTO users (username, email, password_hash, full_name, badge_number, rank_title, department, role, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (username, email, password_hash, full_name, badge_number, rank_title, department, role, allowed_sections, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       username.trim(),
       email ? email.trim() : null,
@@ -50,18 +69,22 @@ export async function createUser(req, res) {
       rank_title ? rank_title.trim() : 'موظف تشغيل',
       department ? department.trim() : 'مديرية أمن أوباري',
       role || 'officer',
+      sectionsJson,
       status || 'active'
     ]);
 
     const newUser = await db.get(`
-      SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, created_at
+      SELECT id, username, email, full_name, badge_number, rank_title, department, role, allowed_sections, status, created_at
       FROM users WHERE id = ?
     `, [result.lastID]);
 
     return res.status(201).json({
       success: true,
       message: 'تم إضافة المستخدم بنجاح',
-      user: newUser
+      user: {
+        ...newUser,
+        allowed_sections: Array.isArray(allowed_sections) ? allowed_sections : ['dashboard', 'force']
+      }
     });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -72,7 +95,7 @@ export async function createUser(req, res) {
 export async function updateUser(req, res) {
   try {
     const userId = Number(req.params.id);
-    const { full_name, badge_number, rank_title, department, role, status, email, password } = req.body;
+    const { full_name, badge_number, rank_title, department, role, status, email, password, allowed_sections } = req.body;
 
     const { db } = getDb();
     const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
@@ -86,6 +109,10 @@ export async function updateUser(req, res) {
       passwordHash = await bcrypt.hash(password, 10);
     }
 
+    const sectionsJson = allowed_sections !== undefined
+      ? JSON.stringify(Array.isArray(allowed_sections) ? allowed_sections : (role === 'super_admin' ? ['all'] : ['dashboard', 'force']))
+      : user.allowed_sections;
+
     await db.run(`
       UPDATE users SET
         full_name = ?,
@@ -93,6 +120,7 @@ export async function updateUser(req, res) {
         rank_title = ?,
         department = ?,
         role = ?,
+        allowed_sections = ?,
         status = ?,
         email = ?,
         password_hash = ?,
@@ -104,6 +132,7 @@ export async function updateUser(req, res) {
       rank_title !== undefined ? rank_title : user.rank_title,
       department !== undefined ? department : user.department,
       role !== undefined ? role : user.role,
+      sectionsJson,
       status !== undefined ? status : user.status,
       email !== undefined ? email : user.email,
       passwordHash,
@@ -111,9 +140,27 @@ export async function updateUser(req, res) {
     ]);
 
     const updated = await db.get(`
-      SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login, updated_at
+      SELECT id, username, email, full_name, badge_number, rank_title, department, role, allowed_sections, status, avatar, last_login, updated_at
       FROM users WHERE id = ?
     `, [userId]);
+
+    let parsedSections = ['dashboard', 'force'];
+    if (updated.allowed_sections) {
+      try {
+        parsedSections = typeof updated.allowed_sections === 'string' ? JSON.parse(updated.allowed_sections) : updated.allowed_sections;
+      } catch (_) {}
+    } else if (updated.role === 'super_admin' || updated.username === 'admin') {
+      parsedSections = ['all'];
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم تحديث بيانات المستخدم بنجاح',
+      user: {
+        ...updated,
+        allowed_sections: parsedSections
+      }
+    });
 
     return res.status(200).json({
       success: true,

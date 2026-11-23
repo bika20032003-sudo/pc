@@ -95,6 +95,14 @@ export async function login(req, res) {
         rank_title: user.rank_title,
         department: user.department,
         role: user.role,
+        allowed_sections: (() => {
+          if (user.allowed_sections) {
+            try {
+              return typeof user.allowed_sections === 'string' ? JSON.parse(user.allowed_sections) : user.allowed_sections;
+            } catch (_) {}
+          }
+          return user.role === 'super_admin' || user.username === 'admin' ? ['all'] : ['dashboard', 'force'];
+        })(),
         avatar: user.avatar || '',
         databaseEngine: 'SQLite WAL Mode'
       }

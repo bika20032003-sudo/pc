@@ -51,7 +51,8 @@ export async function initDatabase() {
         badge_number TEXT DEFAULT 'MOI-001',
         rank_title TEXT DEFAULT 'لواء شرطة / مدير النظام',
         department TEXT DEFAULT 'الإدارة العامة للعمليات والأمن',
-        role TEXT CHECK(role IN ('super_admin', 'officer', 'operator', 'auditor')) DEFAULT 'super_admin',
+        role TEXT DEFAULT 'super_admin',
+        allowed_sections TEXT DEFAULT '["all"]',
         status TEXT CHECK(status IN ('active', 'suspended', 'inactive')) DEFAULT 'active',
         avatar TEXT,
         last_login TEXT,
@@ -59,6 +60,45 @@ export async function initDatabase() {
         updated_at TEXT DEFAULT (datetime('now', 'localtime'))
       );
     `);
+
+    // ترقية وتوسيع جدول المستخدمين لدعم كافة الأدوار الحديثة والصلاحيات
+    try {
+      const tableInfo = await dbInstance.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='users';");
+      if (tableInfo && tableInfo.sql && tableInfo.sql.includes("role IN ('super_admin', 'officer', 'operator', 'auditor')")) {
+        await dbInstance.exec(`
+          BEGIN TRANSACTION;
+          CREATE TABLE users_upgraded (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE,
+            password_hash TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            badge_number TEXT DEFAULT 'MOI-001',
+            rank_title TEXT DEFAULT 'لواء شرطة / مدير النظام',
+            department TEXT DEFAULT 'الإدارة العامة للعمليات والأمن',
+            role TEXT DEFAULT 'super_admin',
+            allowed_sections TEXT DEFAULT '["all"]',
+            status TEXT DEFAULT 'active',
+            avatar TEXT,
+            last_login TEXT,
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+          );
+          INSERT INTO users_upgraded (id, username, email, password_hash, full_name, badge_number, rank_title, department, role, status, avatar, last_login, created_at, updated_at)
+          SELECT id, username, email, password_hash, full_name, badge_number, rank_title, department, role, status, avatar, last_login, created_at, updated_at FROM users;
+          DROP TABLE users;
+          ALTER TABLE users_upgraded RENAME TO users;
+          COMMIT;
+        `);
+      } else {
+        const userCols = await dbInstance.all('PRAGMA table_info(users);');
+        if (!userCols.some(c => c.name === 'allowed_sections')) {
+          await dbInstance.exec("ALTER TABLE users ADD COLUMN allowed_sections TEXT DEFAULT '[\"all\"]';");
+        }
+      }
+    } catch (e) {
+      console.warn('تنبيه أثناء فحص ترقية جدول المستخدمين:', e.message);
+    }
 
     // 2. جدول سجل القوة العمومية المركزي
     await dbInstance.exec(`
@@ -270,6 +310,30 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_weapons_type ON weapons(weapon_type);
       CREATE INDEX IF NOT EXISTS idx_weapons_entity ON weapons(receiving_entity);
       CREATE INDEX IF NOT EXISTS idx_weapons_receiver ON weapons(receiver_name);
+    `);
+
+    // 10. جدول سجل العقوبات والانضباط وصحائف الاتهام
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS penalties (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        penalty_id INTEGER,
+        full_name TEXT NOT NULL,
+        national_id TEXT,
+        job_number TEXT,
+        employee_category TEXT DEFAULT 'نظامي',
+        penalty_type TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        penalty_date TEXT NOT NULL,
+        deduction_days INTEGER DEFAULT 0,
+        decision_number TEXT,
+        is_applied INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now', 'localtime')),
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_penalties_name ON penalties(full_name);
+      CREATE INDEX IF NOT EXISTS idx_penalties_nat_id ON penalties(national_id);
+      CREATE INDEX IF NOT EXISTS idx_penalties_job_no ON penalties(job_number);
+      CREATE INDEX IF NOT EXISTS idx_penalties_type ON penalties(penalty_type);
     `);
 
     // 8. التحقق من وجود مستخدم المسؤول الافتراضي

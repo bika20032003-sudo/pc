@@ -1,5 +1,30 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { safeWriteJson } from '../utils/fileUtils.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const vehiclesJsonPaths = [
+  path.resolve(__dirname, '../data/vehicles_data.json'),
+  path.resolve(__dirname, '../../../client/public/api/data/vehicles_data.json'),
+  path.resolve(__dirname, '../../../client/src/data/vehicles_data.json')
+];
+
+async function syncVehiclesJson(db) {
+  try {
+    const all = await db.all('SELECT * FROM vehicles ORDER BY id ASC');
+    if (Array.isArray(all) && all.length > 0) {
+      for (const p of vehiclesJsonPaths) {
+        safeWriteJson(p, all);
+      }
+    }
+  } catch (e) {
+    console.warn('Vehicle JSON backup sync error:', e.message);
+  }
+}
 
 export async function getVehicleList(req, res) {
   try {
@@ -129,6 +154,7 @@ export async function createVehicle(req, res) {
     ]);
 
     const created = await db.get('SELECT * FROM vehicles WHERE id = ?', [newId]);
+    syncVehiclesJson(db);
 
     return res.status(201).json({
       success: true,
@@ -193,6 +219,7 @@ export async function updateVehicle(req, res) {
     ]);
 
     const updated = await db.get('SELECT * FROM vehicles WHERE id = ?', [id]);
+    syncVehiclesJson(db);
 
     return res.status(200).json({
       success: true,
@@ -214,6 +241,8 @@ export async function deleteVehicle(req, res) {
     if (result.changes === 0) {
       return res.status(404).json({ success: false, message: 'الآلية غير موجودة' });
     }
+
+    syncVehiclesJson(db);
 
     return res.status(200).json({
       success: true,
@@ -270,6 +299,7 @@ export async function replaceVehicleList(req, res) {
 
     await stmt.finalize();
     await db.run('COMMIT;');
+    syncVehiclesJson(db);
 
     console.log(`✅ تم استبدال أسطول الآليات في SQLite بنجاح (${vehicles.length} مركبة)`);
 

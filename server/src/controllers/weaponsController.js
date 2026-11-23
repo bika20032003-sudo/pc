@@ -1,6 +1,6 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import fs from 'fs';
+import { safeWriteJson } from '../utils/fileUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,10 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const jsonPath = path.resolve(__dirname, '../data/weapons_data.json');
 
-// Helper to save to JSON file as persistent backup
+// Helper to save to JSON file as persistent atomic backup
 function saveToJsonFile(weapons) {
   try {
-    fs.writeFileSync(jsonPath, JSON.stringify(weapons, null, 2), 'utf8');
+    safeWriteJson(jsonPath, weapons);
   } catch (err) {
     console.error('Error saving weapons to JSON backup:', err);
   }

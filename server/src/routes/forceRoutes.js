@@ -7,14 +7,15 @@ import {
   replaceForceList,
   selfUpdateForceMember
 } from '../controllers/forceController.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', getForceList);
-router.post('/replace', replaceForceList);
+router.post('/replace', authenticateToken, requireAdmin, replaceForceList);
 router.post('/self-update', selfUpdateForceMember);
-router.post('/', createForceMember);
-router.put('/:id', updateForceMember);
-router.delete('/:id', deleteForceMember);
+router.post('/', authenticateToken, createForceMember);
+router.put('/:id', authenticateToken, updateForceMember);
+router.delete('/:id', authenticateToken, requireAdmin, deleteForceMember);
 
 export default router;
