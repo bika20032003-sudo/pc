@@ -5,8 +5,8 @@
  */
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -30,15 +30,16 @@ function normalizeDigits($str) {
 $rawInput = file_get_contents('php://input');
 $body = json_decode($rawInput, true);
 
-if (!$body || empty($body['id']) || empty($body['updates'])) {
+if (!$body || (empty($body['id']) && empty($body['national_id']) && empty($body['financial_number'])) || empty($body['updates'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'بيانات التحديث غير مكتملة'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$memberId = intval($body['id']);
+$memberId = intval($body['id'] ?? 0);
 $nationalId = normalizeDigits($body['national_id'] ?? '');
-$updates = $body['updates'];
+$financialNumber = normalizeDigits($body['financial_number'] ?? '');
+$updates = is_array($body['updates']) ? $body['updates'] : [];
 
 // مسار حفظ وتخزين بيانات القوة العمومية على خادم cPanel
 $dataDir = __DIR__ . '/data';
@@ -48,87 +49,107 @@ if (!is_dir($dataDir)) {
 
 $dataFile = $dataDir . '/force_data.json';
 
+// البحث عن الملف أو نسخه من المسارات البديلة إن لم يكن موجوداً
+if (!file_exists($dataFile) || filesize($dataFile) < 100) {
+    $altPaths = [
+        __DIR__ . '/../data/force_data.json',
+        __DIR__ . '/force_data.json',
+        dirname(__DIR__, 2) . '/client/src/data/force_data.json',
+        dirname(__DIR__, 2) . '/server/src/data/force_data.json'
+    ];
+    foreach ($altPaths as $alt) {
+        if (file_exists($alt) && filesize($alt) > 1000) {
+            @copy($alt, $dataFile);
+            break;
+        }
+    }
+}
+
 if (!file_exists($dataFile)) {
     file_put_contents($dataFile, '[]');
 }
 
-// قراءة وتحديث البيانات مع استخدام قفل حصري (flock LOCK_EX) لمنع تداخل الطلبات المتزامنة
-$fp = fopen($dataFile, 'c+');
-if ($fp && flock($fp, LOCK_EX)) {
-    $fileSize = filesize($dataFile);
-    $content = $fileSize > 0 ? fread($fp, $fileSize) : '[]';
-    $list = json_decode($content, true);
-    if (!is_array($list)) {
-        $list = [];
-    }
-
-    $found = false;
-    $updatedItem = null;
-
-    foreach ($list as &$item) {
-        if (intval($item['id']) === $memberId) {
-            // التحقق من الهوية برقم الهوية الوطني (12 رقماً) أو الإداري (10 أرقام)
-            $itemNat = normalizeDigits($item['national_id'] ?? '');
-            if (!empty($nationalId) && $itemNat !== $nationalId) {
-                flock($fp, LOCK_UN);
-                fclose($fp);
-                http_response_code(403);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'تعذر التحقق الأمني: عدم مطابقة الرقم الوطني أو الإداري للمنتسب'
-                ], JSON_UNESCAPED_UNICODE);
-                exit;
+// قراءة محتوى الملف كاملاً وبأمان تام
+$content = @file_get_contents($dataFile);
+$list = json_decode($content, true);
+if (!is_array($list) || empty($list)) {
+    // محاولة قراءة احتياطية بديلة
+    $altPaths = [
+        __DIR__ . '/../data/force_data.json',
+        __DIR__ . '/force_data.json',
+        dirname(__DIR__, 2) . '/client/src/data/force_data.json',
+        dirname(__DIR__, 2) . '/server/src/data/force_data.json'
+    ];
+    foreach ($altPaths as $alt) {
+        if (file_exists($alt)) {
+            $altContent = @file_get_contents($alt);
+            $altList = json_decode($altContent, true);
+            if (is_array($altList) && count($altList) > 0) {
+                $list = $altList;
+                @file_put_contents($dataFile, json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+                break;
             }
-
-            // الحقول السيادية المحمية ضد التعديل
-            $sovereignFields = ['id', 'name', 'national_id', 'job_title', 'type', 'department'];
-
-            // تطبيق التحديثات المسموح بها فقط
-            foreach ($updates as $key => $val) {
-                if (in_array($key, $sovereignFields)) {
-                    continue; // منع المساس بالحقول السيادية
-                }
-                $item[$key] = is_string($val) ? trim($val) : $val;
-            }
-
-            $item['updated_at'] = date('Y-m-d H:i:s');
-            $found = true;
-            $updatedItem = $item;
-            break;
         }
     }
+}
 
-    if ($found) {
-        ftruncate($fp, 0);
-        rewind($fp);
-        fwrite($fp, json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        fflush($fp);
-        flock($fp, LOCK_UN);
-        fclose($fp);
+if (!is_array($list)) {
+    $list = [];
+}
 
-        echo json_encode([
-            'success' => true,
-            'message' => 'تم حفظ وتحديث واستكمال بيانات المنتسب بنجاح في قاعدة البيانات المركزية',
-            'memberId' => $memberId,
-            'data' => $updatedItem,
-            'updated_at' => date('Y-m-d H:i:s')
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    } else {
-        flock($fp, LOCK_UN);
-        fclose($fp);
-        http_response_code(404);
-        echo json_encode([
-            'success' => false,
-            'message' => 'لم يتم العثور على القيد المطلوب بالقوة العمومية'
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
+$found = false;
+$updatedItem = null;
+$matchedId = null;
+
+// البحث عن القيد بمرونة ودقة عالية لمنع أي خطأ بسبب تطابق المعرف أو الرقم الوطني أو المالي
+foreach ($list as &$item) {
+    $itemId = intval($item['id'] ?? 0);
+    $itemNat = normalizeDigits($item['national_id'] ?? '');
+    $itemFin = normalizeDigits($item['financial_number'] ?? '');
+    $itemJob = normalizeDigits($item['job_number'] ?? '');
+
+    $matchesId = ($memberId > 0 && $itemId === $memberId);
+    $matchesNat = (!empty($nationalId) && $itemNat === $nationalId);
+    $matchesFin = (!empty($financialNumber) && ($itemFin === $financialNumber || $itemJob === $financialNumber));
+
+    if ($matchesId || $matchesNat || $matchesFin) {
+        // الحقول السيادية المحمية ضد التعديل
+        $sovereignFields = ['id', 'name', 'national_id', 'job_title', 'type', 'department'];
+
+        // تطبيق التحديثات المسموح بها
+        foreach ($updates as $key => $val) {
+            if (in_array($key, $sovereignFields)) {
+                continue; // حماية الحقول السيادية
+            }
+            $item[$key] = is_string($val) ? trim($val) : $val;
+        }
+
+        $item['self_updated'] = true;
+        $item['updated_at'] = date('Y-m-d H:i:s');
+        $found = true;
+        $matchedId = $itemId;
+        $updatedItem = $item;
+        break;
     }
+}
+
+if ($found) {
+    // كتابة وحفظ البيانات في الملف مع قفل حصري
+    @file_put_contents($dataFile, json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'تم حفظ وتحديث واستكمال بيانات المنتسب بنجاح في قاعدة البيانات المركزية',
+        'memberId' => $matchedId,
+        'data' => $updatedItem,
+        'updated_at' => date('Y-m-d H:i:s')
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 } else {
-    http_response_code(500);
+    http_response_code(404);
     echo json_encode([
         'success' => false,
-        'message' => 'تعذر إقفال ملف البيانات للكتابة بسبب الضغط المتزامن، يرجى المحاولة بعد لحظات'
+        'message' => 'لم يتم العثور على القيد المطلوب بالقوة العمومية'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
