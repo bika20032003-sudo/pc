@@ -404,10 +404,11 @@ export default function App() {
             }
           },
           error_callback: (err) => {
-            console.warn('Google OAuth popup notice:', err);
-            fetchForceFromServer(true);
-            setStartWithGoogle(true);
-            setShowInquiryModal(true);
+            console.warn('Google OAuth popup cancelled or closed:', err);
+            // Strict Security: NEVER open the inquiry modal when stopping or canceling Google login!
+            setShowInquiryModal(false);
+            setNotificationMsg('تم إيقاف أو إلغاء تسجيل الدخول بـ Google. يلزم تسجيل الدخول للوصول للاستعلام.');
+            setTimeout(() => setNotificationMsg(''), 4000);
           }
         });
         client.requestAccessToken();
@@ -417,10 +418,9 @@ export default function App() {
       }
     }
 
-    // Fallback: open modal directly to allow Google account selection
-    fetchForceFromServer(true);
-    setStartWithGoogle(true);
-    setShowInquiryModal(true);
+    // If Google GSI library is still loading, do NOT open the inquiry modal!
+    setNotificationMsg('جاري تحميل خدمة Google، يرجى النقر مجدداً بعد ثوانٍ...');
+    setTimeout(() => setNotificationMsg(''), 4000);
   }, [fetchForceFromServer]);
 
   const handleGoogleSignOut = useCallback(() => {

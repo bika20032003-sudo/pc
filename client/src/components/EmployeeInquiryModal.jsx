@@ -293,6 +293,11 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitSuccess(false);
     setSubmitError(null);
 
+    if (!googleUser) {
+      setSearchError('يلزم تسجيل الدخول بحساب Google المعتمد أولاً قبل الاستعلام عن الملف.');
+      return;
+    }
+
     const clean = sanitizeDigits(searchInput);
     if (!clean || clean.length < 10 || clean.length > 12) {
       setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري (10 أرقام) الصحيح للاستعلام عن الملف.');
@@ -412,11 +417,9 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
             }
           },
           error_callback: (err) => {
-            console.warn('Google OAuth popup notice or unverified origin:', err);
-            // Fallback directly to verified email modal
-            setGoogleModalEmail(googleUser?.email || '');
-            setGoogleModalName(googleUser?.name || '');
-            setShowGoogleModal(true);
+            console.warn('Google OAuth popup cancelled or closed:', err);
+            // Strict Security: NEVER open fallback modal or unlock inquiry if user cancelled or closed Google login
+            setSearchError('تم إيقاف أو إلغاء تسجيل الدخول بـ Google. يلزم تسجيل الدخول للوصول للاستعلام.');
           }
         });
         client.requestAccessToken();
@@ -426,10 +429,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       }
     }
 
-    // 2. Interactive Modal fallback for immediate, reliable verification
-    setGoogleModalEmail(googleUser?.email || '');
-    setGoogleModalName(googleUser?.name || '');
-    setShowGoogleModal(true);
+    setSearchError('جاري تحميل خدمة Google، يرجى المحاولة بعد قليل...');
   };
 
   const handleGoogleSignOut = () => {
@@ -955,99 +955,122 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     </button>
                   </div>
 
-                  {/* Or Divider */}
-                  <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 18px', gap: '14px' }}>
-                    <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
-                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#64748b' }}>أو الاستعلام اليدوي بالرقم الوطني أو الإداري</span>
-                    <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
-                  </div>
-
-                  <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
-                    <div style={{ marginBottom: '8px' }}>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                        الرقم الوطني أو الرقم الإداري المعتمد (10 - 12 رقماً):
-                      </label>
-                    </div>
-
-                    <div style={{ position: 'relative', marginBottom: '14px' }}>
-                      <input
-                        type="text"
-                        dir="ltr"
-                        maxLength={12}
-                        placeholder="مثال: 119960541445 أو 5198606410"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '14px 18px',
-                          paddingLeft: '48px',
-                          borderRadius: '10px',
-                          border: '2px solid #1e3a8a',
-                          fontSize: '16px',
-                          fontWeight: 800,
-                          fontFamily: 'monospace',
-                          boxSizing: 'border-box',
-                          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.08)'
-                        }}
-                        autoFocus
-                      />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: '14px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#1e3a8a'
-                        }}
-                      >
-                        <Search size={22} />
+                  {googleUser ? (
+                    <>
+                      {/* Or Divider */}
+                      <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 18px', gap: '14px' }}>
+                        <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
+                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#64748b' }}>الاستعلام بالرقم الوطني أو الإداري المعتمد</span>
+                        <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
                       </div>
+
+                      <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                            الرقم الوطني أو الرقم الإداري المعتمد (10 - 12 رقماً):
+                          </label>
+                        </div>
+
+                        <div style={{ position: 'relative', marginBottom: '14px' }}>
+                          <input
+                            type="text"
+                            dir="ltr"
+                            maxLength={12}
+                            placeholder="مثال: 119960541445 أو 5198606410"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '14px 18px',
+                              paddingLeft: '48px',
+                              borderRadius: '10px',
+                              border: '2px solid #1e3a8a',
+                              fontSize: '16px',
+                              fontWeight: 800,
+                              fontFamily: 'monospace',
+                              boxSizing: 'border-box',
+                              boxShadow: '0 4px 12px rgba(30, 58, 138, 0.08)'
+                            }}
+                            autoFocus
+                          />
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: '14px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#1e3a8a'
+                            }}
+                          >
+                            <Search size={22} />
+                          </div>
+                        </div>
+
+                        {searchError && (
+                          <div
+                            style={{
+                              padding: '12px 14px',
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              borderRadius: '8px',
+                              color: '#b91c1c',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              marginBottom: '14px'
+                            }}
+                          >
+                            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                            <span>{searchError}</span>
+                          </div>
+                        )}
+
+                        <button
+                          type="submit"
+                          style={{
+                            width: '100%',
+                            padding: '14px',
+                            background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                            color: '#ffffff',
+                            border: '1.5px solid #d4af37',
+                            borderRadius: '10px',
+                            fontSize: '15px',
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 14px rgba(10, 25, 47, 0.2)'
+                          }}
+                        >
+                          <Search size={18} />
+                          <span>التحقق من الهوية وعرض الملف</span>
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <div style={{
+                      marginTop: '15px',
+                      padding: '16px 20px',
+                      background: '#fffbeb',
+                      border: '1.5px solid #fde68a',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      color: '#92400e',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px'
+                    }}>
+                      <Lock size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+                      <span>حقول الاستعلام محجوبة ومقفلة لحين إتمام تسجيل الدخول بحساب Google</span>
                     </div>
-
-                    {searchError && (
-                      <div
-                        style={{
-                          padding: '12px 14px',
-                          background: '#fef2f2',
-                          border: '1px solid #fecaca',
-                          borderRadius: '8px',
-                          color: '#b91c1c',
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '14px'
-                        }}
-                      >
-                        <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                        <span>{searchError}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      style={{
-                        width: '100%',
-                        padding: '14px',
-                        background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-                        color: '#ffffff',
-                        border: '1.5px solid #d4af37',
-                        borderRadius: '10px',
-                        fontSize: '15px',
-                        fontWeight: 900,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 14px rgba(10, 25, 47, 0.2)'
-                      }}
-                    >
-                      <Search size={18} />
-                      <span>التحقق من الهوية وعرض الملف</span>
-                    </button>
-                  </form>
+                  )}
                 </>
               )}
 
