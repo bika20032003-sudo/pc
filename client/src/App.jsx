@@ -75,6 +75,9 @@ import EmployeeInquiryModal from './components/EmployeeInquiryModal';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
 import * as XLSX from 'xlsx';
 
+// Official Google Cloud Console Client ID for Ministry Portal
+export const OFFICIAL_GOOGLE_CLIENT_ID = '368836718086-jb8f3bq2gh0ea143jjkk3gvpnpm7jnib.apps.googleusercontent.com';
+
 // Official Sections of Ubari Security Directorate (مديرية أمن أوباري)
 export const SECTIONS = [
   { id: 'dashboard', name: 'لوحة التحكم والمتابعة', icon: LayoutDashboard },
