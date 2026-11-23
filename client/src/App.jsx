@@ -215,6 +215,29 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Secret Admin Login Toggle via 4 Clicks on Ministry Logo
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const clickTimerRef = useRef(null);
+
+  const handleLogoClick = useCallback(() => {
+    if (showAdminLogin) return;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+    setLogoClickCount((prev) => {
+      const next = prev + 1;
+      if (next >= 4) {
+        setShowAdminLogin(true);
+        return 0;
+      }
+      clickTimerRef.current = setTimeout(() => {
+        setLogoClickCount(0);
+      }, 2500);
+      return next;
+    });
+  }, [showAdminLogin]);
+
   // Mobile Drawer State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -712,6 +735,8 @@ export default function App() {
     localStorage.removeItem('moi_token');
     localStorage.removeItem('moi_user');
     setIsMobileMenuOpen(false);
+    setShowAdminLogin(false);
+    setLogoClickCount(0);
   };
 
   // Open Form to Edit Existing Personnel
@@ -3196,7 +3221,12 @@ export default function App() {
           <div className="visual-overlay" />
 
           <div className="visual-content-top">
-            <div className="visual-logo-badge">
+            <div
+              className="visual-logo-badge"
+              onClick={handleLogoClick}
+              title="شعار وزارة الداخلية"
+              style={{ cursor: 'pointer', userSelect: 'none', transition: 'transform 0.15s ease' }}
+            >
               <img src="./moi-logo.png" onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }} alt="شعار وزارة الداخلية" />
             </div>
             <div className="visual-title-wrap">
@@ -3233,15 +3263,48 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right Side: Authentication Form */}
+        {/* Right Side: Authentication Panel */}
         <div className="auth-form-panel">
           <div className="form-card-inner">
-            <div className="form-header-block">
+            <div className="form-header-block" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Sovereign Ministry of Interior Emblem - Click 4 Times to Unlock Login */}
+              <div
+                onClick={handleLogoClick}
+                style={{
+                  width: '68px',
+                  height: '68px',
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
+                  padding: '8px',
+                  boxShadow: '0 4px 16px rgba(10, 25, 47, 0.28)',
+                  border: '2px solid #d4af37',
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  userSelect: 'none'
+                }}
+                title="شعار وزارة الداخلية"
+                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+              >
+                <img
+                  src="./moi-logo.png"
+                  onError={(e) => { e.currentTarget.src = MOI_LOGO_BASE64; }}
+                  alt="شعار وزارة الداخلية"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
+
               <div className="national-crest-tag">
                 <span className="crest-dot" />
                 <span>دولة ليبيا - وزارة الداخلية</span>
               </div>
-              <h2 className="portal-title">تسجيل الدخول للمنظومة</h2>
+              <h2 className="portal-title">
+                {showAdminLogin ? 'تسجيل دخول المشرف والقيادة' : 'منظومة مديرية أمن أوباري'}
+              </h2>
+              <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px', marginBottom: 0 }}>
+                {showAdminLogin ? 'أدخل بيانات الاعتماد الرسمية للوصول إلى لوحة التحكم' : 'البوابة الرقمية المعتمدة للخدمات والاستعلام'}
+              </p>
             </div>
 
             {errorMessage && (
@@ -3251,83 +3314,40 @@ export default function App() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="auth-form" noValidate>
-              <div className="form-group">
-                <label className="form-label" htmlFor="identifier">
-                  اسم المستخدم
-                </label>
-                <div className="input-container">
-                  <input
-                    id="identifier"
-                    type="text"
-                    className="form-input"
-                    placeholder="أدخل اسم المستخدم..."
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="password">
-                  كلمة المرور
-                </label>
-                <div className="password-input-wrap">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="form-input"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className={`toggle-pwd-btn ${showPassword ? 'active' : ''}`}
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                    title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-auxiliary-row">
-                <label className="remember-checkbox-label">
-                  <input type="checkbox" defaultChecked />
-                  <span>تذكر بيانات الجلسة على هذا الجهاز</span>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className={`submit-btn ${isLoading ? 'btn-loading' : ''}`}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="spinner-loader" />
-                ) : (
-                  <>
-                    <Lock size={16} />
-                    <span>تسجيل الدخول</span>
-                  </>
-                )}
-              </button>
-
-              {/* Employee Self-Service Inquiry Portal Button */}
-              <div style={{ marginTop: '16px', marginBottom: '4px' }}>
-                <div style={{ position: 'relative', textAlign: 'center', marginBottom: '10px' }}>
-                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: '#e2e8f0' }} />
-                  <span style={{ position: 'relative', background: '#ffffff', padding: '0 12px', fontSize: '11px', fontWeight: 800, color: '#64748b' }}>
-                    بوابة منتسبي مديرية أمن أوباري
-                  </span>
+            {!showAdminLogin ? (
+              /* Public View: Hidden Login Fields, Only Public Services & Inquiry Portal */
+              <div style={{ marginTop: '20px' }}>
+                <div style={{
+                  padding: '24px 18px',
+                  background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                  borderRadius: '14px',
+                  border: '1.5px solid #e2e8f0',
+                  textAlign: 'center',
+                  marginBottom: '22px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 12px'
+                  }}>
+                    <Shield size={28} />
+                  </div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0a192f', marginBottom: '8px' }}>
+                    بوابة منتسبي وزارة الداخلية
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                    مرحباً بكم في البوابة المركزية لمديرية أمن أوباري. يرجى من ضباط وضباط صف وأفراد وموظفي المديرية الاستعلام واستيفاء بياناتهم بالضغط على الزر أدناه.
+                  </p>
                 </div>
 
+                {/* Employee Self-Service Inquiry Portal Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -3336,13 +3356,13 @@ export default function App() {
                   }}
                   style={{
                     width: '100%',
-                    padding: '12px 16px',
+                    padding: '14px 20px',
                     background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0a192f 100%)',
                     color: '#d4af37',
                     border: '1.5px solid #d4af37',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     fontWeight: 900,
-                    fontSize: '14px',
+                    fontSize: '15px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -3353,11 +3373,139 @@ export default function App() {
                   }}
                   title="استعلام عن بيانات المنتسب وتحديث البيانات الناقصة"
                 >
-                  <Search size={18} style={{ color: '#d4af37' }} />
-                  <span>استعلام وتحديث بيانات المنتسب</span>
+                  <Search size={20} style={{ color: '#d4af37' }} />
+                  <span>دخول بوابة الاستعلام وتحديث البيانات</span>
                 </button>
               </div>
-            </form>
+            ) : (
+              /* Admin Login Form (Revealed after 4 clicks on Ministry Logo) */
+              <form onSubmit={handleLogin} className="auth-form" noValidate style={{ animation: 'fadeIn 0.3s ease-in' }}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="identifier">
+                    اسم المستخدم
+                  </label>
+                  <div className="input-container">
+                    <input
+                      id="identifier"
+                      type="text"
+                      className="form-input"
+                      placeholder="أدخل اسم المستخدم..."
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      required
+                      autoComplete="username"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="password">
+                    كلمة المرور
+                  </label>
+                  <div className="password-input-wrap">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="form-input"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className={`toggle-pwd-btn ${showPassword ? 'active' : ''}`}
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                      title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-auxiliary-row">
+                  <label className="remember-checkbox-label">
+                    <input type="checkbox" defaultChecked />
+                    <span>تذكر بيانات الجلسة على هذا الجهاز</span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className={`submit-btn ${isLoading ? 'btn-loading' : ''}`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="spinner-loader" />
+                  ) : (
+                    <>
+                      <Lock size={16} />
+                      <span>تسجيل الدخول</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAdminLogin(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#64748b',
+                    fontSize: '12.5px',
+                    cursor: 'pointer',
+                    marginTop: '10px',
+                    textAlign: 'center',
+                    width: '100%',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  إخفاء حقول تسجيل الدخول
+                </button>
+
+                {/* Employee Self-Service Inquiry Portal Button */}
+                <div style={{ marginTop: '16px', marginBottom: '4px' }}>
+                  <div style={{ position: 'relative', textAlign: 'center', marginBottom: '10px' }}>
+                    <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: '#e2e8f0' }} />
+                    <span style={{ position: 'relative', background: '#ffffff', padding: '0 12px', fontSize: '11px', fontWeight: 800, color: '#64748b' }}>
+                      بوابة منتسبي مديرية أمن أوباري
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchForceFromServer(true);
+                      setShowInquiryModal(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0a192f 100%)',
+                      color: '#d4af37',
+                      border: '1.5px solid #d4af37',
+                      borderRadius: '10px',
+                      fontWeight: 900,
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      boxShadow: '0 4px 14px rgba(10, 25, 47, 0.25)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title="استعلام عن بيانات المنتسب وتحديث البيانات الناقصة"
+                  >
+                    <Search size={18} style={{ color: '#d4af37' }} />
+                    <span>استعلام وتحديث بيانات المنتسب</span>
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Links and Directorate Social */}
             <div className="auth-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
