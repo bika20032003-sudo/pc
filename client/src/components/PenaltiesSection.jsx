@@ -34,10 +34,15 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Verify that real initial penalties are preserved
-          const existingIds = new Set(parsed.map(p => p.PenaltyID || p.NationalNumber));
-          const missingInitial = initialPenalties.filter(p => !existingIds.has(p.PenaltyID) && !existingIds.has(p.NationalNumber));
-          return [...missingInitial, ...parsed];
+          // Guarantee that all official initial penalties (including suspended "إيقاف عن العمل") are preserved
+          const parsedIds = new Set(parsed.map(p => p.PenaltyID));
+          const missingInitial = initialPenalties.filter(p => !parsedIds.has(p.PenaltyID));
+          if (missingInitial.length > 0) {
+            const merged = [...parsed, ...missingInitial];
+            localStorage.setItem('ubari_penalties', JSON.stringify(merged));
+            return merged;
+          }
+          return parsed;
         }
       }
     } catch (e) {
@@ -51,8 +56,9 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
+  const [modalMemberSearch, setModalMemberSearch] = useState('');
   const [selectedPenaltyType, setSelectedPenaltyType] = useState('all');
-  const [viewScope, setViewScope] = useState('all'); // 'all' (كافة عقوبات المديرية) or 'member' (عقوبات المنتسب المحدد)
+  const [viewScope, setViewScope] = useState('all'); // Default: show all directorate penalties without a pinned person
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [indictmentModal, setIndictmentModal] = useState({ isOpen: false, member: null, penalty: null });
 
@@ -152,16 +158,32 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
     }
   }, [penalties]);
 
-  // Set default selected member
+  // Ensure all official suspended/penalized cases from initial data are preserved
   useEffect(() => {
-    if (!selectedMember && forceMembers.length > 0) {
-      // Prefer someone who already has a penalty or first member
-      const withPenalty = forceMembers.find(m => 
-        penalties.some(p => p.FullName === m.name || p.NationalNumber === m.national_id)
-      );
-      setSelectedMember(withPenalty || forceMembers[0]);
-    }
-  }, [forceMembers, selectedMember, penalties]);
+    setPenalties(prev => {
+      const prevIds = new Set(prev.map(p => p.PenaltyID));
+      const missing = initialPenalties.filter(p => !prevIds.has(p.PenaltyID));
+      if (missing.length > 0) {
+        const merged = [...prev, ...missing];
+        try {
+          localStorage.setItem('ubari_penalties', JSON.stringify(merged));
+        } catch (e) {}
+        return merged;
+      }
+      return prev;
+    });
+  }, []);
+
+  // Manual reset & restore of official penalties and suspended members
+  const handleRestoreOfficialPenalties = () => {
+    const userAdded = penalties.filter(p => p.PenaltyID > 1000000 && !initialPenalties.some(init => init.PenaltyID === p.PenaltyID));
+    const full = [...initialPenalties, ...userAdded];
+    setPenalties(full);
+    try {
+      localStorage.setItem('ubari_penalties', JSON.stringify(full));
+    } catch (e) {}
+    alert('✅ تم استرجاع كافة الموقوفين عن العمل والقيود التأديبية الرسمية بنجاح.');
+  };
 
   // Search autocomplete for picking member
   const searchedMembers = useMemo(() => {
@@ -174,6 +196,18 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       return name.includes(q) || nat.includes(q) || job.includes(q);
     }).slice(0, 8);
   }, [forceMembers, memberSearchTerm]);
+
+  // Search autocomplete for picking member inside modal
+  const searchedModalMembers = useMemo(() => {
+    const q = normalizeArabicText(modalMemberSearch.trim());
+    if (!q) return [];
+    return forceMembers.filter(m => {
+      const name = normalizeArabicText(m.name || '');
+      const nat = (m.national_id || '').toString();
+      const job = (m.job_number || m.financial_number || '').toString();
+      return name.includes(q) || nat.includes(q) || job.includes(q);
+    }).slice(0, 6);
+  }, [forceMembers, modalMemberSearch]);
 
   // Navigation handlers for next/prev member
   const handleNavigateMember = (direction) => {
@@ -217,6 +251,9 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
     // Optimistic UI update
     setPenalties(prev => [newPenalty, ...prev]);
     setIsAddModalOpen(false);
+    setSelectedMember(null);
+    setModalMemberSearch('');
+    setViewScope('all');
     setPenaltyForm({
       penalty_type: 'لفت نظر (إنذار)',
       deduction_days: 0,
@@ -648,6 +685,16 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
           </button>
 
           <button
+            type="button"
+            onClick={handleRestoreOfficialPenalties}
+            title="استرجاع كافة الموقوفين والقيود التأديبية الرسمية المعتمدة"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #dc2626', background: '#fef2f2', color: '#dc2626', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}
+          >
+            <span>🔄</span>
+            <span>استعادة الموقوفين والعقوبات</span>
+          </button>
+
+          <button
             onClick={() => setIsAddModalOpen(true)}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '8px', border: 'none', background: '#b91c1c', color: '#ffffff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 10px rgba(185, 28, 28, 0.25)' }}
           >
@@ -700,25 +747,16 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
         </div>
       </div>
 
-      {/* Smart Member Search & Navigator Bar */}
-      <div style={{ background: '#ffffff', padding: '14px 20px', borderRadius: '14px', border: '1.5px solid #cbd5e1', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-        <button
-          onClick={() => handleNavigateMember('prev')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', fontWeight: 800, color: '#1e3a8a', cursor: 'pointer' }}
-          title="الانتقال للمنتسب السابق بقوة المديرية"
-        >
-          <ChevronRight size={18} />
-          <span>السابق</span>
-        </button>
-
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+      {/* Optional Member Search & Filter Bar */}
+      <div style={{ background: '#ffffff', padding: '12px 18px', borderRadius: '12px', border: '1.5px solid #cbd5e1', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+          <Search size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
             value={memberSearchTerm}
             onChange={(e) => setMemberSearchTerm(e.target.value)}
-            placeholder="🔍 ابحث بالاسم، الرقم الوطني، أو الرقم المالي لتحديد المنتسب من بين 2,211 عنصراً..."
-            style={{ width: '100%', padding: '11px 42px 11px 16px', borderRadius: '10px', border: '2px solid #b91c1c', fontSize: '13.5px', fontWeight: 800, boxSizing: 'border-box', textAlign: 'center', color: '#b91c1c' }}
+            placeholder="🔍 تصفية عقوبات منتسب محدد بالاسم، الرقم الوطني، أو الرقم المالي (اختياري)..."
+            style={{ width: '100%', padding: '9px 38px 9px 14px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '13px', fontWeight: 700, boxSizing: 'border-box' }}
           />
 
           {searchedMembers.length > 0 && (
@@ -731,17 +769,17 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
                     setMemberSearchTerm('');
                     setViewScope('member');
                   }}
-                  style={{ padding: '11px 16px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  style={{ padding: '10px 14px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
                   onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#fee2e2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#fee2e2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '11px' }}>
                       {m.rank ? m.rank.slice(0, 2) : 'ش'}
                     </div>
                     <div>
-                      <strong style={{ color: '#0f172a', fontSize: '13px' }}>{m.name}</strong>
-                      <span style={{ fontSize: '11px', color: '#64748b', marginRight: '8px' }}>({m.rank || 'شرطي'})</span>
+                      <strong style={{ color: '#0f172a', fontSize: '12.5px' }}>{m.name}</strong>
+                      <span style={{ fontSize: '11px', color: '#64748b', marginRight: '6px' }}>({m.rank || 'شرطي'})</span>
                     </div>
                   </div>
                   <div style={{ textAlign: 'left' }}>
@@ -754,36 +792,42 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
           )}
         </div>
 
-        <button
-          onClick={() => handleNavigateMember('next')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', fontWeight: 800, color: '#1e3a8a', cursor: 'pointer' }}
-          title="الانتقال للمنتسب التالي بقوة المديرية"
-        >
-          <span>التالي</span>
-          <ChevronLeft size={18} />
-        </button>
+        {selectedMember && (
+          <button
+            onClick={() => {
+              setSelectedMember(null);
+              setViewScope('all');
+              setMemberSearchTerm('');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1.5px solid #dc2626', background: '#fef2f2', color: '#dc2626', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}
+            title="إلغاء تصفية المنتسب والعودة لعرض كافة عقوبات المديرية"
+          >
+            <X size={15} />
+            <span>إلغاء التحديد وعرض كافة العقوبات</span>
+          </button>
+        )}
       </div>
 
-      {/* Selected Member Dossier Card */}
+      {/* Selected Member Dossier Card (Displayed ONLY when a member is actively selected) */}
       {selectedMember && (
-        <div style={{ background: '#ffffff', padding: '16px 22px', borderRadius: '14px', border: '1.5px solid #cbd5e1', borderTop: '5px solid #b91c1c', marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', flexWrap: 'wrap' }}>
-          <div style={{ width: '70px', height: '88px', borderRadius: '8px', border: '2px solid #b91c1c', overflow: 'hidden', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#ffffff', padding: '14px 20px', borderRadius: '12px', border: '1.5px solid #cbd5e1', borderTop: '4px solid #b91c1c', marginBottom: '16px', display: 'flex', gap: '16px', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', flexWrap: 'wrap' }}>
+          <div style={{ width: '62px', height: '78px', borderRadius: '6px', border: '1.5px solid #b91c1c', overflow: 'hidden', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {selectedMember.photo ? (
               <img src={selectedMember.photo} alt={selectedMember.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ fontSize: '28px' }}>👮</div>
+              <div style={{ fontSize: '24px' }}>👮</div>
             )}
           </div>
 
-          <div style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a' }}>{selectedMember.name}</h3>
-              <span style={{ background: '#fee2e2', color: '#b91c1c', fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', border: '1px solid #fecaca' }}>
+          <div style={{ flex: 1, minWidth: '260px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>{selectedMember.name}</h3>
+              <span style={{ background: '#fee2e2', color: '#b91c1c', fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', border: '1px solid #fecaca' }}>
                 {selectedMember.rank || 'شرطي'}
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', fontSize: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '11.5px' }}>
               <div><span style={{ color: '#64748b' }}>الرقم المالي: </span><strong style={{ color: '#0284c7', fontFamily: 'monospace' }}>{selectedMember.financial_number || selectedMember.job_number || '---'}</strong></div>
               <div><span style={{ color: '#64748b' }}>الرقم الوطني: </span><strong style={{ color: '#0f172a', fontFamily: 'monospace' }}>{selectedMember.national_id || '---'}</strong></div>
               <div><span style={{ color: '#64748b' }}>جهة التبعية: </span><strong>{selectedMember.department || 'مديرية أمن أوباري'}</strong></div>
@@ -800,32 +844,43 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={() => {
                 setViewScope(viewScope === 'member' ? 'all' : 'member');
               }}
-              style={{ padding: '9px 14px', borderRadius: '8px', border: '1.5px solid #1e3a8a', background: viewScope === 'member' ? '#1e3a8a' : '#eff6ff', color: viewScope === 'member' ? '#ffffff' : '#1e3a8a', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1.5px solid #1e3a8a', background: viewScope === 'member' ? '#1e3a8a' : '#eff6ff', color: viewScope === 'member' ? '#ffffff' : '#1e3a8a', fontWeight: 800, fontSize: '11.5px', cursor: 'pointer' }}
             >
-              {viewScope === 'member' ? 'عرض سجل المديرية العام' : 'تصفية عقوبات هذا المنتسب فقط'}
+              {viewScope === 'member' ? 'عرض السجل العام' : 'تصفية هذا المنتسب'}
             </button>
 
             <button
               type="button"
               onClick={() => handleOpenIndictmentForMember(selectedMember)}
-              style={{ padding: '9px 14px', borderRadius: '8px', border: '1.5px solid #b91c1c', background: '#fef2f2', color: '#b91c1c', fontWeight: 900, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1.5px solid #b91c1c', background: '#fef2f2', color: '#b91c1c', fontWeight: 900, fontSize: '11.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
               title="إصدار وطباعة صحيفة اتهام للحالات الموجزة لهذا المنتسب"
             >
-              <FileText size={15} />
-              <span>صحيفة اتهام للمنتسب</span>
+              <FileText size={14} />
+              <span>صحيفة اتهام</span>
             </button>
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              style={{ padding: '9px 16px', borderRadius: '8px', background: '#b91c1c', color: '#ffffff', border: 'none', fontWeight: 800, fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 14px', borderRadius: '6px', background: '#b91c1c', color: '#ffffff', border: 'none', fontWeight: 800, fontSize: '11.5px', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px' }}
             >
-              <Plus size={15} />
-              <span>تقييد عقوبة للمنتسب</span>
+              <Plus size={14} />
+              <span>تقييد عقوبة</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setSelectedMember(null);
+                setViewScope('all');
+              }}
+              style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#64748b', cursor: 'pointer' }}
+              title="إلغاء التحديد وإخفاء البطاقة"
+            >
+              <X size={15} />
             </button>
           </div>
         </div>
@@ -1016,13 +1071,54 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
                     {selectedMember.rank || 'شرطي'} | الرقم المالي: {selectedMember.financial_number || selectedMember.job_number || '---'}
                   </div>
                 </div>
-                <span style={{ fontSize: '11px', background: '#ffffff', border: '1px solid #f87171', color: '#b91c1c', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>
-                  {selectedMember.department || 'مديرية أمن أوباري'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', background: '#ffffff', border: '1px solid #f87171', color: '#b91c1c', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                    {selectedMember.department || 'مديرية أمن أوباري'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedMember(null); setModalMemberSearch(''); }}
+                    style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}
+                    title="تغيير المنتسب"
+                  >
+                    تغيير
+                  </button>
+                </div>
               </div>
             ) : (
-              <div style={{ background: '#fef3c7', padding: '10px', borderRadius: '8px', marginBottom: '16px', color: '#b45309', fontSize: '12px' }}>
-                ⚠️ يرجى تحديد المنتسب أولاً من القائمة قبل الحفظ.
+              <div style={{ marginBottom: '16px', position: 'relative' }}>
+                <label style={{ fontWeight: 800, color: '#1e3a8a', display: 'block', marginBottom: '6px', fontSize: '12px' }}>
+                  اختر المنتسب المتهم من القوة العمومية:
+                </label>
+                <input
+                  type="text"
+                  placeholder="🔍 اكتب اسم المنتسب، الرقم الوطني، أو الرقم المالي..."
+                  value={modalMemberSearch}
+                  onChange={(e) => setModalMemberSearch(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #b91c1c', fontSize: '12.5px', boxSizing: 'border-box' }}
+                />
+                {searchedModalMembers.length > 0 && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#ffffff', border: '1.5px solid #b91c1c', borderRadius: '8px', marginTop: '4px', zIndex: 11000, boxShadow: '0 8px 20px rgba(0,0,0,0.15)', maxHeight: '180px', overflowY: 'auto' }}>
+                    {searchedModalMembers.map(m => (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedMember(m);
+                          setModalMemberSearch('');
+                        }}
+                        style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
+                      >
+                        <div>
+                          <strong style={{ fontSize: '12.5px', color: '#0f172a' }}>{m.name}</strong>
+                          <span style={{ fontSize: '11px', color: '#64748b', marginRight: '6px' }}>({m.rank || 'شرطي'})</span>
+                        </div>
+                        <span style={{ fontSize: '10.5px', color: '#0284c7', fontFamily: 'monospace' }}>{m.financial_number || m.job_number || '---'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
