@@ -2,4 +2,9 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home2/ubarigh1/public_html
-    - /bin/cp -R * $DEPLOYPATH
+    - /bin/cp -R client/dist/* $DEPLOYPATH/
+    - /bin/cp -R client/dist/.htaccess $DEPLOYPATH/.htaccess 2>/dev/null || true
+    - /bin/cp -R client/dist/.nojekyll $DEPLOYPATH/.nojekyll 2>/dev/null || true
+    - /bin/cp -R server/src $DEPLOYPATH/
+    - /bin/cp server/package.json $DEPLOYPATH/package.json
+

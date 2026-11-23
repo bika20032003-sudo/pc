@@ -89,6 +89,8 @@ const __dirname = path.dirname(__filename);
 
 // Serve Static Frontend Assets (Single Page App) if present
 const possibleStaticDirs = [
+  process.cwd(),
+  path.join(__dirname, '..'),
   path.join(__dirname, '../public'),
   path.join(__dirname, '../dist'),
   path.join(__dirname, '../../client/dist'),

@@ -40,9 +40,15 @@
   ExpiresByType application/javascript "access plus 1 week"
 </IfModule>
 
-# ترويسات الحماية والأمان السيادي
+# ترويسات الحماية والأمان ومنع تخزين ملف index.html مؤقتاً لضمان وصول التحديثات فوراً
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
+
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+  </FilesMatch>
 </IfModule>

@@ -3,8 +3,8 @@ node_modules/
 client/node_modules/
 server/node_modules/
 
-# Production build
-client/dist/
+# Production build (tracked for cPanel git automated deployments)
+# client/dist/
 .vite/
 client/.vite/
 
