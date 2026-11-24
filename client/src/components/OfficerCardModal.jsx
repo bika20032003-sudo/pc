@@ -65,7 +65,7 @@ export default function OfficerCardModal({
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     const memName = normalizeArabicText(member.name || '');
     const memNat = String(member.national_id || '').trim();
@@ -1020,7 +1020,7 @@ export default function OfficerCardModal({
                TAB 1: SMART SECURITY ID CARD (Official White PVC Format)
                ══════════════════════════════════════════════════════════════ */
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-              
+
               {/* Controls Toolbar for Card */}
               <div
                 style={{
@@ -2337,7 +2337,7 @@ export default function OfficerCardModal({
 
             {/* Cards Container: Front & Back Fitted for 1 Single Page */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              
+
               {/* ── CARD FRONT (2D FLAT) ── */}
               <div
                 className="printable-card-item"

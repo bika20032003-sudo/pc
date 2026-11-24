@@ -1549,17 +1549,24 @@ export default function ForceSection({
         </div>
 
         {/* Personnel Table with Edit & Delete actions */}
-        <div style={{ overflowX: 'auto' }}>
-          <table className="official-data-table">
+        <div className="table-scroll-wrapper" style={{
+          width: '100%',
+          overflowX: 'auto',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          background: '#ffffff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+        }}>
+          <table className="official-data-table force-personnel-table" style={{ width: '100%' }}>
             <thead>
               <tr>
-                <th>الاسم</th>
-                <th>الرقم الوطني</th>
-                <th>الرتبة</th>
-                <th>الرقم الوظيفي</th>
-                <th>جهة العمل</th>
-                <th>الوضع الوظيفي</th>
-                <th>إجراءات</th>
+                <th style={{ width: '28%' }}>الاسم</th>
+                <th style={{ width: '13%', textAlign: 'center' }}>الرقم الوطني</th>
+                <th style={{ width: '10%', textAlign: 'center' }}>الرتبة</th>
+                <th style={{ width: '11%', textAlign: 'center' }}>الرقم الوظيفي</th>
+                <th style={{ width: '14%' }}>جهة العمل</th>
+                <th style={{ width: '11%', textAlign: 'center' }}>الوضع الوظيفي</th>
+                <th style={{ width: '13%', textAlign: 'center' }}>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -1614,25 +1621,6 @@ export default function ForceSection({
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>{m.name}</span>
-                          {(m.self_updated || m.self_updated_at || m.mother_name || m.phone || m.bank_name) && (
-                            <span
-                              style={{
-                                background: '#dcfce7',
-                                color: '#15803d',
-                                border: '1px solid #bbf7d0',
-                                padding: '1px 6px',
-                                borderRadius: '10px',
-                                fontSize: '10px',
-                                fontWeight: 800,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px'
-                              }}
-                              title="قام المنتسب باستكمال وتحديث بياناته ذاتياً بنجاح"
-                            >
-                              ✓ تم استكمال وتحديث البيانات
-                            </span>
-                          )}
                           {(() => {
                             const penalty =
                               penalizedMembersMap.get(String(m.national_id || '').trim()) ||
@@ -1688,19 +1676,19 @@ export default function ForceSection({
                       </div>
                     </div>
                   </td>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b' }}>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b', textAlign: 'center' }}>
                     {m.national_id || '-'}
                   </td>
-                  <td style={{ fontWeight: 800, color: '#1e3a8a' }}>
+                  <td style={{ fontWeight: 800, color: '#1e3a8a', textAlign: 'center' }}>
                     {m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}
                   </td>
-                  <td style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>
+                  <td style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace', textAlign: 'center' }}>
                     {m.job_number || m.financial_number || '-'}
                   </td>
                   <td style={{ fontWeight: 600, color: '#334155' }}>
                     {m.department || 'مديرية أمن أوباري'}
                   </td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}>
                     <select
                       value={m.job_status || 'على رأس العمل'}
                       onChange={(e) => handleQuickStatusChange(m.id, e.target.value)}
@@ -1711,7 +1699,7 @@ export default function ForceSection({
                         fontWeight: 800,
                         fontSize: '11px',
                         borderRadius: '20px',
-                        padding: '4px 8px',
+                        padding: '3px 7px',
                         textAlign: 'center',
                         fontFamily: 'inherit',
                         background:
@@ -1730,8 +1718,8 @@ export default function ForceSection({
                       <option value="موقوف مؤقتاً">🔴 موقوف مؤقتاً</option>
                     </select>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
                       <button
                         type="button"
                         onClick={() => onOpenPreview && onOpenPreview(m)}
@@ -1740,19 +1728,20 @@ export default function ForceSection({
                           border: 'none',
                           color: '#ffffff',
                           cursor: 'pointer',
-                          padding: '5px 10px',
+                          padding: '4px 8px',
                           borderRadius: '6px',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          boxShadow: '0 1px 4px rgba(2,132,199,0.3)',
-                          transition: 'all 0.15s ease'
+                          gap: '3px',
+                          boxShadow: '0 1px 3px rgba(2,132,199,0.25)',
+                          transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap'
                         }}
                         title="معاينة الملف الشامل للمنتسب"
                       >
-                        <Eye size={13} />
+                        <Eye size={12} />
                         <span>معاينة</span>
                       </button>
 
@@ -1764,19 +1753,20 @@ export default function ForceSection({
                           border: '1px solid #bfdbfe',
                           color: '#1e3a8a',
                           cursor: 'pointer',
-                          padding: '5px 10px',
+                          padding: '4px 8px',
                           borderRadius: '6px',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                          transition: 'all 0.15s ease'
+                          gap: '3px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                          transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap'
                         }}
                         title="تعديل وتحديث بيانات الشخص"
                       >
-                        <Edit size={13} color="#2563eb" />
+                        <Edit size={12} color="#2563eb" />
                         <span>تعديل</span>
                       </button>
 
@@ -1788,13 +1778,17 @@ export default function ForceSection({
                           border: '1px solid #fecaca',
                           color: '#dc2626',
                           cursor: 'pointer',
-                          padding: '5px 7px',
+                          padding: '4px 7px',
                           borderRadius: '6px',
-                          transition: 'all 0.15s ease'
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                         }}
                         title="حذف القيد"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   </td>
