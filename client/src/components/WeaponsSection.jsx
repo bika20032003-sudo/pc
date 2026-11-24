@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import {
-  Shield,
-  Crosshair,
   Printer,
   FileSpreadsheet,
   UploadCloud,
@@ -14,13 +12,10 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
-  Building2,
-  User,
   Calendar,
   X,
   FileText,
   RefreshCw,
-  Layers,
   ChevronRight,
   ChevronLeft,
   Save,
@@ -873,40 +868,24 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
 
       {/* Module Header Bar */}
       <div className="module-view-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px', flexWrap: 'wrap', gap: '16px' }}>
-        <div className="module-title-box" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '46px',
-            height: '46px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-            border: '1.5px solid #d4af37',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#d4af37',
-            boxShadow: '0 4px 12px rgba(30, 58, 138, 0.25)'
-          }}>
-            <Crosshair size={24} />
+        <div className="module-title-box">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#0a192f' }}>قسم الأسلحة والذخائر والعهد</h1>
+            <span style={{
+              background: 'rgba(30, 58, 138, 0.08)',
+              color: '#1e3a8a',
+              padding: '2px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 800,
+              border: '1px solid rgba(30, 58, 138, 0.2)'
+            }}>
+              سجل رسمي معتمد
+            </span>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#0a192f' }}>قسم الأسلحة والذخائر والعهد</h1>
-              <span style={{
-                background: 'rgba(30, 58, 138, 0.08)',
-                color: '#1e3a8a',
-                padding: '2px 10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 800,
-                border: '1px solid rgba(30, 58, 138, 0.2)'
-              }}>
-                سجل رسمي معتمد
-              </span>
-            </div>
-            <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-              حصر وتوثيق الأسلحة النارية والبنادق والمسدسات والذخائر ومتابعة صرف العهد بالمراكز والأقسام
-            </p>
-          </div>
+          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+            حصر وتوثيق الأسلحة النارية والبنادق والمسدسات والذخائر ومتابعة صرف العهد بالمراكز والأقسام
+          </p>
         </div>
 
         {/* Action Toolbar */}
@@ -1038,7 +1017,7 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
       {/* Top Summary Statistics Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '14px',
         marginBottom: '22px'
       }}>
@@ -1051,11 +1030,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           borderRight: '4px solid #1e3a8a'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 700 }}>إجمالي الأسلحة المصروفة</span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(30,58,138,0.1)', color: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Crosshair size={18} />
-            </div>
+          <div>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>إجمالي الأسلحة المصروفة</span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 900, color: '#0a192f', marginTop: '6px' }}>
             {stats.total.toLocaleString('ar-LY')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>قطعة</span>
@@ -1071,11 +1047,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           borderRight: '4px solid #b91c1c'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 700 }}>بنادق كلاشنكوف</span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(185,28,28,0.1)', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Crosshair size={18} />
-            </div>
+          <div>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>بنادق كلاشنكوف</span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 900, color: '#b91c1c', marginTop: '6px' }}>
             {stats.rifles.toLocaleString('ar-LY')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>بندقية</span>
@@ -1091,34 +1064,11 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           borderRight: '4px solid #0369a1'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 700 }}>مسدسات عيار (9) ملي</span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(3,105,161,0.1)', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield size={18} />
-            </div>
+          <div>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>مسدسات عيار (9) ملي</span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 900, color: '#0369a1', marginTop: '6px' }}>
             {stats.pistols.toLocaleString('ar-LY')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>مسدس</span>
-          </div>
-        </div>
-
-        {/* Total Ammo */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '14px',
-          padding: '16px 20px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          borderRight: '4px solid #d97706'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 700 }}>الذخيرة الحية المصروفة</span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(217,119,6,0.1)', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Layers size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: 900, color: '#d97706', marginTop: '6px' }}>
-            {stats.totalAmmo.toLocaleString('ar-LY')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>طلقة</span>
           </div>
         </div>
 
@@ -1131,11 +1081,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           borderRight: '4px solid #059669'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 700 }}>إجمالي المخازن والملحقات</span>
-            <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(5,150,105,0.1)', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Building2 size={18} />
-            </div>
+          <div>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 700 }}>إجمالي المخازن والملحقات</span>
           </div>
           <div style={{ fontSize: '24px', fontWeight: 900, color: '#059669', marginTop: '6px' }}>
             {stats.totalMags.toLocaleString('ar-LY')} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>مخزن</span>
@@ -1651,7 +1598,6 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
               {paginatedWeapons.length === 0 ? (
                 <tr>
                   <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '14px' }}>
-                    <Crosshair size={32} style={{ display: 'block', margin: '0 auto 8px', opacity: 0.3 }} />
                     لا توجد أسلحة مسجلة مطابقة لمعايير البحث الحالية
                   </td>
                 </tr>
@@ -1680,14 +1626,13 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
                           background: isPistol ? 'rgba(3, 105, 161, 0.08)' : 'rgba(185, 28, 28, 0.08)',
                           color: isPistol ? '#0369a1' : '#b91c1c',
                           padding: '3px 8px',
                           borderRadius: '6px',
                           fontSize: '12px'
                         }}>
-                          {isPistol ? '🔫' : '🎯'} {w.weapon_type || w.WeaponType}
+                          {w.weapon_type || w.WeaponType}
                         </span>
                       </td>
 
@@ -1717,19 +1662,15 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
 
                       {/* Entity */}
                       <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Building2 size={14} style={{ color: '#64748b' }} />
-                          <span>{w.receiving_entity || w.ReceivingEntity || 'مخزن المديرية'}</span>
-                        </div>
+                        <span>{w.receiving_entity || w.ReceivingEntity || 'مخزن المديرية'}</span>
                       </td>
 
                       {/* Receiver */}
                       <td style={{ padding: '10px 12px' }}>
                         {w.receiver_name || w.ReceiverName ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#047857', fontWeight: 800 }}>
-                            <User size={14} />
-                            <span>{w.receiver_name || w.ReceiverName}</span>
-                          </div>
+                          <span style={{ color: '#047857', fontWeight: 800 }}>
+                            {w.receiver_name || w.ReceiverName}
+                          </span>
                         ) : (
                           <span style={{ color: '#94a3b8', fontSize: '12px' }}>عهدة قسم / مركز</span>
                         )}
