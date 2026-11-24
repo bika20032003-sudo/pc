@@ -123,7 +123,7 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           }
           @page {
             size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? 'A4 landscape' : 'A4 portrait'};
-            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? '6mm 8mm' : '8mm 10mm'};
+            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? '6mm 8mm' : '10mm 12mm'};
           }
           html, body {
             margin: 0 !important;
@@ -190,19 +190,17 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet {
             display: block !important;
             width: 100% !important;
-            max-width: 185mm !important;
+            max-width: 186mm !important;
             min-height: auto !important;
             max-height: 275mm !important;
             margin: 0 auto !important;
-            padding: 6mm 8mm !important;
+            padding: 0 !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
             position: relative !important;
             direction: rtl !important;
             font-family: 'Cairo', Arial, sans-serif !important;
-            font-size: 13px !important;
-            line-height: 1.4 !important;
             box-shadow: none !important;
             border: none !important;
             page-break-inside: avoid !important;
@@ -212,7 +210,7 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet table {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            line-height: 1.35 !important;
+            border-collapse: collapse !important;
           }
           #moi-exit-permit-to-print td,
           .official-exit-permit-sheet td {

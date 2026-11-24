@@ -972,67 +972,67 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const qrImg = permit.qrCodeUrl || '';
 
     return `
-      <div id="moi-exit-permit-to-print" class="official-exit-permit-sheet official-a4-letter-sheet" style="width: 100%; max-width: 180mm; margin: 0 auto; padding: 6mm 10mm; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff;">
+      <div id="moi-exit-permit-to-print" class="official-exit-permit-sheet official-a4-letter-sheet" style="width: 100%; max-width: 184mm; margin: 0 auto; padding: 0; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff;">
         
         <!-- Top Sovereign Header (3-Column Header matching 100% Official Document: Right=Ministry Pills, Center=Logo, Left=Police Shield) -->
-        <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 8px;">
+        <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 12px;">
           <tr>
             <!-- Right: Ministry & Directorate Stacked Pills -->
             <td style="vertical-align: middle; width: 48%; text-align: right; border: none; padding: 0;">
-              <div style="display: flex; flex-direction: column; gap: 4px; max-width: 295px; margin-right: 0; margin-left: auto;">
+              <div style="display: flex; flex-direction: column; gap: 5px; max-width: 305px; margin-right: 0; margin-left: auto;">
                 <!-- Pill 1: وزارة الداخلية | MINISTRY OF THE INTERIOR -->
-                <div style="background: #e2e8f0; border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center;">
-                  <div style="font-size: 11px; font-weight: 900; line-height: 1.15; text-align: right; color: #000000;">
+                <div style="background: #e2e8f0; border-radius: 6px; padding: 5px 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font-size: 12px; font-weight: 900; line-height: 1.15; text-align: right; color: #000000;">
                     <div>وزارة</div>
                     <div>الداخلية</div>
                   </div>
-                  <div style="font-size: 8.5px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.15; text-align: left; letter-spacing: 0.3px; color: #000000;">
+                  <div style="font-size: 9px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.15; text-align: left; letter-spacing: 0.3px; color: #000000;">
                     <div>MINISTRY OF THE</div>
                     <div>INTERIOR</div>
                   </div>
                 </div>
                 <!-- Pill 2: مديرية أمن أوباري | UBARI SECURITY DIRECTORATE -->
-                <div style="background: #e2e8f0; border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center;">
-                  <div style="font-size: 11px; font-weight: 900; line-height: 1.15; text-align: right; color: #000000;">
+                <div style="background: #e2e8f0; border-radius: 6px; padding: 5px 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font-size: 12px; font-weight: 900; line-height: 1.15; text-align: right; color: #000000;">
                     <div>مديرية أمن</div>
                     <div>أوباري</div>
                   </div>
-                  <div style="font-size: 8.5px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.15; text-align: left; letter-spacing: 0.3px; color: #000000;">
+                  <div style="font-size: 9px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.15; text-align: left; letter-spacing: 0.3px; color: #000000;">
                     <div>UBARI SECURITY</div>
                     <div>DIRECTORATE</div>
                   </div>
                 </div>
                 <!-- Line 3: ديوان المديرية | Personnel Affairs -->
-                <div style="padding: 2px 10px; display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 11.5px; font-weight: 800; color: #000000;">ديوان المديرية</span>
-                  <span style="font-size: 9.5px; font-weight: 700; font-family: Arial, sans-serif; color: #000000;">Personnel Affairs</span>
+                <div style="padding: 3px 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 800; color: #000000;">ديوان المديرية</span>
+                  <span style="font-size: 10px; font-weight: 700; font-family: Arial, sans-serif; color: #000000;">Personnel Affairs</span>
                 </div>
               </div>
             </td>
 
             <!-- Center: Ministry of Interior Center Crest -->
-            <td style="vertical-align: middle; width: 28%; text-align: center; border: none; padding: 0;">
-              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 48px; height: 48px; object-fit: contain; display: inline-block;" />
+            <td style="vertical-align: middle; width: 26%; text-align: center; border: none; padding: 0;">
+              <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 54px; height: 54px; object-fit: contain; display: inline-block;" />
             </td>
 
             <!-- Left: Police Crest in sharp bordered box -->
-            <td style="vertical-align: middle; width: 24%; text-align: left; border: none; padding: 0;">
-              <div style="border: 1.5px solid #000000; padding: 3px; display: inline-block; background: #ffffff; width: 80px; height: 96px; box-sizing: border-box; text-align: center;">
-                <img src="${MOI_LOGO_BASE64}" alt="شعار الشرطة" style="width: 70px; height: 86px; object-fit: contain; display: block; margin: 0 auto;" />
+            <td style="vertical-align: middle; width: 26%; text-align: left; border: none; padding: 0;">
+              <div style="border: 1.5px solid #000000; padding: 3px; display: inline-block; background: #ffffff; width: 84px; height: 102px; box-sizing: border-box; text-align: center;">
+                <img src="${MOI_LOGO_BASE64}" alt="شعار الشرطة" style="width: 74px; height: 92px; object-fit: contain; display: block; margin: 0 auto;" />
               </div>
             </td>
           </tr>
         </table>
 
         <!-- QR Code (Right) & National ID Row (Left) -->
-        <table style="width: 100%; border-collapse: collapse; border: none; margin: 8px 0 14px 0;">
+        <table style="width: 100%; border-collapse: collapse; border: none; margin: 10px 0 16px 0;">
           <tr>
             <!-- Right: QR Code -->
             <td style="vertical-align: middle; width: 45%; text-align: right; border: none; padding: 0 4px;">
               ${qrImg ? `
-                <img src="${qrImg}" alt="QR" style="width: 74px; height: 74px; object-fit: contain; display: inline-block;" />
+                <img src="${qrImg}" alt="QR" style="width: 80px; height: 80px; object-fit: contain; display: inline-block;" />
               ` : `
-                <div style="width: 74px; height: 74px; border: 1px solid #000000; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800;">
+                <div style="width: 80px; height: 80px; border: 1px solid #000000; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">
                   QR
                 </div>
               `}
@@ -1040,9 +1040,9 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
             <!-- Left: National Number with Box -->
             <td style="vertical-align: middle; width: 55%; text-align: left; border: none; padding: 0 4px;">
-              <div style="display: inline-flex; align-items: center; gap: 8px; direction: rtl;">
-                <span style="font-size: 13.5px; font-weight: 900; color: #000000;">الرقم الوطني:</span>
-                <span style="border: 1.5px solid #000000; padding: 3px 14px; font-family: monospace, Arial; font-weight: 900; font-size: 15px; background: #ffffff; letter-spacing: 1.5px; color: #000000;">
+              <div style="display: inline-flex; align-items: center; gap: 10px; direction: rtl;">
+                <span style="font-size: 14.5px; font-weight: 900; color: #000000;">الرقم الوطني:</span>
+                <span style="border: 1.5px solid #000000; padding: 4px 16px; font-family: monospace, Arial; font-weight: 900; font-size: 16px; background: #ffffff; letter-spacing: 1.5px; color: #000000;">
                   ${permit.NationalNumber || '---'}
                 </span>
               </div>
@@ -1051,99 +1051,99 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
         </table>
 
         <!-- Title Box -->
-        <div style="text-align: center; margin: 12px 0 16px 0;">
-          <div style="display: inline-block; border: 1.5px solid #000000; padding: 4px 26px; background: #ffffff;">
-            <h1 style="margin: 0; font-size: 17px; font-weight: 900; color: #000000; letter-spacing: 0.5px; white-space: nowrap;">
+        <div style="text-align: center; margin: 14px 0 20px 0;">
+          <div style="display: inline-block; border: 1.5px solid #000000; padding: 6px 30px; background: #ffffff;">
+            <h1 style="margin: 0; font-size: 18.5px; font-weight: 900; color: #000000; letter-spacing: 0.5px; white-space: nowrap;">
               | نموذج تصريح الخروج بإجازة من |
             </h1>
           </div>
         </div>
 
-        <!-- Main Form Table (Strict 100% Replication of Official Decree Table) -->
-        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000000; margin-bottom: 22px; font-size: 13px;">
+        <!-- Main Form Table (Strict 100% Replication of Official Decree Table with Generous Row Height) -->
+        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000000; margin-bottom: 30px; font-size: 14px;">
           <!-- Row 1: الرقم والرتبة -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; width: 17%; text-align: center;">الرقم</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; font-family: monospace, Arial; font-size: 14.5px; width: 33%; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; width: 18%; text-align: center;">الرقم</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; font-family: monospace, Arial; font-size: 15.5px; width: 32%; text-align: center;">
               ${permit.Number || '---'}
             </td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; width: 17%; text-align: center;">الرتبة</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; width: 33%; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; width: 18%; text-align: center;">الرتبة</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; width: 32%; text-align: center;">
               ${permit.Grade || permit.Rank || 'شرطي'}
             </td>
           </tr>
 
           <!-- Row 2: الاسم -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">الاسم</td>
-            <td colspan="3" style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; font-size: 15px; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 13px 14px; font-weight: 900; text-align: center;">الاسم</td>
+            <td colspan="3" style="border: 1px solid #000000; padding: 13px 14px; font-weight: 900; font-size: 16px; text-align: center;">
               ${permit.FullName || '---'}
             </td>
           </tr>
 
           <!-- Row 3: مصرح له بالسفر -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">مصرح له بالسفر</td>
-            <td colspan="3" style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">مصرح له بالسفر</td>
+            <td colspan="3" style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-size: 15px; text-align: center;">
               ${permit.Destination || 'داخل ليبيا'}
             </td>
           </tr>
 
           <!-- Row 4: نوع الاجازة والمدة -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">نوع الاجازة</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">نوع الاجازة</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-size: 15px; text-align: center;">
               ${permit.LeaveType || 'اجازة سنوية'}
             </td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">لمدة:</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">
-              <span style="float: left; font-size: 12.5px; font-weight: bold; margin-left: 2px;">يوماً</span>
-              <span style="font-family: monospace, Arial; font-size: 15px;">${durationDays}</span>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">لمدة:</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">
+              <span style="float: left; font-size: 13.5px; font-weight: bold; margin-left: 4px;">يوماً</span>
+              <span style="font-family: monospace, Arial; font-size: 16px;">${durationDays}</span>
             </td>
           </tr>
 
           <!-- Row 5: الاجازة من والساعة -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">الاجازة من</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; font-family: monospace, Arial; font-size: 13.5px; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">الاجازة من</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-family: monospace, Arial; font-size: 14.5px; text-align: center;">
               ${formattedStartDate}
             </td>
-            <td colspan="2" style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; text-align: center;">
+            <td colspan="2" style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-size: 14.5px; text-align: center;">
               من الساعة ${startHour}
             </td>
           </tr>
 
           <!-- Row 6: الاجازة الى والساعة -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">الاجازة الى</td>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; font-family: monospace, Arial; font-size: 13.5px; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">الاجازة الى</td>
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-family: monospace, Arial; font-size: 14.5px; text-align: center;">
               ${formattedEndDate}
             </td>
-            <td colspan="2" style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; text-align: center;">
+            <td colspan="2" style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-size: 14.5px; text-align: center;">
               الى الساعة ${endHour}
             </td>
           </tr>
 
           <!-- Row 7: اعطيت له في -->
           <tr>
-            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: 900; text-align: center;">اعطيت له في</td>
-            <td colspan="3" style="border: 1px solid #000000; padding: 6px 10px; font-weight: 800; text-align: center;">
+            <td style="border: 1px solid #000000; padding: 12px 14px; font-weight: 900; text-align: center;">اعطيت له في</td>
+            <td colspan="3" style="border: 1px solid #000000; padding: 12px 14px; font-weight: 800; font-size: 15px; text-align: center;">
               ${permit.IssuedAt || 'ديوان المديرية'}
             </td>
           </tr>
         </table>
 
         <!-- Signature Dotted Line -->
-        <div style="text-align: center; font-size: 13.5px; font-weight: 900; margin: 24px 0 28px 0; letter-spacing: 1px;">
+        <div style="text-align: center; font-size: 14.5px; font-weight: 900; margin: 30px 0 34px 0; letter-spacing: 1px;">
           التوقيع .....................................................
         </div>
 
         <!-- Bottom Carbon Copy (Right) & Signatory Table (Left) -->
-        <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 14px;">
+        <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 16px;">
           <tr>
             <!-- Bottom Right: Carbon Copy List -->
             <td style="vertical-align: bottom; width: 55%; text-align: right; border: none; padding-right: 4px;">
-              <div style="font-size: 11px; font-weight: 800; line-height: 1.8; color: #000000;">
+              <div style="font-size: 11.5px; font-weight: 800; line-height: 2.1; color: #000000;">
                 <div>صورة / مدير ادارة الشئون الادارية والمالية</div>
                 <div>صورة / الملف 2.2 ج الدوري للحفظ</div>
                 <div>الملف الشخصي للحفظ</div>
@@ -1152,18 +1152,18 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
             <!-- Bottom Left: Official Signatory Table -->
             <td style="vertical-align: top; width: 45%; text-align: left; border: none; padding-left: 0;">
-              <table style="border-collapse: collapse; border: 1.5px solid #000000; width: 230px; margin-left: 0; margin-right: auto; font-size: 12.5px; line-height: 1.4;">
+              <table style="border-collapse: collapse; border: 1.5px solid #000000; width: 250px; margin-left: 0; margin-right: auto; font-size: 13px; line-height: 1.4;">
                 <tr>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 900; width: 35%; text-align: center;">الرتبة</td>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 800; text-align: center;">${permit.SignerRank || 'لواء'}</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 900; width: 35%; text-align: center;">الرتبة</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 800; text-align: center;">${permit.SignerRank || 'لواء'}</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 900; text-align: center;">الاسم</td>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 900; text-align: center;">${permit.SignerName || 'موسى سعد البدين'}</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 900; text-align: center;">الاسم</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 900; text-align: center;">${permit.SignerName || 'موسى سعد البدين'}</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 900; text-align: center;">المنصب</td>
-                  <td style="border: 1px solid #000000; padding: 5px 8px; font-weight: 800; text-align: center;">${permit.SignerTitle || 'مدير أمن أوباري'}</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 900; text-align: center;">المنصب</td>
+                  <td style="border: 1px solid #000000; padding: 7px 10px; font-weight: 800; text-align: center;">${permit.SignerTitle || 'مدير أمن أوباري'}</td>
                 </tr>
               </table>
             </td>
@@ -2594,51 +2594,51 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                 boxSizing: 'border-box'
               }}>
                 {/* Top Sovereign Header (3 Columns matching 100% Official Document: Right=Pills, Center=Logo, Left=Badge) */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', marginBottom: '8px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', marginBottom: '12px' }}>
                   <tbody>
                     <tr>
                       {/* Right: Ministry & Directorate Stacked Pills */}
                       <td style={{ verticalAlign: 'middle', width: '48%', textAlign: 'right', border: 'none', padding: 0 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '295px', marginRight: 0, marginLeft: 'auto' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxWidth: '305px', marginRight: 0, marginLeft: 'auto' }}>
                           {/* Pill 1: وزارة الداخلية | MINISTRY OF THE INTERIOR */}
-                          <div style={{ background: '#e2e8f0', borderRadius: '6px', padding: '4px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 900, lineHeight: 1.15, textAlign: 'right', color: '#000000' }}>
+                          <div style={{ background: '#e2e8f0', borderRadius: '6px', padding: '5px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 900, lineHeight: 1.15, textAlign: 'right', color: '#000000' }}>
                               <div>وزارة</div>
                               <div>الداخلية</div>
                             </div>
-                            <div style={{ fontSize: '8.5px', fontWeight: 800, fontFamily: 'Arial, sans-serif', lineHeight: 1.15, textAlign: 'left', letterSpacing: '0.3px', color: '#000000' }}>
+                            <div style={{ fontSize: '9px', fontWeight: 800, fontFamily: 'Arial, sans-serif', lineHeight: 1.15, textAlign: 'left', letterSpacing: '0.3px', color: '#000000' }}>
                               <div>MINISTRY OF THE</div>
                               <div>INTERIOR</div>
                             </div>
                           </div>
                           {/* Pill 2: مديرية أمن أوباري | UBARI SECURITY DIRECTORATE */}
-                          <div style={{ background: '#e2e8f0', borderRadius: '6px', padding: '4px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 900, lineHeight: 1.15, textAlign: 'right', color: '#000000' }}>
+                          <div style={{ background: '#e2e8f0', borderRadius: '6px', padding: '5px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 900, lineHeight: 1.15, textAlign: 'right', color: '#000000' }}>
                               <div>مديرية أمن</div>
                               <div>أوباري</div>
                             </div>
-                            <div style={{ fontSize: '8.5px', fontWeight: 800, fontFamily: 'Arial, sans-serif', lineHeight: 1.15, textAlign: 'left', letterSpacing: '0.3px', color: '#000000' }}>
+                            <div style={{ fontSize: '9px', fontWeight: 800, fontFamily: 'Arial, sans-serif', lineHeight: 1.15, textAlign: 'left', letterSpacing: '0.3px', color: '#000000' }}>
                               <div>UBARI SECURITY</div>
                               <div>DIRECTORATE</div>
                             </div>
                           </div>
                           {/* Line 3: ديوان المديرية | Personnel Affairs */}
-                          <div style={{ padding: '2px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#000000' }}>ديوان المديرية</span>
-                            <span style={{ fontSize: '9.5px', fontWeight: 700, fontFamily: 'Arial, sans-serif', color: '#000000' }}>Personnel Affairs</span>
+                          <div style={{ padding: '3px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#000000' }}>ديوان المديرية</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'Arial, sans-serif', color: '#000000' }}>Personnel Affairs</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Center: Ministry of Interior Center Crest */}
-                      <td style={{ verticalAlign: 'middle', width: '28%', textAlign: 'center', border: 'none', padding: 0 }}>
-                        <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '48px', height: '48px', objectFit: 'contain', display: 'inline-block' }} />
+                      <td style={{ verticalAlign: 'middle', width: '26%', textAlign: 'center', border: 'none', padding: 0 }}>
+                        <img src={MOI_LOGO_BASE64} alt="شعار وزارة الداخلية" style={{ width: '54px', height: '54px', objectFit: 'contain', display: 'inline-block' }} />
                       </td>
 
                       {/* Left: Police Crest in sharp bordered box */}
-                      <td style={{ verticalAlign: 'middle', width: '24%', textAlign: 'left', border: 'none', padding: 0 }}>
-                        <div style={{ border: '1.5px solid #000000', padding: '3px', display: 'inline-block', background: '#ffffff', width: '80px', height: '96px', boxSizing: 'border-box', textAlign: 'center' }}>
-                          <img src={MOI_LOGO_BASE64} alt="شعار الشرطة" style={{ width: '70px', height: '86px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+                      <td style={{ verticalAlign: 'middle', width: '26%', textAlign: 'left', border: 'none', padding: 0 }}>
+                        <div style={{ border: '1.5px solid #000000', padding: '3px', display: 'inline-block', background: '#ffffff', width: '84px', height: '102px', boxSizing: 'border-box', textAlign: 'center' }}>
+                          <img src={MOI_LOGO_BASE64} alt="شعار الشرطة" style={{ width: '74px', height: '92px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
                         </div>
                       </td>
                     </tr>
@@ -2646,15 +2646,15 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                 </table>
 
                 {/* QR Code (Right) & National ID Row (Left) */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: '8px 0 14px 0' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: '10px 0 16px 0' }}>
                   <tbody>
                     <tr>
                       {/* Right: QR Code */}
                       <td style={{ verticalAlign: 'middle', width: '45%', textAlign: 'right', border: 'none', padding: '0 4px' }}>
                         {activeExitPermit.qrCodeUrl ? (
-                          <img src={activeExitPermit.qrCodeUrl} alt="QR" style={{ width: '74px', height: '74px', objectFit: 'contain', display: 'inline-block' }} />
+                          <img src={activeExitPermit.qrCodeUrl} alt="QR" style={{ width: '80px', height: '80px', objectFit: 'contain', display: 'inline-block' }} />
                         ) : (
-                          <div style={{ width: '74px', height: '74px', border: '1px solid #000000', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800 }}>
+                          <div style={{ width: '80px', height: '80px', border: '1px solid #000000', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
                             QR
                           </div>
                         )}
@@ -2662,9 +2662,9 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
                       {/* Left: National Number with Box */}
                       <td style={{ verticalAlign: 'middle', width: '55%', textAlign: 'left', border: 'none', padding: '0 4px' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', direction: 'rtl' }}>
-                          <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#000000' }}>الرقم الوطني:</span>
-                          <span style={{ border: '1.5px solid #000000', padding: '3px 14px', fontFamily: "monospace, 'Cairo'", fontWeight: 900, fontSize: '15px', background: '#ffffff', letterSpacing: '1.5px', color: '#000000' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', direction: 'rtl' }}>
+                          <span style={{ fontSize: '14.5px', fontWeight: 900, color: '#000000' }}>الرقم الوطني:</span>
+                          <span style={{ border: '1.5px solid #000000', padding: '4px 16px', fontFamily: "monospace, 'Cairo'", fontWeight: 900, fontSize: '16px', background: '#ffffff', letterSpacing: '1.5px', color: '#000000' }}>
                             {activeExitPermit.NationalNumber || '---'}
                           </span>
                         </div>
@@ -2674,55 +2674,55 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                 </table>
 
                 {/* Title Box */}
-                <div style={{ textAlign: 'center', margin: '12px 0 16px 0' }}>
-                  <div style={{ display: 'inline-block', border: '1.5px solid #000000', padding: '4px 26px', background: '#ffffff' }}>
-                    <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 900, color: '#000000', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                <div style={{ textAlign: 'center', margin: '14px 0 20px 0' }}>
+                  <div style={{ display: 'inline-block', border: '1.5px solid #000000', padding: '6px 30px', background: '#ffffff' }}>
+                    <h1 style={{ margin: 0, fontSize: '18.5px', fontWeight: 900, color: '#000000', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
                       | نموذج تصريح الخروج بإجازة من |
                     </h1>
                   </div>
                 </div>
 
-                {/* Main Form Table (Strict 100% Replication of Official Decree Table) */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '22px', fontSize: '13px' }}>
+                {/* Main Form Table (Strict 100% Replication of Official Decree Table with Generous Row Height) */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '30px', fontSize: '14px' }}>
                   <tbody>
                     {/* Row 1: الرقم والرتبة */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, width: '17%', textAlign: 'center' }}>الرقم</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, fontFamily: "monospace, 'Cairo'", fontSize: '14.5px', width: '33%', textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, width: '18%', textAlign: 'center' }}>الرقم</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, fontFamily: "monospace, 'Cairo'", fontSize: '15.5px', width: '32%', textAlign: 'center' }}>
                         {activeExitPermit.Number || '---'}
                       </td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, width: '17%', textAlign: 'center' }}>الرتبة</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, width: '33%', textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, width: '18%', textAlign: 'center' }}>الرتبة</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, width: '32%', textAlign: 'center' }}>
                         {activeExitPermit.Grade || 'شرطي'}
                       </td>
                     </tr>
 
                     {/* Row 2: الاسم */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>الاسم</td>
-                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, fontSize: '15px', textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '13px 14px', fontWeight: 900, textAlign: 'center' }}>الاسم</td>
+                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '13px 14px', fontWeight: 900, fontSize: '16px', textAlign: 'center' }}>
                         {activeExitPermit.FullName || '---'}
                       </td>
                     </tr>
 
                     {/* Row 3: مصرح له بالسفر */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>مصرح له بالسفر</td>
-                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>مصرح له بالسفر</td>
+                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontSize: '15px', textAlign: 'center' }}>
                         {activeExitPermit.Destination || 'داخل ليبيا'}
                       </td>
                     </tr>
 
                     {/* Row 4: نوع الاجازة والمدة */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>نوع الاجازة</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>نوع الاجازة</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontSize: '15px', textAlign: 'center' }}>
                         {activeExitPermit.LeaveType || 'اجازة سنوية'}
                       </td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>لمدة:</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>
-                        <span style={{ float: 'left', fontSize: '12.5px', fontWeight: 'bold', marginLeft: '2px' }}>يوماً</span>
-                        <span style={{ fontFamily: "monospace, 'Cairo'", fontSize: '15px' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>لمدة:</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>
+                        <span style={{ float: 'left', fontSize: '13.5px', fontWeight: 'bold', marginLeft: '4px' }}>يوماً</span>
+                        <span style={{ fontFamily: "monospace, 'Cairo'", fontSize: '16px' }}>
                           {activeExitPermit.DurationDays || String(activeExitPermit.Duration || '30').replace(/[^\d]/g, '') || '30'}
                         </span>
                       </td>
@@ -2730,30 +2730,30 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
                     {/* Row 5: الاجازة من والساعة */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>الاجازة من</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, fontFamily: "monospace, 'Cairo'", fontSize: '13.5px', textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>الاجازة من</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontFamily: "monospace, 'Cairo'", fontSize: '14.5px', textAlign: 'center' }}>
                         {formatPermitDateSlash(activeExitPermit.StartDate)}
                       </td>
-                      <td colSpan={2} style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, textAlign: 'center' }}>
+                      <td colSpan={2} style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontSize: '14.5px', textAlign: 'center' }}>
                         من الساعة {formatPermitHourClean(activeExitPermit.StartHour, '08:00')}
                       </td>
                     </tr>
 
                     {/* Row 6: الاجازة الى والساعة */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>الاجازة الى</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, fontFamily: "monospace, 'Cairo'", fontSize: '13.5px', textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>الاجازة الى</td>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontFamily: "monospace, 'Cairo'", fontSize: '14.5px', textAlign: 'center' }}>
                         {formatPermitDateSlash(activeExitPermit.EndDate)}
                       </td>
-                      <td colSpan={2} style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, textAlign: 'center' }}>
+                      <td colSpan={2} style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontSize: '14.5px', textAlign: 'center' }}>
                         الى الساعة {formatPermitHourClean(activeExitPermit.EndHour, '14:00')}
                       </td>
                     </tr>
 
                     {/* Row 7: اعطيت له في */}
                     <tr>
-                      <td style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 900, textAlign: 'center' }}>اعطيت له في</td>
-                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '6px 10px', fontWeight: 800, textAlign: 'center' }}>
+                      <td style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 900, textAlign: 'center' }}>اعطيت له في</td>
+                      <td colSpan={3} style={{ border: '1px solid #000000', padding: '12px 14px', fontWeight: 800, fontSize: '15px', textAlign: 'center' }}>
                         {activeExitPermit.IssuedAt || 'ديوان المديرية'}
                       </td>
                     </tr>
@@ -2761,17 +2761,17 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
                 </table>
 
                 {/* Signature Dotted Line */}
-                <div style={{ textAlign: 'center', fontSize: '13.5px', fontWeight: 900, margin: '24px 0 28px 0', letterSpacing: '1px' }}>
+                <div style={{ textAlign: 'center', fontSize: '14.5px', fontWeight: 900, margin: '30px 0 34px 0', letterSpacing: '1px' }}>
                   التوقيع .....................................................
                 </div>
 
                 {/* Bottom Carbon Copy (Right) & Signatory Table (Left) */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', marginTop: '14px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', marginTop: '16px' }}>
                   <tbody>
                     <tr>
                       {/* Bottom Right: Carbon Copy List */}
                       <td style={{ verticalAlign: 'bottom', width: '55%', textAlign: 'right', border: 'none', paddingRight: '4px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, lineHeight: 1.8, color: '#000000' }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: 800, lineHeight: 2.1, color: '#000000' }}>
                           <div>صورة / مدير ادارة الشئون الادارية والمالية</div>
                           <div>صورة / الملف 2.2 ج الدوري للحفظ</div>
                           <div>الملف الشخصي للحفظ</div>
@@ -2780,19 +2780,19 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
 
                       {/* Bottom Left: Official Signatory Table */}
                       <td style={{ verticalAlign: 'top', width: '45%', textAlign: 'left', border: 'none', paddingLeft: 0 }}>
-                        <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '230px', marginLeft: 0, marginRight: 'auto', fontSize: '12.5px', lineHeight: 1.4 }}>
+                        <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '250px', marginLeft: 0, marginRight: 'auto', fontSize: '13px', lineHeight: 1.4 }}>
                           <tbody>
                             <tr>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 900, width: '35%', textAlign: 'center' }}>الرتبة</td>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 800, textAlign: 'center' }}>{activeExitPermit.SignerRank || 'لواء'}</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 900, width: '35%', textAlign: 'center' }}>الرتبة</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 800, textAlign: 'center' }}>{activeExitPermit.SignerRank || 'لواء'}</td>
                             </tr>
                             <tr>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 900, textAlign: 'center' }}>الاسم</td>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 900, textAlign: 'center' }}>{activeExitPermit.SignerName || 'موسى سعد البدين'}</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 900, textAlign: 'center' }}>الاسم</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 900, textAlign: 'center' }}>{activeExitPermit.SignerName || 'موسى سعد البدين'}</td>
                             </tr>
                             <tr>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 900, textAlign: 'center' }}>المنصب</td>
-                              <td style={{ border: '1px solid #000000', padding: '5px 8px', fontWeight: 800, textAlign: 'center' }}>{activeExitPermit.SignerTitle || 'مدير أمن أوباري'}</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 900, textAlign: 'center' }}>المنصب</td>
+                              <td style={{ border: '1px solid #000000', padding: '7px 10px', fontWeight: 800, textAlign: 'center' }}>{activeExitPermit.SignerTitle || 'مدير أمن أوباري'}</td>
                             </tr>
                           </tbody>
                         </table>
