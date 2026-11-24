@@ -42,7 +42,7 @@ export function createOfficialLetterHtml({
   const ccCol2 = ccList.slice(halfCc);
 
   return `
-    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 760px; margin: 0 auto; background: #ffffff; padding: 22px 28px; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative;">
+    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 186mm; margin: 0 auto; background: #ffffff; padding: 0; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative;">
       
       <!-- الشريط الوطني الليبي المعتمد (4 ألوان) -->
       <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">

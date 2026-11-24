@@ -294,81 +294,105 @@ export default function IndictmentSheetModal({
             </div>
           )}
 
-          {/* Authentic Document Canvas matching 100% Screenshot */}
+          {/* Authentic Document Canvas matching 100% Libyan MOI Portrait Standard */}
           <div
-            className="indictment-sheet-page orientation-landscape"
+            className="indictment-sheet-page"
             style={{
               background: '#ffffff',
               border: '2px solid #94a3b8',
               borderRadius: '8px',
-              padding: '24px 30px',
+              padding: '24px 28px',
               boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
               color: '#0f172a',
               width: '100%',
-              boxSizing: 'border-box'
+              maxWidth: '820px',
+              margin: '0 auto',
+              boxSizing: 'border-box',
+              fontFamily: "'Cairo', Arial, sans-serif"
             }}
           >
-            {/* Top Sovereign Header (Strict Fixed Table - Zero Overlap) */}
+            {/* Libyan 4-Color Sovereign Ribbon */}
+            <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px' }}>
+              <div style={{ flex: 1, background: '#e11d48' }}></div>
+              <div style={{ flex: 2, background: '#000000' }}></div>
+              <div style={{ flex: 1, background: '#16a34a' }}></div>
+            </div>
+
+            {/* Top Sovereign Header (Robust Fixed Table - Zero Overlap in Portrait) */}
             <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', marginBottom: '8px', direction: 'rtl', border: 'none' }}>
               <colgroup>
-                <col style={{ width: '31%' }} />
-                <col style={{ width: '38%' }} />
-                <col style={{ width: '31%' }} />
+                <col style={{ width: '34%' }} />
+                <col style={{ width: '36%' }} />
+                <col style={{ width: '30%' }} />
               </colgroup>
               <tbody>
                 <tr>
-                  {/* Right (Col 1 in RTL): Ministry Title with Logo */}
-                  <td style={{ textAlign: 'right', verticalAlign: 'middle', padding: '0 4px', border: 'none', overflow: 'hidden' }}>
+                  {/* Right: Ministry Title with Logo */}
+                  <td style={{ textAlign: 'right', verticalAlign: 'middle', padding: '0 4px', border: 'none' }}>
                     <table style={{ borderCollapse: 'collapse', border: 'none', margin: 0, direction: 'rtl' }}>
                       <tbody>
                         <tr>
-                          <td style={{ verticalAlign: 'middle', paddingLeft: '10px', border: 'none' }}>
+                          <td style={{ verticalAlign: 'middle', paddingLeft: '8px', border: 'none' }}>
                             <img
                               src={MOI_LOGO_BASE64}
                               alt="شعار وزارة الداخلية"
-                              style={{ width: '56px', height: '56px', objectFit: 'contain', display: 'block' }}
+                              style={{ width: '52px', height: '52px', objectFit: 'contain', display: 'block' }}
                             />
                           </td>
                           <td style={{ verticalAlign: 'middle', border: 'none', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: '15px', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.35, letterSpacing: '0.2px' }}>وزارة الــداخــلــيــة</div>
-                            <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', lineHeight: 1.35 }}>مديرية أمن أوباري</div>
+                            <div style={{ fontSize: '14px', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.3 }}>وزارة الــداخــلــيــة</div>
+                            <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a', lineHeight: 1.3 }}>مديرية أمن أوباري</div>
+                            <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b', lineHeight: 1.2 }}>مكتب الانضباط والشؤون القانونية</div>
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   </td>
 
-                  {/* Center (Col 2 in RTL): Red Bordered Title Box */}
-                  <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 4px', border: 'none' }}>
+                  {/* Center: Red Bordered Title Box */}
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 2px', border: 'none' }}>
                     <div
                       style={{
                         display: 'inline-block',
                         border: '2.5px solid #b91c1c',
-                        borderRadius: '10px',
-                        padding: '7px 22px',
+                        borderRadius: '8px',
+                        padding: '6px 14px',
                         background: '#ffffff',
-                        boxShadow: '0 1px 4px rgba(185, 28, 28, 0.08)'
+                        boxShadow: '0 1px 3px rgba(185, 28, 28, 0.08)'
                       }}
                     >
-                      <h2 style={{ margin: 0, fontSize: '19px', fontWeight: 900, color: '#b91c1c', letterSpacing: '0.5px', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
+                      <h2 style={{ margin: 0, fontSize: '16.5px', fontWeight: 900, color: '#b91c1c', letterSpacing: '0.3px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
                         صحـيـفـة اتـهـام لـلـحـالات الـمـوجـزة
                       </h2>
                     </div>
                   </td>
 
-                  {/* Left (Col 3 in RTL): Photo Box & QR Code */}
+                  {/* Left: QR Code & Photo Box */}
                   <td style={{ textAlign: 'left', verticalAlign: 'middle', padding: '0 4px', border: 'none' }}>
                     <table style={{ borderCollapse: 'collapse', border: 'none', marginRight: 'auto', marginLeft: 0, direction: 'ltr' }}>
                       <tbody>
                         <tr>
-                          {/* Photo Box (At outer left edge) */}
-                          <td style={{ verticalAlign: 'middle', paddingRight: '12px', border: 'none' }}>
+                          {/* QR Code */}
+                          <td style={{ verticalAlign: 'middle', paddingLeft: '8px', border: 'none' }}>
+                            {qrCodeUrl ? (
+                              <div style={{ width: '56px', height: '56px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img src={qrCodeUrl} alt="QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                              </div>
+                            ) : (
+                              <div style={{ width: '56px', height: '56px', border: '1px dashed #cbd5e1', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', color: '#94a3b8' }}>
+                                QR
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Photo Box */}
+                          <td style={{ verticalAlign: 'middle', border: 'none' }}>
                             <div
                               style={{
-                                width: '76px',
-                                height: '96px',
+                                width: '58px',
+                                height: '72px',
                                 border: '1.5px solid #d97706',
-                                borderRadius: '6px',
+                                borderRadius: '4px',
                                 background: '#fafafa',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -379,22 +403,9 @@ export default function IndictmentSheetModal({
                               {officerPhoto ? (
                                 <img src={officerPhoto} alt={accusedName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                               ) : (
-                                <span style={{ color: '#94a3b8', fontSize: '13.5px', fontWeight: 800 }}>صورة</span>
+                                <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 800 }}>صورة</span>
                               )}
                             </div>
-                          </td>
-
-                          {/* QR Code */}
-                          <td style={{ verticalAlign: 'middle', border: 'none' }}>
-                            {qrCodeUrl ? (
-                              <div style={{ width: '72px', height: '72px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <img src={qrCodeUrl} alt="QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-                              </div>
-                            ) : (
-                              <div style={{ width: '72px', height: '72px', border: '1px dashed #cbd5e1', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#94a3b8' }}>
-                                QR
-                              </div>
-                            )}
                           </td>
                         </tr>
                       </tbody>
@@ -405,51 +416,97 @@ export default function IndictmentSheetModal({
             </table>
 
             {/* Double Divider Line */}
-            <div style={{ borderTop: '3px double #000000', margin: '10px 0 20px 0' }} />
+            <div style={{ borderTop: '3px double #000000', margin: '8px 0 12px 0' }} />
+
+            {/* Sovereign Metadata / Identification Bar */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', background: '#f8fafc', fontSize: '12.5px', marginBottom: '14px', tableLayout: 'fixed' }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '7px 10px', border: '1px solid #000000', width: '25%', fontWeight: 800, color: '#1e3a8a' }}>
+                    الرقم الوطني: <span style={{ fontFamily: 'monospace', fontSize: '13.5px', fontWeight: 900, color: '#000000' }}>{member?.national_id || penalty?.NationalId || '---'}</span>
+                  </td>
+                  <td style={{ padding: '7px 10px', border: '1px solid #000000', width: '25%', fontWeight: 800, color: '#1e3a8a' }}>
+                    رقم القيد العسكري: <span style={{ fontFamily: 'monospace', fontSize: '13.5px', fontWeight: 900, color: '#000000' }}>{militaryId}</span>
+                  </td>
+                  <td style={{ padding: '7px 10px', border: '1px solid #000000', width: '25%', fontWeight: 800, color: '#1e3a8a' }}>
+                    تاريخ الواقعة: <span style={{ fontWeight: 900, color: '#000000' }}>{incidentDate}</span>
+                  </td>
+                  <td style={{ padding: '7px 10px', border: '1px solid #000000', width: '25%', fontWeight: 800, color: '#1e3a8a' }}>
+                    مكان الضبط: <span style={{ fontWeight: 900, color: '#000000' }}>{incidentLocation}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Section Title 1 */}
+            <div style={{ fontSize: '13px', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>
+              ■ بيانات المتهم والواقعة المنسوبة:
+            </div>
 
             {/* Main Charge Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '45px', tableLayout: 'fixed' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '16px', tableLayout: 'fixed' }}>
               <thead>
-                <tr style={{ background: '#cbd5e1', color: '#0f172a' }}>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 4px', fontSize: '13px', fontWeight: 900, textAlign: 'center', width: '12%' }}>الرقم</th>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 4px', fontSize: '13px', fontWeight: 900, textAlign: 'center', width: '14%' }}>الرتبة / الصفة</th>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 6px', fontSize: '14px', fontWeight: 900, textAlign: 'center', width: '24%' }}>اسم المتهم</th>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 4px', fontSize: '13px', fontWeight: 900, textAlign: 'center', width: '18%' }}>تاريخ ومكان الواقعة</th>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 6px', fontSize: '13px', fontWeight: 900, textAlign: 'center', width: '18%' }}>التهمة والمادة القانونية</th>
-                  <th style={{ border: '1.5px solid #000000', padding: '9px 4px', fontSize: '13px', fontWeight: 900, textAlign: 'center', width: '14%' }}>الحكم / الإجراء</th>
+                <tr style={{ background: '#e2e8f0', color: '#0f172a' }}>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 4px', fontSize: '12.5px', fontWeight: 900, textAlign: 'center', width: '12%' }}>الرقم</th>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 4px', fontSize: '12.5px', fontWeight: 900, textAlign: 'center', width: '14%' }}>الرتبة / الصفة</th>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 6px', fontSize: '13.5px', fontWeight: 900, textAlign: 'center', width: '24%' }}>اسم المتهم</th>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 4px', fontSize: '12.5px', fontWeight: 900, textAlign: 'center', width: '18%' }}>تاريخ ومكان الواقعة</th>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 6px', fontSize: '12.5px', fontWeight: 900, textAlign: 'center', width: '18%' }}>التهمة والمادة القانونية</th>
+                  <th style={{ border: '1.5px solid #000000', padding: '8px 4px', fontSize: '12.5px', fontWeight: 900, textAlign: 'center', width: '14%' }}>الحكم / الإجراء</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 6px', textAlign: 'center', fontSize: '14px', fontWeight: 900, fontFamily: 'monospace' }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 6px', textAlign: 'center', fontSize: '13.5px', fontWeight: 900, fontFamily: 'monospace' }}>
                     {militaryId}
                   </td>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 6px', textAlign: 'center', fontSize: '13px', fontWeight: 800 }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 6px', textAlign: 'center', fontSize: '13px', fontWeight: 800 }}>
                     {officerRank}
                   </td>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 8px', textAlign: 'center', fontSize: '15.5px', fontWeight: 900, color: '#dc2626' }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 8px', textAlign: 'center', fontSize: '14.5px', fontWeight: 900, color: '#dc2626' }}>
                     {accusedName}
                   </td>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 6px', textAlign: 'center', fontSize: '13px', fontWeight: 700 }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 6px', textAlign: 'center', fontSize: '12.5px', fontWeight: 800 }}>
                     {incidentLocation} - {incidentDate}
                   </td>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 8px', textAlign: 'center', fontSize: '13px', fontWeight: 800, color: '#334155' }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 8px', textAlign: 'center', fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>
                     {charge}
                   </td>
-                  <td style={{ border: '1.5px solid #000000', padding: '20px 6px', textAlign: 'center', fontSize: '13.5px', fontWeight: 900, color: '#0f172a' }}>
+                  <td style={{ border: '1.5px solid #000000', padding: '14px 6px', textAlign: 'center', fontSize: '13px', fontWeight: 900, color: '#0f172a' }}>
                     {verdict}
                   </td>
                 </tr>
               </tbody>
             </table>
 
+            {/* Section Title 2: حيثيات الاتهام والسند القانوني */}
+            <div style={{ fontSize: '13px', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>
+              ■ حيثيات الاتهام والسند القانوني للعقوبة الانضباطية:
+            </div>
+
+            {/* Legal Grounds Box */}
+            <div style={{ border: '1.5px solid #000000', background: '#ffffff', padding: '10px 14px', marginBottom: '16px', fontSize: '12.5px', lineHeight: 1.8, color: '#000000' }}>
+              <div style={{ marginBottom: '6px' }}>
+                <strong style={{ color: '#1e3a8a' }}>1. وصف الواقعة والتحقيق: </strong>
+                <span>بناءً على التقارير الأمنية والانضباطية الواردة ومذكرة الضبط المؤرخة في <strong>{incidentDate}</strong>، ثبت ارتكاب المتهم المذكور أعلاه للمخالفة الانضباطية المنسوبة إليه (<strong>{charge}</strong>) بما يخل بمقتضيات الواجب المسلكي وشرف الخدمة بهيئة الشرطة.</span>
+              </div>
+              <div style={{ marginBottom: '6px' }}>
+                <strong style={{ color: '#1e3a8a' }}>2. السند القانوني: </strong>
+                <span>تطبيقاً لأحكام القانون رقم (10) لسنة 1992م بشأن الشرطة، والقوانين واللوائح المنظمة للانضباط بالمديرية، ولما تقتضيه المصلحة الأمنية العامة لفرض الضبط والربط العسكري.</span>
+              </div>
+              <div>
+                <strong style={{ color: '#b91c1c' }}>3. منطوق قرار المحاكمة الموجزة: </strong>
+                <span>تقرر توقيع عقوبة <strong>( {verdict} )</strong> على المتهم المذكور، مع قيدها بالسجل الانضباطي وإحالة نسخة رسمية لإدارة الشؤون الإدارية والمالية للتنفيذ فوراً.</span>
+              </div>
+            </div>
+
             {/* Bottom Row: Signatures on Right + Trial Schedule on Left */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '25px', tableLayout: 'fixed', border: 'none' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', tableLayout: 'fixed', border: 'none' }}>
               <tbody>
                 <tr>
-                  {/* Right (First TD in RTL): Official Signatures */}
-                  <td style={{ verticalAlign: 'bottom', width: '50%', textAlign: 'right', paddingRight: '15px', border: 'none' }}>
-                    <div style={{ display: 'inline-block', textAlign: 'right', fontSize: '13.5px', fontWeight: 800, lineHeight: 2.3, color: '#0f172a' }}>
+                  {/* Right: Official Signatures */}
+                  <td style={{ verticalAlign: 'top', width: '48%', textAlign: 'right', paddingRight: '8px', border: 'none' }}>
+                    <div style={{ display: 'inline-block', textAlign: 'right', fontSize: '12.5px', fontWeight: 800, lineHeight: 2.1, color: '#0f172a' }}>
                       <div>التوقيع: .......................................</div>
                       <div>الرتبة: .......................................</div>
                       <div>المنصب: .......................................</div>
@@ -457,23 +514,33 @@ export default function IndictmentSheetModal({
                     </div>
                   </td>
 
-                  {/* Left (Second TD in RTL): Trial Schedule Box */}
-                  <td style={{ verticalAlign: 'bottom', width: '50%', textAlign: 'left', paddingLeft: '15px', border: 'none' }}>
-                    <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '280px', fontSize: '12.5px', marginRight: 'auto', marginLeft: 0 }}>
+                  {/* Center: Official Ministry Stamp Placeholder */}
+                  <td style={{ verticalAlign: 'middle', width: '24%', textAlign: 'center', border: 'none' }}>
+                    <div style={{ width: '78px', height: '78px', borderRadius: '50%', border: '2px dashed #1e3a8a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 900, color: '#1e3a8a', margin: '0 auto', lineHeight: 1.25, background: 'rgba(30,58,138,0.02)' }}>
+                      <span>دولة ليبيا</span>
+                      <span>وزارة الداخلية</span>
+                      <span style={{ fontSize: '8.5px', color: '#000000', fontWeight: 900 }}>مديرية أمن أوباري</span>
+                      <span style={{ color: '#b91c1c', fontSize: '7.5px', marginTop: '1px' }}>الختم المعتمد</span>
+                    </div>
+                  </td>
+
+                  {/* Left: Trial Schedule Box */}
+                  <td style={{ verticalAlign: 'top', width: '28%', textAlign: 'left', paddingLeft: '4px', border: 'none' }}>
+                    <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '100%', fontSize: '12px', marginRight: 'auto', marginLeft: 0 }}>
                       <tbody>
                         <tr>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', background: '#f8fafc', fontWeight: 800, width: '45%', textAlign: 'center' }}>
+                          <td style={{ border: '1.5px solid #000000', padding: '6px 8px', background: '#f8fafc', fontWeight: 800, width: '45%', textAlign: 'center' }}>
                             تاريخ المحاكمة
                           </td>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', textAlign: 'center', fontWeight: 700, direction: 'ltr' }}>
+                          <td style={{ border: '1.5px solid #000000', padding: '6px 8px', textAlign: 'center', fontWeight: 800, direction: 'ltr' }}>
                             {trialDate}
                           </td>
                         </tr>
                         <tr>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', background: '#f8fafc', fontWeight: 800, textAlign: 'center' }}>
+                          <td style={{ border: '1.5px solid #000000', padding: '6px 8px', background: '#f8fafc', fontWeight: 800, textAlign: 'center' }}>
                             مكان المحاكمة
                           </td>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', textAlign: 'center', fontWeight: 700 }}>
+                          <td style={{ border: '1.5px solid #000000', padding: '6px 8px', textAlign: 'center', fontWeight: 800 }}>
                             {trialLocation}
                           </td>
                         </tr>
@@ -483,6 +550,30 @@ export default function IndictmentSheetModal({
                 </tr>
               </tbody>
             </table>
+
+            {/* Official Directorate Endorsement Bar */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', borderTop: '1.5px solid #000000', paddingTop: '8px', marginBottom: '12px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '60%', textAlign: 'right', verticalAlign: 'middle', fontSize: '12px', fontWeight: 800 }}>
+                    <div style={{ color: '#1e3a8a' }}>يعتمد / مدير مديرية أمن أوباري</div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#000000', marginTop: '2px' }}>لواء / موسى سعد البدین</div>
+                  </td>
+                  <td style={{ width: '40%', textAlign: 'left', verticalAlign: 'middle', fontSize: '12px', fontWeight: 800 }}>
+                    <div>التوقيع: .......................................</div>
+                    <div style={{ marginTop: '3px' }}>التاريخ: ..... / ..... / 202 م</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Carbon Copy Footer */}
+            <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '6px', fontSize: '10.5px', color: '#475569', fontWeight: 700, lineHeight: 1.6 }}>
+              <div>صورة / مكتب الانضباط والشؤون القانونية</div>
+              <div>صورة / مدير إدارة الشؤون الإدارية والمالية (قسم المرتبات للتنفيذ)</div>
+              <div>صورة / الملف 2.2 ج الدوري للحفظ</div>
+              <div>الملف الشخصي للمنتسب للحفظ</div>
+            </div>
 
           </div>
         </div>

@@ -122,8 +122,8 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             display: table-footer-group !important;
           }
           @page {
-            size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? 'A4 landscape' : 'A4 portrait'};
-            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? '6mm 8mm' : '10mm 12mm'};
+            size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster')) ? 'A4 landscape' : 'A4 portrait'};
+            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster')) ? '6mm 8mm' : '10mm 12mm'};
           }
           html, body {
             margin: 0 !important;
@@ -147,9 +147,9 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             border: none !important;
             margin: 0 auto !important;
             width: 100% !important;
-            max-width: 190mm !important;
-            min-height: 265mm !important;
-            padding: 6mm 10mm !important;
+            max-width: 186mm !important;
+            min-height: auto !important;
+            padding: 0 !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
@@ -163,19 +163,19 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-leave-form-sheet {
             display: block !important;
             width: 100% !important;
-            max-width: 185mm !important;
+            max-width: 186mm !important;
             min-height: auto !important;
             max-height: 275mm !important;
             margin: 0 auto !important;
-            padding: 4mm 8mm !important;
+            padding: 0 !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
             position: relative !important;
             direction: rtl !important;
             font-family: 'Cairo', Arial, sans-serif !important;
-            font-size: 11.5px !important;
-            line-height: 1.55 !important;
+            font-size: 13px !important;
+            line-height: 1.8 !important;
             box-shadow: none !important;
             border: none !important;
             page-break-inside: avoid !important;
@@ -216,13 +216,13 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet td {
             font-family: 'Cairo', Arial, sans-serif !important;
           }
-          /* Indictment Sheet (Strict 1-Page A4 Landscape) */
+          /* Indictment Sheet (Strict 1-Page A4 Portrait) */
           .indictment-sheet-page {
             display: block !important;
             width: 100% !important;
-            max-width: 280mm !important;
+            max-width: 186mm !important;
             margin: 0 auto !important;
-            padding: 6mm 10mm !important;
+            padding: 0 !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;

@@ -627,18 +627,18 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     const notes = leave.notes || leave.ResumptionNotes || leave.Notes || 'إجازة سنوية نظامية معتمدة بسجلات المديرية';
 
     return `
-      <div id="official-leave-form-99" class="official-leave-form-sheet official-a4-letter-sheet" style="width: 100%; max-width: 185mm; margin: 0 auto; padding: 4mm 8mm; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 11.5px; line-height: 1.55;">
+      <div id="official-leave-form-99" class="official-leave-form-sheet official-a4-letter-sheet" style="width: 100%; max-width: 186mm; margin: 0 auto; padding: 0; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; background: #ffffff; font-size: 13px; line-height: 1.8;">
         
         <!-- Header: ن ش 99/1 والتسمية السيادية الرسمية -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
           <tr>
-            <td style="width: 25%; text-align: right; vertical-align: top; font-weight: 900; font-size: 13.5px; padding-top: 2px;">
+            <td style="width: 25%; text-align: right; vertical-align: top; font-weight: 900; font-size: 14.5px; padding-top: 2px;">
               ن ش 99/1
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
-              <div style="font-size: 16px; font-weight: 900; margin-bottom: 1px; font-family: 'Amiri', 'Traditional Arabic', serif;">دَوْلَةُ لِيبْيَا</div>
-              <div style="font-size: 15px; font-weight: 900; margin-bottom: 4px; font-family: 'Amiri', 'Traditional Arabic', serif;">وَزَارَةُ الدَّاخِلِيَّةِ</div>
-              <div style="font-size: 14px; font-weight: 900; border-bottom: 1.5px solid #000; display: inline-block; padding-bottom: 1px;">
+              <div style="font-size: 17px; font-weight: 900; margin-bottom: 2px; font-family: 'Amiri', 'Traditional Arabic', serif;">دَوْلَةُ لِيبْيَا</div>
+              <div style="font-size: 16px; font-weight: 900; margin-bottom: 5px; font-family: 'Amiri', 'Traditional Arabic', serif;">وَزَارَةُ الدَّاخِلِيَّةِ</div>
+              <div style="font-size: 15px; font-weight: 900; border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
                 نموذج طلب الحصول على إجازة سنوية لرجال الشرطة
               </div>
             </td>
@@ -647,17 +647,17 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
         </table>
 
         <!-- القسم الأول -->
-        <div style="margin-top: 4px;">
-          <div style="font-weight: 900; font-size: 13px; margin-bottom: 2px;">القسم الأول :</div>
+        <div style="margin-top: 6px;">
+          <div style="font-weight: 900; font-size: 14px; margin-bottom: 4px;">القسم الأول :</div>
           
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">الإدارة العامة :</td>
               <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${generalDept}</td>
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
             <tr>
               <td style="width: 28%;">
                 <span style="font-weight: 700;">الرقم : </span>
@@ -674,18 +674,18 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مكان العمل :</td>
               <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${workplace}</td>
             </tr>
           </table>
 
-          <div style="font-weight: 900; margin: 3px 0 2px 0;">
+          <div style="font-weight: 900; margin: 4px 0 3px 0;">
             أرجو منحي إجازة سنوية كما يلي:-
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
             <tr>
               <td style="width: 36%;">
                 <span style="font-weight: 700;">مدة الإجازة المطلوبة: </span>
@@ -702,7 +702,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">نوع الإجازة المطلوبة محلية / خارجية / العنوان خلال مدة الإجازة :</td>
               <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${leaveTypeAndLocation}</td>
@@ -725,19 +725,19 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- القسم الثاني -->
         <div>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
-              <td style="width: 25%; font-weight: 900; font-size: 13px;">القسم الثاني :</td>
-              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 12.5px;">(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
+              <td style="width: 25%; font-weight: 900; font-size: 14px;">القسم الثاني :</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 13px;">(( يعد من الجهة المختصة بشؤون الإجازات ))</td>
               <td style="width: 25%;"></td>
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المستحقة لغاية :</td>
               <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${dueDate}</td>
@@ -745,7 +745,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المطلوبة :</td>
               <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${requestedDays} يوماً</td>
@@ -753,7 +753,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
               <td style="width: 1%; white-space: nowrap; font-weight: 700; padding-left: 6px;">مدة الإجازة المتبقية :</td>
               <td style="border-bottom: 1px dotted #000; text-align: center; font-weight: 800; padding: 0 6px;">${remainingDays} يوماً</td>
@@ -761,7 +761,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
             <tr>
               <td style="width: 48%;">
                 <span style="font-weight: 900;">توقيع الضابط المختص </span>
@@ -779,22 +779,22 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- القسم الثالث -->
         <div>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
               <td style="width: 1%; white-space: nowrap;">
-                <span style="font-weight: 900; font-size: 13px;">القسم الثالث : </span>
+                <span style="font-weight: 900; font-size: 14px;">القسم الثالث : </span>
                 <span style="font-weight: 700;">أوصي بالموافقة / عدم الموافقة للأسباب الآتية: </span>
               </td>
               <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${recommendation}</td>
             </tr>
           </table>
-          <div style="border-bottom: 1px dotted #000; width: 100%; height: 16px;"></div>
+          <div style="border-bottom: 1px dotted #000; width: 100%; height: 20px;"></div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
             <tr>
               <td style="width: 48%;">
                 <span style="font-weight: 900;">توقيع الرئيس المباشر </span>
@@ -812,19 +812,19 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- القسم الرابع -->
         <div>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
             <tr>
-              <td style="width: 25%; font-weight: 900; font-size: 13px;">القسم الرابع:</td>
-              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 12.5px;">(( قرار الجهة المختصة ))</td>
+              <td style="width: 25%; font-weight: 900; font-size: 14px;">القسم الرابع:</td>
+              <td style="width: 50%; text-align: center; font-weight: 900; font-size: 13px;">(( قرار الجهة المختصة ))</td>
               <td style="width: 25%;"></td>
             </tr>
           </table>
 
-          <div style="margin-bottom: 2px;">
+          <div style="margin-bottom: 4px;">
             <span>1- أوافق / لا أوافق على الإجازة المطلوبة أو على مدة ( </span>
             <span style="font-weight: 900; padding: 0 4px; border-bottom: 1px dotted #000; display: inline-block; min-width: 35px; text-align: center;">${approvedDays}</span>
             <span> ) يوماً.</span>
@@ -833,7 +833,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             <span>2- تحفظ مدة الإجازة المتجمعة أو المتبقية أو التي لم يوافق عليها لاعتبارات تتعلق بصالح العمل ومدتها.</span>
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
             <tr>
               <td style="width: 60%;">
                 <span style="font-weight: 900;">توقيع المختص بمنح الإجازات </span>
@@ -847,14 +847,14 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- القسم الخامس -->
         <div>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="width: 1%; white-space: nowrap;">
-                <span style="font-weight: 900; font-size: 13px;">القسم الخامس : </span>
+                <span style="font-weight: 900; font-size: 14px;">القسم الخامس : </span>
                 <span style="font-weight: 700;">عاد من إجازته وباشر العمل بتاريخ: </span>
               </td>
               <td style="border-bottom: 1px dotted #000; width: 28%; text-align: center; font-weight: 800;">${resumedDate}</td>
@@ -863,7 +863,7 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
             </tr>
           </table>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
             <tr>
               <td style="width: 60%;">
                 <span style="font-weight: 900;">توقيع المختص </span>
@@ -874,28 +874,28 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
           </table>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- القسم السادس -->
         <div>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="width: 1%; white-space: nowrap;">
-                <span style="font-weight: 900; font-size: 13px;">القسم السادس : </span>
+                <span style="font-weight: 900; font-size: 14px;">القسم السادس : </span>
                 <span style="font-weight: 700;">ملاحظات </span>
               </td>
               <td style="border-bottom: 1px dotted #000; font-weight: 800; padding: 0 6px;">${notes}</td>
             </tr>
           </table>
-          <div style="border-bottom: 1px dotted #000; width: 100%; height: 16px;"></div>
+          <div style="border-bottom: 1px dotted #000; width: 100%; height: 20px;"></div>
         </div>
 
-        <hr style="border: none; border-top: 1.2px solid #000; margin: 4px 0;" />
+        <hr style="border: none; border-top: 1.5px solid #000; margin: 6px 0;" />
 
         <!-- التوزيع -->
-        <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10.5px;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11.5px;">
           <tr>
-            <td style="width: 100%; vertical-align: bottom; line-height: 1.5;">
+            <td style="width: 100%; vertical-align: bottom; line-height: 1.6;">
               <div style="font-weight: 900;">التوزيع : النسخة الأصلية لطالب الإجازة.</div>
               <div>نسخة للإدارة العامة لشؤون الضباط أو إدارة شؤون خدمة الأفراد.</div>
               <div>نسخة للفرع الذي يتبعه طالب الإجازة</div>

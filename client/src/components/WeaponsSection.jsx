@@ -734,16 +734,21 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
     const wDate = w.issue_date || (w.IssueDate ? String(w.IssueDate).split('T')[0] : fullDate);
 
     const html = `
-      <div class="official-a4-letter-sheet" style="font-family: 'Cairo', 'Amiri', sans-serif; direction: rtl; padding: 25px 35px; color: #0a192f; max-width: 680px; margin: 0 auto; background: #ffffff;">
+      <div class="official-a4-letter-sheet" style="font-family: 'Cairo', 'Amiri', sans-serif; direction: rtl; padding: 0; color: #0a192f; width: 100%; max-width: 186mm; margin: 0 auto; background: #ffffff;">
         <style>
           @page {
-            size: A4 portrait;
-            margin: 10mm 12mm;
+            size: A4 portrait !important;
+            margin: 10mm 12mm !important;
           }
           @media print {
             body {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+            }
+            .official-a4-letter-sheet {
+              padding: 0 !important;
+              max-width: 186mm !important;
+              width: 100% !important;
             }
           }
         </style>
