@@ -190,19 +190,19 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet {
             display: block !important;
             width: 100% !important;
-            max-width: 175mm !important;
+            max-width: 185mm !important;
             min-height: auto !important;
             max-height: 275mm !important;
             margin: 0 auto !important;
-            padding: 10mm 15mm !important;
+            padding: 6mm 8mm !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
             position: relative !important;
             direction: rtl !important;
             font-family: 'Cairo', Arial, sans-serif !important;
-            font-size: 14.5px !important;
-            line-height: 2.1 !important;
+            font-size: 13px !important;
+            line-height: 1.4 !important;
             box-shadow: none !important;
             border: none !important;
             page-break-inside: avoid !important;
@@ -212,6 +212,11 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet table {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            line-height: 1.35 !important;
+          }
+          #moi-exit-permit-to-print td,
+          .official-exit-permit-sheet td {
+            font-family: 'Cairo', Arial, sans-serif !important;
           }
           /* Indictment Sheet (Strict 1-Page A4 Landscape) */
           .indictment-sheet-page {
