@@ -127,19 +127,6 @@ export default function DecisionsSection({ forceMembers = [], user = {} }) {
           <p><strong>مـادة (2):</strong> يُكلف كل من (${d.entity}) باتخاذ الإجراءات العاجلة واللازمة لوضع هذا القرار موضع التنفيذ الفوري اعتباراً من تاريخ صدوره.</p>
           <p><strong>مـادة (3):</strong> يُعمل بهذا القرار من تاريخ صدوره، ويُلغى كل ما يخالفه من أحكام سابقة، وعلى كافة الجهات المختصة تنفيذه كل فيما يخصه.</p>
         </div>
-
-        <!-- Signatures -->
-        <div style="text-align: left; margin-top: 50px; padding-left: 50px;">
-          <div style="font-size: 15px; font-weight: 900; color: #1e3a8a;">
-            اللواء / موسى سعد محمد البدين
-          </div>
-          <div style="font-size: 13px; font-weight: 700; color: #475569; margin-top: 4px;">
-            مدير أمن أوباري
-          </div>
-          <div style="margin-top: 30px; font-size: 12px; color: #64748b;">
-            الختم الرسمي لمديرية أمن أوباري
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `قرار_إداري_رقم_${d.number}`);

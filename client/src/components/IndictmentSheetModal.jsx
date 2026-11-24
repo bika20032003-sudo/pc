@@ -447,14 +447,8 @@ export default function IndictmentSheetModal({
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '25px', tableLayout: 'fixed', border: 'none' }}>
               <tbody>
                 <tr>
-                  {/* Right (First TD in RTL): Official Signatures */}
+                  {/* Right (First TD in RTL): Signatures removed */}
                   <td style={{ verticalAlign: 'bottom', width: '50%', textAlign: 'right', paddingRight: '15px', border: 'none' }}>
-                    <div style={{ display: 'inline-block', textAlign: 'right', fontSize: '13.5px', fontWeight: 800, lineHeight: 2.3, color: '#0f172a' }}>
-                      <div>التوقيع: .......................................</div>
-                      <div>الرتبة: .......................................</div>
-                      <div>المنصب: .......................................</div>
-                      <div>الاسم: .......................................</div>
-                    </div>
                   </td>
 
                   {/* Left (Second TD in RTL): Trial Schedule Box */}

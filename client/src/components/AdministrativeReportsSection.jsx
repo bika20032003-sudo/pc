@@ -121,22 +121,6 @@ export default function AdministrativeReportsSection({ forceMembers = [], user =
             `).join('')}
           </tbody>
         </table>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مقرر لجنة الترقيات</div>
-            <div style="margin-top: 35px; font-size: 12px;">مقدم / سالم عبدالكريم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الشؤون الإدارية</div>
-            <div style="margin-top: 35px; font-size: 12px;">عميد / مفتاح مسعود الشريف</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `كشف_المرشحين_للترقية_${new Date().getFullYear()}`);

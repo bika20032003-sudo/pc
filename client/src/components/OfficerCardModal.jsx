@@ -151,18 +151,6 @@ export default function OfficerCardModal({
             مادة (2): يودع هذا القرار بملف الخدمة للمنتسب وتخطر به الشؤون المالية لتنفيذ الاستقطاع، وتخطر جهة عمله للتنفيذ.
           </p>
         </div>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-          <tr>
-            <td style="width: 50%; text-align: center;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">رئيس قسم التفتيش والانضباط</div>
-              <div style="font-weight: 700; border-top: 1px dashed #94a3b8; display: inline-block; padding-top: 4px;">عقيد / رئيس لجنة الانضباط</div>
-            </td>
-            <td style="width: 50%; text-align: center;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; display: inline-block; padding-top: 4px;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
     printDocumentInIframe(printHtml, `قرار جزاء - ${penalty.FullName || member.name}`);
@@ -300,7 +288,7 @@ export default function OfficerCardModal({
             <div style="border-top: 1px solid #e2e8f0; padding-top: 3px; display: flex; align-items: center; justify-content: space-between; font-size: 8px; color: #475569; font-weight: 700;">
               <div>تاريخ الإصدار: 2024م • سارية حتى: 2029م</div>
               <div style="font-family: monospace; font-size: 9px; color: #1e3a8a; font-weight: 800;">*UBR-MOI-${financialId}*</div>
-              <div style="color: #0f172a; font-weight: 800;">توقيع مدير أمن أوباري</div>
+              <div></div>
             </div>
           </div>
 
@@ -350,24 +338,6 @@ export default function OfficerCardModal({
               </div>
             </div>
 
-            <!-- Signatures -->
-            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 4px;">
-              <div>
-                <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">رئيس قسم الشؤون الإدارية:</div>
-                <div style="font-size: 9.5px; font-weight: 800; color: #0f172a;">عقيد شرطة / فرج محمد السنوسي</div>
-              </div>
-
-              <div style="width: 48px; height: 48px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 6.5px; font-weight: 800; color: #1e3a8a; text-align: center; line-height: 1.15;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 5.5px;">ختم معتمد</span>
-              </div>
-
-              <div style="text-align: left;">
-                <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">يعتمد مدير مديرية أمن أوباري:</div>
-                <div style="font-size: 9.5px; font-weight: 800; color: #0f172a;">لواء / موسى سعد محمد</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -499,26 +469,6 @@ export default function OfficerCardModal({
             <td style="padding: 5px; border: 1px solid #cbd5e1; font-weight: 800;">${member.phone || '---'} - ${member.residence || 'أوباري المدينة'}</td>
           </tr>
         </table>
-
-        <table style="width: 100%; border-collapse: collapse; border-top: 2px solid #1e3a8a; padding-top: 8px;">
-          <tr>
-            <td style="text-align: center; vertical-align: top; width: 33%;">
-              <div style="font-size: 10px; color: #64748b; font-weight: 700; margin-bottom: 3px;">الموثق والمدخل</div>
-              <div style="font-size: 11px; font-weight: 800; color: #0f172a;">رئيس قسم الشؤون الإدارية</div>
-            </td>
-            <td style="text-align: center; vertical-align: middle; width: 33%;">
-              <div style="width: 54px; height: 54px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.15;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 6px;">ختم رسمي</span>
-              </div>
-            </td>
-            <td style="text-align: center; vertical-align: top; width: 33%;">
-              <div style="font-size: 10px; color: #64748b; font-weight: 700; margin-bottom: 3px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-size: 11px; font-weight: 800; color: #0f172a;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 
@@ -573,12 +523,8 @@ export default function OfficerCardModal({
           </p>
         </div>
       `,
-      signerName: 'لواء / موسى سعد محمد',
-      signerTitle: 'مدير مديرية أمن أوباري',
-      deptOfficerName: 'عقيد / إبراهيم عبدالكريم صالح',
-      deptOfficerTitle: 'رئيس قسم الشؤون الإدارية والمالية',
-      showStamp: true,
-      showSignature: true
+      showStamp: false,
+      showSignature: false
     });
     printDocumentInIframe(certHtml, `إفادة خدمة رسمية - ${member.name}`);
   };
@@ -1561,7 +1507,6 @@ export default function OfficerCardModal({
                       </div>
 
                       <div style={{ textAlign: 'left', color: '#0f172a', fontWeight: 800 }}>
-                        توقيع مدير أمن أوباري
                       </div>
                     </div>
                   </div>
@@ -2522,7 +2467,7 @@ export default function OfficerCardModal({
                 <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '3px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '8px', color: '#475569', fontWeight: 700 }}>
                   <div>تاريخ الإصدار: 2024م • سارية حتى: 2029م</div>
                   <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#1e3a8a', fontWeight: 800 }}>*UBR-MOI-{financialId}*</div>
-                  <div style={{ color: '#0f172a', fontWeight: 800 }}>توقيع مدير أمن أوباري</div>
+                  <div></div>
                 </div>
               </div>
 
@@ -2636,8 +2581,6 @@ export default function OfficerCardModal({
                   </div>
 
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '7.5px', color: '#64748b', fontWeight: 700 }}>يعتمد مدير مديرية أمن أوباري:</div>
-                    <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#0f172a' }}>لواء / موسى سعد محمد</div>
                   </div>
                 </div>
               </div>
@@ -2762,25 +2705,6 @@ export default function OfficerCardModal({
                   </tr>
                 </tbody>
               </table>
-            </div>
-
-            {/* Dossier Footer with Signatures & Stamp */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '2px solid #1e3a8a', paddingTop: '10px', marginTop: '16px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>الموثق والمدخل</p>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>رئيس قسم الشؤون الإدارية</span>
-              </div>
-
-              <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '1.5px dashed #1e3a8a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: '#1e3a8a', textAlign: 'center' }}>
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style={{ color: '#dc2626' }}>ختم رسمي</span>
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>يعتمد مدير مديرية أمن أوباري</p>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>لواء / موسى سعد محمد</span>
-              </div>
             </div>
           </div>
         )}

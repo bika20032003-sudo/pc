@@ -137,6 +137,7 @@ export function createOfficialLetterHtml({
         <p style="font-size: 14px; font-weight: 900; color: #000000; margin: 0;">${closing}</p>
       </div>
 
+      ${showSignature ? `
       <!-- كتلة التوقيعات والختم المعتمد -->
       <table style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 20px;">
         <tr>
@@ -159,11 +160,11 @@ export function createOfficialLetterHtml({
           <td style="width: 35%; vertical-align: top;">
             <div style="font-weight: 800; font-size: 13px; color: #1e3a8a; margin-bottom: 45px;">${signerTitle}</div>
             <div style="font-weight: 900; font-size: 13px; color: #000000; border-top: 1px dashed #64748b; padding-top: 5px; width: 85%; margin: 0 auto;">
-              ${showSignature ? signerName : ''}
+              ${signerName}
             </div>
           </td>
         </tr>
-      </table>
+      </table>` : ''}
 
       <!-- صورة منه إلى (إن وجدت) -->
       ${ccList && ccList.length > 0 ? `

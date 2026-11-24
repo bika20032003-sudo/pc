@@ -184,19 +184,6 @@ export default function DetaineesSection() {
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-right: 4px solid #dc2626; padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; font-size: 10px; color: #334155;">
           <strong>تنبيه قانوني دستوري:</strong> تنص التشريعات الليبية وقانون الإجراءات الجنائية على عدم جواز حجز أي موقوف في استيقافات مراكز الشرطة لأكثر من 48 ساعة دون إحالته للنيابة العامة المختصة أو الإفراج عنه قانوناً.
         </div>
-
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 20px; font-size: 11px;">
-          <tr>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">رئيس قسم البحث الجنائي</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">عقيد شرطة / فرج محمد السنوسي</div>
-            </td>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">يعتمد / مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 

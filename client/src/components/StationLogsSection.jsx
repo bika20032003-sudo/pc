@@ -143,22 +143,6 @@ export default function StationLogsSection({ forceMembers = [], user = {} }) {
           <br /><br />
           <strong style="text-align: center; display: block;">والسلام عليكم ورحمة الله وبركاته</strong>
         </div>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 50px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">ضابط التحقيق ومأمور الضبط</div>
-            <div style="margin-top: 40px; font-size: 13px;">نقيب / محمد سالم الفرجاني</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">رئيس ${log.station}</div>
-            <div style="margin-top: 40px; font-size: 13px;">عقيد شرطة / فرج مصطفى</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 40px; font-size: 13px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `إحالة_محضر_${log.report_number.replace('/', '-')}`);

@@ -182,32 +182,6 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
             `).join('')}
           </tbody>
         </table>
-
-        <!-- التوقيعات والختم المعتمد -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
-          <tr>
-            <td style="width: 32%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a;">المراجع المالي الداخلي</div>
-              <div style="margin-top: 35px; font-size: 12px; font-weight: 800; color: #000000; border-top: 1px dashed #64748b; padding-top: 4px; width: 80%; margin-left: auto; margin-right: auto;">
-                أ. الطاهر مسعود الشريف
-              </div>
-            </td>
-            <td style="width: 36%; vertical-align: middle;">
-              <div style="width: 72px; height: 72px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25; background: rgba(30,58,138,0.02);">
-                <span>دولة ليبيا</span>
-                <span>وزارة الداخلية</span>
-                <span style="font-size: 8px; color: #000000; font-weight: 900;">مديرية أمن أوباري</span>
-                <span style="color: #b91c1c; font-size: 7px; margin-top: 1px;">القسم المالي</span>
-              </div>
-            </td>
-            <td style="width: 32%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px; color: #1e3a8a;">يعتمد / مدير أمن أوباري</div>
-              <div style="margin-top: 35px; font-size: 12px; font-weight: 800; color: #000000; border-top: 1px dashed #64748b; padding-top: 4px; width: 80%; margin-left: auto; margin-right: auto;">
-                لواء / موسى سعد البدين
-              </div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
     printDocumentInIframe(html, `كشف_حوالة_رواتب_${selectedBank}`);
@@ -343,28 +317,6 @@ export default function PayrollSection({ forceMembers = [], user = {} }) {
               </td>
             </tr>
           </tbody>
-        </table>
-
-        <!-- التوقيعات والختم -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px;">المراجع المالي</div>
-              <div style="margin-top: 30px; font-size: 12px;">أ. الطاهر الشريف</div>
-            </td>
-            <td style="width: 34%; vertical-align: middle;">
-              <div style="width: 70px; height: 70px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25;">
-                <span>دولة ليبيا</span>
-                <span>وزارة الداخلية</span>
-                <span style="font-size: 8px; color: #000;">أمن أوباري</span>
-                <span style="color: #b91c1c; font-size: 7px;">الختم المالي</span>
-              </div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 12px;">رئيس قسم الشؤون المالية</div>
-              <div style="margin-top: 30px; font-size: 12px; font-weight: bold; color: #1e3a8a;">مقدم / سالم محمد الناجم</div>
-            </td>
-          </tr>
         </table>
       </div>
     `;

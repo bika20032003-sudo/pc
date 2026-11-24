@@ -518,25 +518,6 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
           تُحال نسخة رسمية من هذا القرار إلى قسم الشؤون المالية لتطبيق الخصم المستحق على المرتب فوراً، ونسخة إلى قسم الشؤون الإدارية لحفظها بالسجل الشخصي للمنتسب، مع إخطار المعني رسمياً بعدم تكرار المخالفة تفادياً لتشديد العقوبة وإحالته لمجلس التأديب الابتدائي المختص.
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 26px; font-size: 11.5px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">رئيس قسم التفتيش والانضباط</div>
-              <div style="font-weight: 800; border-top: 1.5px dashed #94a3b8; padding-top: 5px; color: #0f172a;">عقيد شرطة / فرج محمد السنوسي</div>
-            </td>
-            <td style="width: 33%; vertical-align: middle;">
-              <div style="width: 60px; height: 60px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.25;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 7px; margin-top: 2px;">ختم رسمي معتمد</span>
-              </div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1.5px dashed #94a3b8; padding-top: 5px; color: #0f172a;">لواء / موسى سعد محمد البدين</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 
@@ -617,25 +598,6 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
           </tbody>
         </table>
 
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 25px; font-size: 11px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">رئيس قسم التفتيش والانضباط</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">عقيد شرطة / فرج محمد السنوسي</div>
-            </td>
-            <td style="width: 33%; vertical-align: middle;">
-              <div style="width: 50px; height: 50px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 6.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 6px;">ختم رسمي</span>
-              </div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد محمد البدين</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 

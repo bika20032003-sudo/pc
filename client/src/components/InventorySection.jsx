@@ -229,22 +229,6 @@ export default function InventorySection({ forceMembers = [], user = {} }) {
         <div style="border: 1px solid #94a3b8; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.8; margin-bottom: 25px; background: #fffbeb;">
           <strong>إقرار والتزام قانوني:</strong> أقر أنا المستلم الموضح بياناته أعلاه بأنني استلمت الصنف المذكور بحالة ممتازة وجاهزة للاستخدام الأمني، وأتعهد بالمحافظة عليه وعدم تسليمه أو التفريط فيه أو استخدامه في غير الأغراض المخصصة له، والالتزام برده فور انتهاء التكليف أو طلب الإدارة، وأتحمل المسؤولية القانونية والانضباطية في حال الفقد أو الإهمال.
         </div>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 30px;">
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">توقيع المستلم للعهدة</div>
-            <div style="margin-top: 40px; font-size: 13px;">الاسم: ${item.receiver_name}</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">أمين مخزن السلاح والتجهيز</div>
-            <div style="margin-top: 40px; font-size: 13px;">ملازم / مصطفى سالم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 40px; font-size: 13px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `إذن_صرف_عهدة_${item.receiver_name}`);

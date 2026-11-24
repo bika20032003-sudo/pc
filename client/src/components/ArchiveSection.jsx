@@ -168,22 +168,6 @@ export default function ArchiveSection({ forceMembers = [], user = {} }) {
         <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.8; margin-bottom: 35px; background: #fffbeb;">
           <strong>إفادة توثيق رسمية:</strong> تشهد إدارة التوثيق والمعلومات بمديرية أمن أوباري بأن الوثيقة الموضحة بياناتها أعلاه قد تم فحصها ضوئياً وتدقيق أصلها وأرشفتها بالنظام الرقمي المركزي لوزارة الداخلية تحت الحماية المشددة والتشفير الأمني.
         </div>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 50px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">أمين الأرشيف والتوثيق</div>
-            <div style="margin-top: 40px; font-size: 13px;">نقيب / خليفة مسعود</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">رئيس قسم المعلومات والتوثيق</div>
-            <div style="margin-top: 40px; font-size: 13px;">مقدم / سالم عبدالسلام</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 40px; font-size: 13px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `شهادة_توثيق_${item.ref_number.replace('/', '-')}`);

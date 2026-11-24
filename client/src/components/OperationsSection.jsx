@@ -693,19 +693,6 @@ export default function OperationsSection() {
             ${liveLog.slice(0, 4).map(l => `<li><strong>[${l.time}]</strong> ${l.text}</li>`).join('')}
           </ul>
         </div>
-
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 20px; font-size: 11px;">
-          <tr>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">ضابط خفر العمليات والسيطرة</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">رائد / خليفة علي محمد</div>
-            </td>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">يعتمد / مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد البدين</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 

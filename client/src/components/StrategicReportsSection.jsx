@@ -98,21 +98,6 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
         <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.8; margin-bottom: 30px; background: #fffbeb;">
           <strong>توجيهات السيد مدير الأمن:</strong> الاستمرار في رفع أقصى درجات اليقظة والجاهزية، والتنسيق الدائم مع كافة الأجهزة الأمنية لحفظ أمن وادي الحياة.
         </div>
-
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">ضابط خفر العمليات والسيطرة</div>
-            <div style="margin-top: 35px; font-size: 12px;">رائد / سالم عثمان التارقي</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مساعد مدير الأمن للشؤون الأمنية</div>
-            <div style="margin-top: 35px; font-size: 12px;">عميد / مفتاح مسعود الشريف</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">اللواء / موسى سعد محمد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `الموقف_الأمني_${new Date().toISOString().slice(0, 10)}`);
@@ -192,21 +177,6 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
             <div>• العهد الشخصية المصروفة: مسجلة وموثقة بنظام التتبع الرقمي 100%.</div>
           </div>
         </div>
-
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الخدمات والآليات</div>
-            <div style="margin-top: 35px; font-size: 12px;">عميد / حامد علي عبدالرحمن</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الإمداد والمخازن</div>
-            <div style="margin-top: 35px; font-size: 12px;">ملازم / مصطفى سالم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">اللواء / موسى سعد محمد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `الموقف_اللوجستي_${new Date().toISOString().slice(0, 10)}`);
@@ -268,21 +238,6 @@ export default function StrategicReportsSection({ forceMembers = [], user = {} }
           <div style="font-size: 13px; line-height: 2;">
             <div>• القرارات المنفذة بالكامل: <strong>قرار رقم 12 لسنة 2026</strong> (رفع درجة الاستعداد والجاهزية).</div>
             <div>• القرارات الجارية: <strong>قرار رقم 15</strong> (حملة ضبط المركبات) و <strong>قرار رقم 18</strong> (ربط توزيع الوقود).</div>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم المحفوظات والبريد</div>
-            <div style="margin-top: 35px; font-size: 12px;">نقيب / خليفة مسعود</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مدير مكتب مدير الأمن</div>
-            <div style="margin-top: 35px; font-size: 12px;">مقدم / سالم عبدالسلام</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 12px; font-weight: bold; color: #1e3a8a;">اللواء / موسى سعد محمد البدين</div>
           </div>
         </div>
       </div>

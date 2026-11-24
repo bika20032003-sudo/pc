@@ -141,14 +141,8 @@ export function createIndictmentSheetHtml({
       <!-- Bottom Signatures & Trial Box Section -->
       <table style="width: 100%; border-collapse: collapse; margin-top: 25px; table-layout: fixed; border: none;">
         <tr>
-          <!-- Right (First TD in RTL): Official Officer Signatures -->
+          <!-- Right (First TD in RTL): Signatures removed -->
           <td style="vertical-align: bottom; width: 50%; text-align: right; padding-right: 15px; border: none;">
-            <div style="display: inline-block; text-align: right; font-size: 13.5px; font-weight: 800; line-height: 2.3; color: #000000;">
-              <div>التوقيع: .......................................</div>
-              <div>الرتبة: .......................................</div>
-              <div>المنصب: .......................................</div>
-              <div>الاسم: .......................................</div>
-            </div>
           </td>
 
           <!-- Left (Second TD in RTL): Trial Schedule Box -->

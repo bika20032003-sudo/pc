@@ -678,31 +678,6 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           </tbody>
         </table>
 
-        <!-- مربعات التوقيعات والختم المعتمد -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 14px; page-break-inside: avoid; break-inside: avoid;">
-          <tr>
-            <td style="width: 28%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">مسؤول مخزن السلاح والذخائر</div>
-              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #0a192f;">نقيب / مصطفى سالم المهدي</div>
-            </td>
-            <td style="width: 24%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">رئيس قسم الشؤون الإدارية والمالية</div>
-              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #0a192f;">عقيد / إبراهيم عبدالسلام</div>
-            </td>
-            <td style="width: 20%; vertical-align: middle;">
-              <div style="width: 72px; height: 72px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.3; background: rgba(30,58,138,0.03);">
-                <span>وزارة الداخلية</span>
-                <span style="font-size: 8px; color: #0a192f; font-weight: 900;">مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 7px; font-weight: 900;">ختم مخزن السلاح</span>
-              </div>
-            </td>
-            <td style="width: 28%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 11.5px; color: #1e3a8a; margin-bottom: 34px;">يعتمد مدير أمن أوباري</div>
-              <div style="font-weight: 800; font-size: 10.5px; border-top: 1.5px dashed #64748b; padding-top: 4px; color: #1e3a8a;">لواء / موسى سعد البدين</div>
-            </td>
-          </tr>
-        </table>
-
         <!-- تذييل الوثيقة الرسمية المعتمدة -->
         <div style="border-top: 1px solid #cbd5e1; margin-top: 12px; padding-top: 5px; display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
           <div>وثيقة أمنية رسمية معتمدة صادرة عن منظومة مديرية أمن أوباري - قسم الأسلحة والذخائر - وزارة الداخلية</div>
@@ -824,27 +799,6 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           <strong>إقرار وتعهد بالمسؤولية القانونية:</strong><br />
           أقر أنا المستلم الموضح اسمي أعلاه بأنني استلمت السلاح المبينة مواصفاته وأرقامه وذخيرته أعلاه في حالة سليمة وجاهزة للعمل، وأتعهد بالمحافظة التامة عليه وعدم تسليمه أو إعارته لأي طرف، واستخدامه حصراً في أداء الواجبات والمهام الأمنية الرسمية المكلف بها وفق تعليمات وضوابط وزارة الداخلية وقانون هيئة الشرطة، وأتحمل كامل المسؤولية الجنائية والمسلكية في حال الفقدان أو التلف أو سوء الاستخدام.
         </div>
-
-        <!-- Official Signatures -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 40px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a; margin-bottom: 45px;">توقيع المستلم الفعلي</div>
-              <div style="font-weight: 800; font-size: 12px; border-top: 1.5px dashed #64748b; padding-top: 5px; color: #0a192f;">${wRec || 'الاسم والتوقيع'}</div>
-            </td>
-            <td style="width: 34%; vertical-align: middle;">
-              <div style="width: 75px; height: 75px; border-radius: 50%; border: 2px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
-                <span>وزارة الداخلية</span>
-                <span style="font-size: 8.5px; color: #0a192f; font-weight: 900;">مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 7.5px; font-weight: 900;">ختم مخزن السلاح</span>
-              </div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a; margin-bottom: 45px;">رئيس قسم الأسلحة والذخائر</div>
-              <div style="font-weight: 800; font-size: 12px; border-top: 1.5px dashed #64748b; padding-top: 5px; color: #1e3a8a;">نقيب / مصطفى سالم المهدي</div>
-            </td>
-          </tr>
-        </table>
 
         <!-- Document Footer -->
         <div style="border-top: 1px solid #cbd5e1; margin-top: 35px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; color: #64748b; font-weight: 700;">

@@ -657,17 +657,6 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
             `).join('')}
           </tbody>
         </table>
-
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 50px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مسؤول الشؤون الإدارية</div>
-            <div style="margin-top: 35px; font-size: 13px; font-weight: 700;">عبدالصمد</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">مدير مديرية أمن أوباري</div>
-            <div style="margin-top: 35px; font-size: 14px; font-weight: 900; color: #1e3a8a;">لواء / موسى سعد محمد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, 'كشف_سجل_النماذج_الإدارية');
@@ -2093,24 +2082,26 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
         </p>
       </div>
 
-      {/* Signature Block (Positioned strictly on the LEFT) */}
-      <div className={`a4-signature-block pos-${doc.sig_position || 'left'}`} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 'auto', marginBottom: '12px', boxSizing: 'border-box' }}>
-        <div className={`sig-inner ${doc.stamp_layout === 'side' ? 'layout-side' : 'layout-stacked'}`} style={{ textAlign: 'center', minWidth: '240px', maxWidth: '300px', marginRight: 'auto', marginLeft: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div className="sig-text-side">
-            <h4 className="sig-officer-name" style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 2px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
-            <h5 className="sig-officer-rank" style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 5px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_title || 'مدير مديرية أمن أوباري'}</h5>
-          </div>
-          {doc.show_stamp !== false && (
-            <div className="sig-stamp-side">
-              <div className="official-stamp-seal-circle" style={{ width: '74px', height: '74px', border: '1.5px dashed #1e3a8a', borderRadius: '50%', margin: '2px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <div className="stamp-top-arc">{doc.stamp_text_1 || 'وزارة الداخلية'}</div>
-                <div className="stamp-center-title">{doc.stamp_text_2 || 'مديرية أمن أوباري'}</div>
-                <div className="stamp-sub-title">{doc.stamp_text_3 || '* مكتب المدير *'}</div>
-              </div>
+      {/* Signature Block (Shown ONLY for free_letter / المراسلة الحرة) */}
+      {(doc.template_type_id === 'free_letter' || doc.template_type === 'free_letter' || doc.type === 'free_letter' || doc.id === 'free_letter') && (
+        <div className={`a4-signature-block pos-${doc.sig_position || 'left'}`} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 'auto', marginBottom: '12px', boxSizing: 'border-box' }}>
+          <div className={`sig-inner ${doc.stamp_layout === 'side' ? 'layout-side' : 'layout-stacked'}`} style={{ textAlign: 'center', minWidth: '240px', maxWidth: '300px', marginRight: 'auto', marginLeft: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div className="sig-text-side">
+              <h4 className="sig-officer-name" style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 2px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
+              <h5 className="sig-officer-rank" style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 5px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_title || 'مدير مديرية أمن أوباري'}</h5>
             </div>
-          )}
+            {doc.show_stamp !== false && (
+              <div className="sig-stamp-side">
+                <div className="official-stamp-seal-circle" style={{ width: '74px', height: '74px', border: '1.5px dashed #1e3a8a', borderRadius: '50%', margin: '2px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div className="stamp-top-arc">{doc.stamp_text_1 || 'وزارة الداخلية'}</div>
+                  <div className="stamp-center-title">{doc.stamp_text_2 || 'مديرية أمن أوباري'}</div>
+                  <div className="stamp-sub-title">{doc.stamp_text_3 || '* مكتب المدير *'}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CC Distribution List (Two Columns) */}
       {Array.isArray(doc.cc_list) && doc.cc_list.length > 0 && (

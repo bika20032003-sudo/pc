@@ -125,22 +125,6 @@ export default function PatrolsSection({ forceMembers = [], user = {} }) {
             `).join('')}
           </tbody>
         </table>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 40px; padding: 0 40px;">
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">ضابط خفر العمليات والتحكم</div>
-            <div style="margin-top: 40px; font-size: 13px;">رائد / سالم عثمان التارقي</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">رئيس قسم الدوريات والنجدة</div>
-            <div style="margin-top: 40px; font-size: 13px;">مقدم / حسن المهدي الشريف</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 14px;">يعتمد / مدير أمن أوباري</div>
-            <div style="margin-top: 40px; font-size: 13px; font-weight: bold; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `أمر_عمليات_يومي_${new Date().toISOString().slice(0, 10)}`);

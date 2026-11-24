@@ -300,22 +300,6 @@ export default function FuelSection({ user, forceMembers = [] }) {
           تنبيه: يصرف الوقود للآليات الأمنية لتأدية المهام الرسمية والدوريات المكلفة فقط ويحظر استخدامه في غير الأغراض المخصصة.
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 15px; font-size: 12px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">توقيع السائق المستلم</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">${tx.driver_name}</div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">أمين محطة الوقود</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">ملازم / بشير مصطفى</div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 35px;">يعتمد مدير مديرية الأمن</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 
@@ -401,18 +385,6 @@ export default function FuelSection({ user, forceMembers = [] }) {
           </tbody>
         </table>
 
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 24px; font-size: 11px;">
-          <tr>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">مشرف محطة وقود المديرية</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">ملازم / بشير مصطفى التارقي</div>
-            </td>
-            <td style="width: 50%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
 

@@ -161,28 +161,6 @@ export default function MaintenanceSection({ forceMembers = [], user = {} }) {
         <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.8; margin-bottom: 25px; background: #f0fdf4;">
           <strong>تقرير الفحص الفني:</strong> تمت المعاينة والتجربة الفنية للآلية بعد إتمام الصيانة، وتأكدت جاهزيتها التامة واستيفاء معايير السلامة للخدمة الميدانية بقطاع مديرية أمن أوباري.
         </div>
-
-        <!-- Signatures & Stamp -->
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 30px;">
-          <tr>
-            <td style="width: 32%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a;">الفني المسؤول عن الصيانة</div>
-              <div style="margin-top: 35px; font-size: 12.5px; font-weight: 800; border-top: 1px dashed #64748b; padding-top: 5px; width: 80%; margin: 0 auto;">${record.mechanic_name.split('-')[1]?.trim() || 'فني / صالح علي'}</div>
-            </td>
-            <td style="width: 36%; vertical-align: middle;">
-              <div style="width: 72px; height: 72px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7.5px; font-weight: 900; color: #1e3a8a; margin: 0 auto; line-height: 1.25; background: rgba(30,58,138,0.02);">
-                <span>دولة ليبيا</span>
-                <span>وزارة الداخلية</span>
-                <span style="font-size: 8px; color: #000000; font-weight: 900;">مديرية أمن أوباري</span>
-                <span style="color: #b91c1c; font-size: 7px; margin-top: 1px;">قسم الآليات</span>
-              </div>
-            </td>
-            <td style="width: 32%; vertical-align: top;">
-              <div style="font-weight: 800; font-size: 13px; color: #1e3a8a;">يعتمد / مدير أمن أوباري</div>
-              <div style="margin-top: 35px; font-size: 12.5px; font-weight: 800; border-top: 1px dashed #64748b; padding-top: 5px; width: 80%; margin: 0 auto; color: #1e3a8a;">لواء / موسى سعد البدين</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
     printDocumentInIframe(html, `أمر_صيانة_${record.vehicle_plate}`);

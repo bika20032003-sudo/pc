@@ -546,22 +546,6 @@ export default function AttendanceSection({ forceMembers = [], user = {} }) {
             `).join('')}
           </tbody>
         </table>
-
-        <!-- Signatures -->
-        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 35px; padding: 0 30px;">
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">ضابط خفر التمام والانضباط</div>
-            <div style="margin-top: 30px; font-size: 12px; font-weight: 700;">نقيب / علي محمد البشير</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">رئيس قسم الشؤون الإدارية</div>
-            <div style="margin-top: 30px; font-size: 12px; font-weight: 700;">مقدم / سالم عبدالكريم</div>
-          </div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px;">يعتمد / مدير مديرية أمن أوباري</div>
-            <div style="margin-top: 30px; font-size: 12px; font-weight: 900; color: #1e3a8a;">سيادة اللواء / موسى سعد البدين</div>
-          </div>
-        </div>
       </div>
     `;
     printDocumentInIframe(html, `كشف_التمام_اليومي_${selectedDate}`);

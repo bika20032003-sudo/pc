@@ -267,25 +267,6 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
           ` : ''}
         </table>
 
-        <table style="width: 100%; border-collapse: collapse; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 20px;">
-          <tr>
-            <td style="text-align: center; vertical-align: top; width: 33%;">
-              <div style="font-size: 10px; color: #64748b; font-weight: 700; margin-bottom: 3px;">رئيس قسم الخدمات والآليات</div>
-              <div style="font-size: 11px; font-weight: 800; color: #0f172a;">عميد / حامد علي عبدالرحمن</div>
-            </td>
-            <td style="text-align: center; vertical-align: middle; width: 33%;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 6.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 6px;">ختم رسمي</span>
-              </div>
-            </td>
-            <td style="text-align: center; vertical-align: top; width: 33%;">
-              <div style="font-size: 10px; color: #64748b; font-weight: 700; margin-bottom: 3px;">يعتمد مدير مديرية أمن أوباري</div>
-              <div style="font-size: 11px; font-weight: 800; color: #0f172a;">لواء / موسى سعد محمد</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
     printDocumentInIframe(cardHtml, 'بطاقة قيد الآلية - ' + v.plate_number);
@@ -368,28 +349,6 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
             أقر أنا المستلم الموقع أدناه بأنني استلمت الآلية المذكورة أعلاه بحالة فنية صالحة وجيدة للاستعمال الأمني، وأتعهد بالمحافظة التامة عليها وصيانتها الدورية واستخدامها في الأغراض الأمنية المخصصة لها فقط دون سواها، وإرجاعها لقسم الخدمات والمركبات عند انتهاء المهام أو نقل العمل.
           </p>
         </div>
-
-        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 16px; font-size: 11px;">
-          <tr>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">المستلم للعهدة</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">${v.custodian_name || '........................'}</div>
-              <div style="font-size: 10px; color: #64748b;">التوقيع والصفة</div>
-            </td>
-            <td style="width: 33%; vertical-align: middle;">
-              <div style="width: 50px; height: 50px; border-radius: 50%; border: 1.5px dashed #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 6.5px; font-weight: 800; color: #1e3a8a; margin: 0 auto; line-height: 1.2;">
-                <span>وزارة الداخلية</span>
-                <span>مديرية أمن أوباري</span>
-                <span style="color: #dc2626; font-size: 6px;">ختم رسمي</span>
-              </div>
-            </td>
-            <td style="width: 33%; vertical-align: top;">
-              <div style="font-weight: 800; color: #1e3a8a; margin-bottom: 30px;">يعتمد / مدير أمن أوباري</div>
-              <div style="font-weight: 800; border-top: 1px dashed #94a3b8; padding-top: 4px;">لواء / موسى سعد محمد</div>
-              <div style="font-size: 10px; color: #64748b;">مدير الأمن العام</div>
-            </td>
-          </tr>
-        </table>
       </div>
     `;
     printDocumentInIframe(docHtml, 'محضر تسليم عهدة آلية - ' + v.plate_number);
@@ -1467,33 +1426,6 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
                   وإرجاعها لقسم الخدمات والمركبات عند انتهاء المهام أو نقل العمل، وفقاً للقوانين واللوائح المعمول بها بوزارة الداخلية.
                 </p>
               </div>
-
-              {/* Signatures */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center', marginTop: '20px' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1e3a8a' }}>المستلم للعهدة</div>
-                  <div style={{ marginTop: '30px', borderBottom: '1px dashed #94a3b8', paddingBottom: '4px', fontWeight: 'bold' }}>
-                    {selectedVehicleForHandover.custodian_name || '................................'}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>التوقيع والختم</div>
-                </div>
-
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1e3a8a' }}>رئيس قسم الخدمات والمركبات</div>
-                  <div style={{ marginTop: '30px', borderBottom: '1px dashed #94a3b8', paddingBottom: '4px', fontWeight: 'bold' }}>
-                    عميد / حامد علي عبدالرحمن
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>التوقيع والختم الرسمي</div>
-                </div>
-
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1e3a8a' }}>يعتمد / مدير أمن أوباري</div>
-                  <div style={{ marginTop: '30px', borderBottom: '1px dashed #94a3b8', paddingBottom: '4px', fontWeight: 'bold' }}>
-                    سيادة اللواء مدير الأمن
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>ختم الإدارة العامة</div>
-                </div>
-              </div>
             </div>
 
             {/* Actions (Fixed at bottom) */}
@@ -1954,21 +1886,6 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
                 </tbody>
               </table>
 
-              {/* Signature Footer */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', padding: '0 20px', textAlign: 'center', fontWeight: 'bold' }}>
-                <div>
-                  <div>مسؤول سجل الآليات</div>
-                  <div style={{ marginTop: '25px' }}>.............................</div>
-                </div>
-                <div>
-                  <div>رئيس قسم الخدمات والمركبات</div>
-                  <div style={{ marginTop: '25px' }}>عميد / حامد علي عبدالرحمن</div>
-                </div>
-                <div>
-                  <div>يعتمد / مدير أمن أوباري</div>
-                  <div style={{ marginTop: '25px' }}>.............................</div>
-                </div>
-              </div>
             </div>
 
             {/* Footer (Fixed at bottom) */}
