@@ -17,7 +17,8 @@ import {
   Trash2,
   ChevronRight,
   ChevronLeft,
-  Scale
+  Scale,
+  Filter
 } from 'lucide-react';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
@@ -121,10 +122,15 @@ export default function ForceSection({
   const [forceSearchTerm, setForceSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('الكل'); // 'الكل', 'شرطي', 'مدني'
   const [statusFilter, setStatusFilter] = useState('الكل'); // 'الكل', 'على رأس العمل', 'إجازة', 'موقوف'
+  const [rankFilter, setRankFilter] = useState('الكل'); // 'الكل', 'لواء', 'عميد', 'مدني', إلخ
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 50;
   const [showRosterModal, setShowRosterModal] = useState(false);
   const [rosterScope, setRosterScope] = useState('all'); // 'all' or 'filtered'
+  const [rosterCategory, setRosterCategory] = useState('all'); // 'all', 'officers', 'ncos', 'civilians'
+  const [rosterRankFilter, setRosterRankFilter] = useState('all'); // 'all', 'لواء', 'عميد', ...
+  const [rosterStatusFilter, setRosterStatusFilter] = useState('all'); // 'all', 'على رأس العمل', 'إجازة', 'موقوف'
+  const [rosterDepartmentFilter, setRosterDepartmentFilter] = useState('all');
   const [rosterModalSearch, setRosterModalSearch] = useState('');
 
   // Watch for external edit requests (e.g., from preview modal)
@@ -307,6 +313,16 @@ export default function ForceSection({
       const matchesType = typeFilter === 'الكل' || m.type === typeFilter;
       if (!matchesType) return false;
 
+      if (rankFilter && rankFilter !== 'الكل') {
+        if (rankFilter === 'مدني') {
+          const isCiv = m.type === 'مدني' || (m.rank || '').includes('مدني') || (m.job_title || '').includes('مدني');
+          if (!isCiv) return false;
+        } else {
+          const rankStr = m.rank || m.job_title || '';
+          if (!rankStr.includes(rankFilter)) return false;
+        }
+      }
+
       if (statusFilter === 'معاقبين') {
         const isPenalized =
           penalizedMembersMap.has(String(m.national_id || '').trim()) ||
@@ -358,7 +374,16 @@ export default function ForceSection({
       const nameB = b.name ? String(b.name).trim() : '';
       return nameA.localeCompare(nameB, 'ar-LY', { sensitivity: 'base' });
     });
-  }, [forceMembers, forceSearchTerm, typeFilter, statusFilter, penalizedMembersMap]);
+  }, [forceMembers, forceSearchTerm, typeFilter, statusFilter, rankFilter, penalizedMembersMap]);
+
+  // Unique Departments List
+  const uniqueDepartments = useMemo(() => {
+    const set = new Set();
+    forceMembers.forEach(m => {
+      if (m.department && m.department.trim()) set.add(m.department.trim());
+    });
+    return Array.from(set).sort();
+  }, [forceMembers]);
 
   // Live Status Stats across all members
   const statusStats = useMemo(() => {
@@ -406,6 +431,81 @@ export default function ForceSection({
     });
   }, [forceMembers]);
 
+  // Dynamic Roster Selection List based on Category, Specific Rank, Status, and Scope
+  const rosterSelectedList = useMemo(() => {
+    let list = rosterScope === 'filtered' ? [...filteredMembers] : [...sortedAllMembers];
+
+    // Primary category filter
+    if (rosterCategory === 'officers') {
+      list = list.filter(m => {
+        const s = getMilitaryRankScore(m.rank || m.job_title, m.type);
+        return s >= 1 && s <= 8;
+      });
+    } else if (rosterCategory === 'ncos') {
+      list = list.filter(m => {
+        const s = getMilitaryRankScore(m.rank || m.job_title, m.type);
+        const isCiv = (m.type && String(m.type).includes('مدني')) || s === 1000;
+        return !isCiv && (s > 8 || s < 1);
+      });
+    } else if (rosterCategory === 'civilians') {
+      list = list.filter(m => {
+        const s = getMilitaryRankScore(m.rank || m.job_title, m.type);
+        return (m.type && String(m.type).includes('مدني')) || s === 1000;
+      });
+    }
+
+    // Specific rank filter (e.g. لواء فقط، عميد فقط، إلخ)
+    if (rosterRankFilter && rosterRankFilter !== 'all') {
+      if (rosterRankFilter === 'مدني') {
+        list = list.filter(m => {
+          const s = getMilitaryRankScore(m.rank || m.job_title, m.type);
+          return (m.type && String(m.type).includes('مدني')) || s === 1000;
+        });
+      } else {
+        list = list.filter(m => (m.rank || m.job_title || '').includes(rosterRankFilter));
+      }
+    }
+
+    // Status filter
+    if (rosterStatusFilter && rosterStatusFilter !== 'all') {
+      list = list.filter(m => (m.job_status || m.status || 'على رأس العمل').includes(rosterStatusFilter));
+    }
+
+    // Department filter
+    if (rosterDepartmentFilter && rosterDepartmentFilter !== 'all') {
+      list = list.filter(m => (m.department || '').trim() === rosterDepartmentFilter.trim());
+    }
+
+    return list;
+  }, [rosterScope, filteredMembers, sortedAllMembers, rosterCategory, rosterRankFilter, rosterStatusFilter, rosterDepartmentFilter]);
+
+  // Dynamic Official Roster Title
+  const getRosterTitle = () => {
+    if (rosterRankFilter && rosterRankFilter !== 'all') {
+      if (rosterRankFilter === 'مدني') return 'كشف الموظفين المدنيين المعتمد';
+      return `كشف منتسبي رتبة (${rosterRankFilter}) المعتمد`;
+    }
+    if (rosterCategory === 'officers') {
+      return 'كشف ضباط مديرية أمن أوباري المعتمد';
+    }
+    if (rosterCategory === 'ncos') {
+      return 'كشف ضباط صف وأفراد مديرية أمن أوباري المعتمد';
+    }
+    if (rosterCategory === 'civilians') {
+      return 'كشف الموظفين المدنيين بمديرية أمن أوباري المعتمد';
+    }
+    if (rosterStatusFilter && rosterStatusFilter !== 'all') {
+      return `كشف القوة العمومية (${rosterStatusFilter}) المعتمد`;
+    }
+    if (rosterDepartmentFilter && rosterDepartmentFilter !== 'all') {
+      return `كشف قوة (${rosterDepartmentFilter}) المعتمد`;
+    }
+    if (rosterScope === 'filtered') {
+      return 'كشف القوة العمومية (نتائج البحث والفرز)';
+    }
+    return 'كشف القوة العمومية المعتمد';
+  };
+
   const getArabicDayName = (date = new Date()) => {
     const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
     return days[date.getDay()];
@@ -452,16 +552,17 @@ export default function ForceSection({
   };
 
   // Handle Export to Excel/CSV with Arabic UTF-8 BOM
+  // ترتيب الأعمدة الرسمي: التسلسل | الرقم | الرتبة | الاسم | الرقم الوطني | جهة العمل
   const handleExportExcel = (targetList = null) => {
     try {
-      const listToExport = Array.isArray(targetList) ? targetList : filteredMembers;
-      const headers = ['ت', 'الاسم', 'الرقم الوطني', 'الرتبة', 'الرقم الوظيفي', 'جهة العمل'];
+      const listToExport = Array.isArray(targetList) ? targetList : (rosterSelectedList || filteredMembers);
+      const headers = ['ت', 'الرقم', 'الرتبة', 'الاسم', 'الرقم الوطني', 'جهة العمل'];
       const rows = listToExport.map((m, idx) => [
         `"${idx + 1}"`,
+        `"${m.job_number || m.financial_number || m.military_number || ''}"`,
+        `"${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}"`,
         `"${m.name || ''}"`,
         `"${m.national_id || ''}"`,
-        `"${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}"`,
-        `"${m.job_number || m.financial_number || ''}"`,
         `"${m.department || 'مديرية أمن أوباري'}"`
       ]);
       const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
@@ -469,7 +570,8 @@ export default function ForceSection({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `كشف_القوة_العمومية_مديرية_أمن_أوباري_${new Date().toISOString().slice(0, 10)}.csv`);
+      const safeTitle = getRosterTitle().replace(/[\s\(\)]+/g, '_');
+      link.setAttribute('download', `${safeTitle}_مديرية_أمن_أوباري_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -480,8 +582,11 @@ export default function ForceSection({
     }
   };
 
-  const handlePrintForceRoster = (scope = rosterScope) => {
-    const targetList = scope === 'filtered' ? filteredMembers : sortedAllMembers;
+  // طباعة الكشف الرسمي مع الترتيب المعتمد للأعمدة:
+  // التسلسل | الرقم | الرتبة | الاسم | الرقم الوطني | جهة العمل
+  const handlePrintForceRoster = (customList = null, customTitle = null) => {
+    const targetList = customList || rosterSelectedList;
+    const title = customTitle || getRosterTitle();
     const dayName = getArabicDayName();
     const fullArabicDate = getArabicDateString();
     const stats = getRosterStats(targetList);
@@ -542,7 +647,7 @@ export default function ForceSection({
               <td style="text-align: center; vertical-align: middle; width: 36%;">
                 <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 58px; height: 58px; object-fit: contain; margin: 0 auto 2px; display: block;" />
                 <div style="display: inline-block; background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%); color: #ffffff; padding: 3px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 900; letter-spacing: 0.5px; border: 1px solid #d4af37;">
-                  كشف القوة العمومية المعتمد
+                  ${title}
                 </div>
                 <div style="font-size: 10px; font-weight: 800; color: #b45309; margin-top: 2px;">
                   قاعدة البيانات الرسمية لقوة منتسبي مديرية أمن أوباري
@@ -591,15 +696,15 @@ export default function ForceSection({
           </table>
         </div>
 
-        <!-- جدول القوة العمومية المعتمد لجميع العناصر -->
+        <!-- جدول القوة العمومية المعتمد: التسلسل | الرقم | الرتبة | الاسم | الرقم الوطني | جهة العمل -->
         <table class="roster-data-table" style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: right; border: 1.5px solid #0a192f; margin-bottom: 12px; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: auto !important; break-inside: auto !important;">
           <thead>
             <tr style="background: #0a192f; color: #ffffff;">
               <th style="padding: 7px 4px; border: 1px solid #475569; width: 35px; text-align: center; font-weight: 800;">ت</th>
+              <th style="padding: 7px 6px; border: 1px solid #475569; width: 105px; text-align: center; font-weight: 800;">الرقم</th>
+              <th style="padding: 7px 6px; border: 1px solid #475569; width: 115px; text-align: center; font-weight: 800;">الرتبة</th>
               <th style="padding: 7px 10px; border: 1px solid #475569; font-weight: 800;">الاسم</th>
-              <th style="padding: 7px 8px; border: 1px solid #475569; width: 140px; text-align: center; font-weight: 800;">الرقم الوطني</th>
-              <th style="padding: 7px 8px; border: 1px solid #475569; width: 125px; text-align: center; font-weight: 800;">الرتبة</th>
-              <th style="padding: 7px 8px; border: 1px solid #475569; width: 110px; text-align: center; font-weight: 800;">الرقم الوظيفي</th>
+              <th style="padding: 7px 6px; border: 1px solid #475569; width: 140px; text-align: center; font-weight: 800;">الرقم الوطني</th>
               <th style="padding: 7px 10px; border: 1px solid #475569; width: 200px; font-weight: 800;">جهة العمل</th>
             </tr>
           </thead>
@@ -607,10 +712,10 @@ export default function ForceSection({
             ${targetList.map((m, idx) => `
               <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; page-break-inside: avoid; break-inside: avoid;">
                 <td style="padding: 5px 3px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0284c7; font-weight: 800; font-size: 11px;">${m.job_number || m.financial_number || m.military_number || '---'}</td>
+                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #1e3a8a;">${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
                 <td style="padding: 5px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #0a192f; white-space: nowrap;">${m.name}</td>
                 <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #1e293b; font-weight: 700; font-size: 11px;">${m.national_id || '---'}</td>
-                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800; color: #1e3a8a;">${m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
-                <td style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace; color: #0284c7; font-weight: 800; font-size: 11px;">${m.job_number || m.financial_number || '---'}</td>
                 <td style="padding: 5px 10px; border: 1px solid #cbd5e1; color: #334155; font-weight: 600;">${m.department || 'مديرية أمن أوباري'}</td>
               </tr>
             `).join('')}
@@ -625,8 +730,7 @@ export default function ForceSection({
       </div>
     `;
 
-    const scopeTitle = scope === 'filtered' ? 'المفلترة' : 'العمومية_الكاملة';
-    printDocumentInIframe(html, `كشف_القوة_${scopeTitle}_مديرية_أمن_أوباري`);
+    printDocumentInIframe(html, `${title.replace(/[\s\(\)]+/g, '_')}_مديرية_أمن_أوباري`);
   };
 
   return (
@@ -1523,6 +1627,41 @@ export default function ForceSection({
                 <option value="معاقبين">⚖️ مطلوبين للتحقيق / معاقبين تأديبياً ({statusStats.penalizedCount})</option>
               </select>
             </div>
+
+            {/* Rank Filter Dropdown (تصنيف حسب الرتبة مباشرة) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <select
+                value={rankFilter}
+                onChange={(e) => { setRankFilter(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: rankFilter === 'الكل' ? '1.5px solid #cbd5e1' : '1.5px solid #d4af37',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  background: rankFilter === 'الكل' ? '#f8fafc' : '#fefce8',
+                  color: rankFilter === 'الكل' ? '#334155' : '#854d0e',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                title="فرز وتصنيف القوة حسب الرتبة"
+              >
+                <option value="الكل">الرتبة: الكل</option>
+                <option value="لواء">🎖️ لواء</option>
+                <option value="عميد">🎖️ عميد</option>
+                <option value="عقيد">🎖️ عقيد</option>
+                <option value="مقدم">🎖️ مقدم</option>
+                <option value="رائد">🎖️ رائد</option>
+                <option value="نقيب">🎖️ نقيب</option>
+                <option value="ملازم أول">🎖️ ملازم أول</option>
+                <option value="ملازم">🎖️ ملازم</option>
+                <option value="رئيس عرفاء سرية">👮 رئيس عرفاء سرية</option>
+                <option value="رئيس عرفاء وحدة">👮 رئيس عرفاء وحدة</option>
+                <option value="عريف">👮 عريف</option>
+                <option value="شرطي">👮 شرطي</option>
+                <option value="مدني">👔 موظف مدني</option>
+              </select>
+            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -1548,7 +1687,7 @@ export default function ForceSection({
           </div>
         </div>
 
-        {/* Personnel Table with Edit & Delete actions */}
+        {/* Personnel Table with Edit & Delete actions - ترتيب الأعمدة المعتمد: الرقم | الرتبة | الاسم | الرقم الوطني | جهة العمل | الوضع الوظيفي | إجراءات */}
         <div className="table-scroll-wrapper" style={{
           width: '100%',
           overflowX: 'auto',
@@ -1560,13 +1699,13 @@ export default function ForceSection({
           <table className="official-data-table force-personnel-table" style={{ width: '100%' }}>
             <thead>
               <tr>
-                <th style={{ width: '28%' }}>الاسم</th>
+                <th style={{ width: '10%', textAlign: 'center' }}>الرقم</th>
+                <th style={{ width: '11%', textAlign: 'center' }}>الرتبة</th>
+                <th style={{ width: '27%' }}>الاسم</th>
                 <th style={{ width: '13%', textAlign: 'center' }}>الرقم الوطني</th>
-                <th style={{ width: '10%', textAlign: 'center' }}>الرتبة</th>
-                <th style={{ width: '11%', textAlign: 'center' }}>الرقم الوظيفي</th>
                 <th style={{ width: '14%' }}>جهة العمل</th>
                 <th style={{ width: '11%', textAlign: 'center' }}>الوضع الوظيفي</th>
-                <th style={{ width: '13%', textAlign: 'center' }}>إجراءات</th>
+                <th style={{ width: '14%', textAlign: 'center' }}>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -1581,6 +1720,12 @@ export default function ForceSection({
                   }}
                   title="اضغط على الصف لعرض الملف الشامل وبطاقة المنتسب"
                 >
+                  <td style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace', textAlign: 'center' }}>
+                    {m.job_number || m.financial_number || m.military_number || '-'}
+                  </td>
+                  <td style={{ fontWeight: 800, color: '#1e3a8a', textAlign: 'center' }}>
+                    {m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}
+                  </td>
                   <td style={{ fontWeight: 800, color: '#0f172a' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {(() => {
@@ -1678,12 +1823,6 @@ export default function ForceSection({
                   </td>
                   <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b', textAlign: 'center' }}>
                     {m.national_id || '-'}
-                  </td>
-                  <td style={{ fontWeight: 800, color: '#1e3a8a', textAlign: 'center' }}>
-                    {m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}
-                  </td>
-                  <td style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace', textAlign: 'center' }}>
-                    {m.job_number || m.financial_number || '-'}
                   </td>
                   <td style={{ fontWeight: 600, color: '#334155' }}>
                     {m.department || 'مديرية أمن أوباري'}
@@ -1959,112 +2098,284 @@ export default function ForceSection({
               </button>
             </div>
 
-            {/* Scope Selector & Toolbar Actions */}
+            {/* Classification & Scope Panel - لوحة تصنيف وتحديد نوع الكشف المطلوب */}
             <div style={{
               background: '#f8fafc',
-              padding: '12px 22px',
+              padding: '14px 22px',
               borderBottom: '1px solid #e2e8f0',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
               gap: '12px'
             }}>
-              {/* Scope Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>نطاق الكشف المطلوب:</span>
-                <button
-                  type="button"
-                  onClick={() => setRosterScope('all')}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: '8px',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    border: rosterScope === 'all' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
-                    background: rosterScope === 'all' ? '#1e3a8a' : '#ffffff',
-                    color: rosterScope === 'all' ? '#ffffff' : '#334155',
-                    transition: 'all 0.2s',
-                    boxShadow: rosterScope === 'all' ? '0 2px 6px rgba(30, 58, 138, 0.3)' : 'none'
-                  }}
-                >
-                  كامل القوة العمومية ({sortedAllMembers.length.toLocaleString('ar-LY')} منتسباً)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRosterScope('filtered')}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: '8px',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    border: rosterScope === 'filtered' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
-                    background: rosterScope === 'filtered' ? '#1e3a8a' : '#ffffff',
-                    color: rosterScope === 'filtered' ? '#ffffff' : '#334155',
-                    transition: 'all 0.2s',
-                    boxShadow: rosterScope === 'filtered' ? '0 2px 6px rgba(30, 58, 138, 0.3)' : 'none'
-                  }}
-                >
-                  النتائج المفلترة بالبحث ({filteredMembers.length.toLocaleString('ar-LY')} منتسباً)
-                </button>
+              {/* Row 1: Primary Category Pills + Specific Rank Quick Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#0a192f', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Filter size={15} color="#1e3a8a" />
+                    <span>تصنيف الكشف:</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => { setRosterCategory('all'); setRosterRankFilter('all'); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: rosterCategory === 'all' && rosterRankFilter === 'all' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: rosterCategory === 'all' && rosterRankFilter === 'all' ? '#1e3a8a' : '#ffffff',
+                      color: rosterCategory === 'all' && rosterRankFilter === 'all' ? '#ffffff' : '#334155',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    🌟 كامل القوة ({sortedAllMembers.length.toLocaleString('ar-LY')})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setRosterCategory('officers'); setRosterRankFilter('all'); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: rosterCategory === 'officers' && rosterRankFilter === 'all' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: rosterCategory === 'officers' && rosterRankFilter === 'all' ? '#1e3a8a' : '#ffffff',
+                      color: rosterCategory === 'officers' && rosterRankFilter === 'all' ? '#ffffff' : '#334155',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    ⭐ الضباط ({getRosterStats(sortedAllMembers).officers.toLocaleString('ar-LY')})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setRosterCategory('ncos'); setRosterRankFilter('all'); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: rosterCategory === 'ncos' && rosterRankFilter === 'all' ? '2px solid #1e3a8a' : '1px solid #cbd5e1',
+                      background: rosterCategory === 'ncos' && rosterRankFilter === 'all' ? '#1e3a8a' : '#ffffff',
+                      color: rosterCategory === 'ncos' && rosterRankFilter === 'all' ? '#ffffff' : '#334155',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    👮 ضباط الصف والأفراد ({getRosterStats(sortedAllMembers).ncos.toLocaleString('ar-LY')})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setRosterCategory('civilians'); setRosterRankFilter('all'); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: rosterCategory === 'civilians' && rosterRankFilter === 'all' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                      background: rosterCategory === 'civilians' && rosterRankFilter === 'all' ? '#7c3aed' : '#ffffff',
+                      color: rosterCategory === 'civilians' && rosterRankFilter === 'all' ? '#ffffff' : '#334155',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    👔 الموظفون المدنيون ({getRosterStats(sortedAllMembers).civilians.toLocaleString('ar-LY')})
+                  </button>
+                </div>
+
+                {/* Specific Rank Quick Selector (مثال: لواء فقط أو مدنيين فقط) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a', whiteSpace: 'nowrap' }}>
+                    تحديد رتبة معينة:
+                  </label>
+                  <select
+                    value={rosterRankFilter}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRosterRankFilter(val);
+                      if (val !== 'all') {
+                        if (val === 'مدني') setRosterCategory('civilians');
+                        else if (['لواء', 'عميد', 'عقيد', 'مقدم', 'رائد', 'نقيب', 'ملازم أول', 'ملازم'].includes(val)) setRosterCategory('officers');
+                        else setRosterCategory('ncos');
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: rosterRankFilter !== 'all' ? '2px solid #d4af37' : '1.5px solid #cbd5e1',
+                      background: rosterRankFilter !== 'all' ? '#fefce8' : '#ffffff',
+                      color: rosterRankFilter !== 'all' ? '#854d0e' : '#334155',
+                      fontSize: '12.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all">-- كافة الرتب --</option>
+                    <option value="لواء">🎖️ كشف رتبة لواء فقط</option>
+                    <option value="عميد">🎖️ كشف رتبة عميد فقط</option>
+                    <option value="عقيد">🎖️ كشف رتبة عقيد فقط</option>
+                    <option value="مقدم">🎖️ كشف رتبة مقدم فقط</option>
+                    <option value="رائد">🎖️ كشف رتبة رائد فقط</option>
+                    <option value="نقيب">🎖️ كشف رتبة نقيب فقط</option>
+                    <option value="ملازم أول">🎖️ كشف رتبة ملازم أول فقط</option>
+                    <option value="ملازم">🎖️ كشف رتبة ملازم فقط</option>
+                    <option value="رئيس عرفاء سرية">👮 كشف رتبة رئيس عرفاء سرية فقط</option>
+                    <option value="رئيس عرفاء وحدة">👮 كشف رتبة رئيس عرفاء وحدة فقط</option>
+                    <option value="عريف">👮 كشف رتبة عريف فقط</option>
+                    <option value="شرطي">👮 كشف رتبة شرطي فقط</option>
+                    <option value="مدني">👔 كشف الموظفين المدنيين فقط</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
-                    handleExportExcel(target);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: '#ffffff',
-                    color: '#059669',
-                    border: '1.5px solid #059669',
-                    padding: '7px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 800,
-                    fontSize: '13px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <FileSpreadsheet size={16} />
-                  <span>تصدير Excel (CSV)</span>
-                </button>
+              {/* Row 2: Secondary Status + Department + Scope + Print/Export Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* Status Filter */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>الوضع الوظيفي:</span>
+                    <select
+                      value={rosterStatusFilter}
+                      onChange={(e) => setRosterStatusFilter(e.target.value)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: rosterStatusFilter !== 'all' ? '#eff6ff' : '#ffffff'
+                      }}
+                    >
+                      <option value="all">الكل</option>
+                      <option value="على رأس العمل">🟢 على رأس العمل</option>
+                      <option value="إجازة">🟡 إجازة رسمية</option>
+                      <option value="موقوف">🔴 موقوف مؤقتاً</option>
+                    </select>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => handlePrintForceRoster(rosterScope)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-                    color: '#ffffff',
-                    border: '1px solid #d4af37',
-                    padding: '7px 20px',
-                    borderRadius: '8px',
+                  {/* Department Filter */}
+                  {uniqueDepartments.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>جهة العمل:</span>
+                      <select
+                        value={rosterDepartmentFilter}
+                        onChange={(e) => setRosterDepartmentFilter(e.target.value)}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          maxWidth: '180px',
+                          background: rosterDepartmentFilter !== 'all' ? '#eff6ff' : '#ffffff'
+                        }}
+                      >
+                        <option value="all">كافة الجهات</option>
+                        {uniqueDepartments.map(dep => (
+                          <option key={dep} value={dep}>{dep}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Scope Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>المصدر:</span>
+                    <select
+                      value={rosterScope}
+                      onChange={(e) => setRosterScope(e.target.value)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="all">قاعدة البيانات الكاملة ({sortedAllMembers.length.toLocaleString('ar-LY')})</option>
+                      <option value="filtered">نتائج البحث بالجدول ({filteredMembers.length.toLocaleString('ar-LY')})</option>
+                    </select>
+                  </div>
+
+                  {/* Count Badge */}
+                  <div style={{
+                    background: '#ecfdf5',
+                    border: '1px solid #a7f3d0',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
                     fontWeight: 800,
-                    fontSize: '13.5px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)'
-                  }}
-                >
-                  <Printer size={18} />
-                  <span>طباعة الكشف الرسمي الكامل (A4 أفقي)</span>
-                </button>
+                    color: '#065f46',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span>عدد القيود بالكشف:</span>
+                    <strong style={{ fontSize: '13px', color: '#047857' }}>{rosterSelectedList.length.toLocaleString('ar-LY')}</strong>
+                    <span>منتسباً</span>
+                  </div>
+                </div>
+
+                {/* Print & Export Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleExportExcel(rosterSelectedList)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#ffffff',
+                      color: '#059669',
+                      border: '1.5px solid #059669',
+                      padding: '7px 15px',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      fontSize: '12.5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <FileSpreadsheet size={15} />
+                    <span>تصدير Excel (CSV)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePrintForceRoster()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                      color: '#ffffff',
+                      border: '1px solid #d4af37',
+                      padding: '7px 18px',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      boxShadow: '0 3px 10px rgba(30, 58, 138, 0.25)'
+                    }}
+                  >
+                    <Printer size={16} />
+                    <span>طباعة {getRosterTitle()} (A4 أفقي)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Summary Statistics Bar */}
             {(() => {
-              const currentList = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
-              const currentStats = getRosterStats(currentList);
+              const currentStats = getRosterStats(rosterSelectedList);
               return (
                 <div style={{
                   display: 'grid',
@@ -2143,25 +2454,24 @@ export default function ForceSection({
                 )}
               </div>
 
-              {/* The Live Manifest Table */}
+              {/* The Live Manifest Table - ترتيب الأعمدة المعتمد: التسلسل | الرقم | الرتبة | الاسم | الرقم الوطني | جهة العمل */}
               <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
                 <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'right' }}>
                     <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                       <tr style={{ background: '#0a192f', color: '#ffffff' }}>
-                        <th style={{ padding: '9px 6px', borderBottom: '2px solid #d4af37', width: '45px', textAlign: 'center' }}>ت</th>
+                        <th style={{ padding: '9px 6px', borderBottom: '2px solid #d4af37', width: '45px', textAlign: 'center' }}>التسلسل</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '110px' }}>الرقم</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '120px' }}>الرتبة</th>
                         <th style={{ padding: '9px 12px', borderBottom: '2px solid #d4af37' }}>الاسم</th>
-                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '140px' }}>الرقم الوطني</th>
-                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '130px' }}>الرتبة</th>
-                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '120px' }}>الرقم الوظيفي</th>
+                        <th style={{ padding: '9px 10px', borderBottom: '2px solid #d4af37', textAlign: 'center', width: '135px' }}>الرقم الوطني</th>
                         <th style={{ padding: '9px 12px', borderBottom: '2px solid #d4af37' }}>جهة العمل</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(() => {
-                        const baseList = rosterScope === 'filtered' ? filteredMembers : sortedAllMembers;
                         const displayList = rosterModalSearch.trim()
-                          ? baseList.filter(m => {
+                          ? rosterSelectedList.filter(m => {
                               const term = rosterModalSearch.toLowerCase();
                               return (
                                 (m.name && m.name.toLowerCase().includes(term)) ||
@@ -2173,7 +2483,7 @@ export default function ForceSection({
                                 (m.department && m.department.toLowerCase().includes(term))
                               );
                             })
-                          : baseList;
+                          : rosterSelectedList;
 
                         return displayList.map((m, idx) => (
                           <tr
@@ -2184,10 +2494,10 @@ export default function ForceSection({
                             }}
                           >
                             <td style={{ padding: '7px 6px', textAlign: 'center', fontWeight: 800, color: '#64748b' }}>{idx + 1}</td>
+                            <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#0284c7', fontWeight: 800 }}>{m.job_number || m.financial_number || m.military_number || '---'}</td>
+                            <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>{m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
                             <td style={{ padding: '7px 12px', fontWeight: 800, color: '#0a192f' }}>{m.name}</td>
                             <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#1e293b', fontWeight: 700 }}>{m.national_id || '---'}</td>
-                            <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 800, color: '#1e3a8a' }}>{m.rank || m.job_title || (m.type === 'مدني' ? 'مدني' : 'شرطي')}</td>
-                            <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#0284c7', fontWeight: 800 }}>{m.job_number || m.financial_number || '---'}</td>
                             <td style={{ padding: '7px 12px', color: '#334155', fontWeight: 600 }}>{m.department || 'مديرية أمن أوباري'}</td>
                           </tr>
                         ));
@@ -2208,7 +2518,7 @@ export default function ForceSection({
               justifyContent: 'space-between'
             }}>
               <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
-                كشف رسمي معتمد • اليوم: {getArabicDayName()} • التاريخ: {getArabicDateString()} • مديرية أمن أوباري
+                {getRosterTitle()} • اليوم: {getArabicDayName()} • التاريخ: {getArabicDateString()} • مديرية أمن أوباري
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
@@ -2229,7 +2539,7 @@ export default function ForceSection({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handlePrintForceRoster(rosterScope)}
+                  onClick={() => handlePrintForceRoster()}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -2246,7 +2556,7 @@ export default function ForceSection({
                   }}
                 >
                   <Printer size={16} />
-                  <span>طباعة الكشف الرسمي الكامل (A4 أفقي)</span>
+                  <span>طباعة {getRosterTitle()} (A4 أفقي)</span>
                 </button>
               </div>
             </div>
