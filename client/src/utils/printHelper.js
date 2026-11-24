@@ -122,8 +122,8 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             display: table-footer-group !important;
           }
           @page {
-            size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster')) ? 'A4 landscape' : 'A4 portrait'};
-            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster')) ? '6mm 8mm' : '10mm 12mm'};
+            size: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? 'A4 landscape' : 'A4 portrait'};
+            margin: ${contentHtml && (contentHtml.includes('size: A4 landscape') || contentHtml.includes('printable-force-roster') || contentHtml.includes('orientation-landscape') || contentHtml.includes('indictment-sheet-page')) ? '6mm 8mm' : '10mm 12mm'};
           }
           html, body {
             margin: 0 !important;
@@ -216,13 +216,13 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .official-exit-permit-sheet td {
             font-family: 'Cairo', Arial, sans-serif !important;
           }
-          /* Indictment Sheet (Strict 1-Page A4 Portrait) */
+          /* Indictment Sheet (Strict 1-Page A4 Landscape) */
           .indictment-sheet-page {
             display: block !important;
             width: 100% !important;
-            max-width: 186mm !important;
+            max-width: 280mm !important;
             margin: 0 auto !important;
-            padding: 0 !important;
+            padding: 6mm 10mm !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
