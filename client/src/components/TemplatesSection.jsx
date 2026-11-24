@@ -131,8 +131,8 @@ const normalizeArabicText = (text) => {
 
 export default function TemplatesSection({ user, forceMembers = [] }) {
   // 1. Form Inputs State (Matching Photo 1, 2, 3, 4)
-  const [employeeSearch, setEmployeeSearch] = useState('عبدالرحمن المهدي إبراهيم يونس');
-  const [selectedEmployee, setSelectedEmployee] = useState(SAMPLE_EMPLOYEES[0]);
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedTemplateType, setSelectedTemplateType] = useState('free_letter'); // 'مراسلة حرة (مستند فارغ ومحرر نصوص)'
   const [referenceNumber, setReferenceNumber] = useState('14'); // Value shown in image 1 or 15/2026 in image 2
 
@@ -274,9 +274,10 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
   // Generate body text according to template type and employee
   const generateTemplateContent = (typeId, emp, ref) => {
-    const empName = emp?.name || employeeSearch || 'السيد الموظف';
-    const jobNo = emp?.job_number || '8163450';
-    const nationalId = emp?.national_id || '119940251120';
+    const rawName = emp?.name || (employeeSearch ? employeeSearch.trim() : '');
+    const empName = rawName || (typeId === 'free_letter' ? '' : 'السيد الموظف');
+    const jobNo = emp?.job_number || emp?.financial_number || (rawName ? '8163450' : '---');
+    const nationalId = emp?.national_id || (rawName ? '119940251120' : '---');
     const dept = emp?.department || 'مديرية أمن أوباري';
     const today = new Date().toLocaleDateString('ar-LY');
 
@@ -356,7 +357,9 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
         return {
           subject: 'مراسلة حرة بخصوص متابعة الإجراءات الإدارية والأمنية',
           recipient: 'إلى السيد / مدير إدارة الشؤون الإدارية والمالية',
-          body: `نحيل إليكم هذا الكتاب بخصوص الموظف / ${empName} (الرقم المالي: ${jobNo}) للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة المنظمة لمديرية أمن أوباري.`
+          body: empName
+            ? `نحيل إليكم هذا الكتاب بخصوص الموظف / ${empName} (الرقم المالي: ${jobNo}) للتفضل بالعلم واتخاذ ما يلزم من إجراءات وفق ما تقتضيه المصلحة الأمنية العامة المنظمة لمديرية أمن أوباري.`
+            : 'نحيل إليكم هذا الكتاب للتفضل بالعلم واتخاذ ما يلزم من إجراءات وتدابير وفق ما تقتضيه المصلحة الأمنية العامة المنظمة لمديرية أمن أوباري، وموافاتنا بما تم اتخاذه بالخصوص.'
         };
     }
   };
@@ -403,10 +406,10 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       reference: refFormatted,
       template_type_id: typeId,
       template_name: tplInfo.name,
-      employee_name: empName,
-      employee_role: empObj?.role || 'موظف',
-      employee_job_no: empObj?.job_number || '8163450',
-      employee_national_id: empObj?.national_id || '119940251120',
+      employee_name: empName || '',
+      employee_role: empObj?.role || (empName ? 'موظف' : ''),
+      employee_job_no: empObj?.job_number || empObj?.financial_number || (empName ? '8163450' : '-'),
+      employee_national_id: empObj?.national_id || (empName ? '119940251120' : '-'),
       employee_dept: empObj?.department || 'الشؤون الإدارية والمالية',
       date: dateFormatted,
 
@@ -420,7 +423,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
       // Subject & Pre-text
       subject: content.subject,
-      reference_subline: 'إشارة إلى السجلات الرسمية وقواعد بيانات منتسبي مديرية أمن أوباري المنظمة للعمل',
+      reference_subline: empName ? 'إشارة إلى السجلات الرسمية وقواعد بيانات منتسبي مديرية أمن أوباري المنظمة للعمل' : '',
 
       // Recipient & Greetings (الرسالة القديمة المعتمدة)
       recipient: content.recipient,
@@ -452,7 +455,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       // CC List
       cc_list: [
         'السيد / وكيل وزارة الداخلية',
-        'الملف الوظيفي والشخصي للمعني',
+        ...(empName ? ['الملف الوظيفي والشخصي للمعني'] : []),
         'قسم الشؤون الإدارية والمالية',
         'قسم المحفوظات والسجلات بالمديرية',
         'الإدارة العامة للتفتيش والمتابعة',
@@ -470,7 +473,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
   // 1. حفظ وطباعة النموذج فوراً وبشكل حقيقي (A4 Direct Print)
   const handleCreateAndPrintDirectly = async () => {
-    if (!employeeSearch.trim()) {
+    if (selectedTemplateType !== 'free_letter' && !employeeSearch.trim()) {
       alert('يرجى إدخال أو اختيار اسم الموظف أولاً للطباعة الفورية');
       return;
     }
@@ -534,7 +537,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
   // 2. معاينة وتحرير النموذج (فتح المحرر الشامل والشاشة المزدوجة)
   const handlePreviewTemplateModal = async () => {
-    if (!employeeSearch.trim()) {
+    if (selectedTemplateType !== 'free_letter' && !employeeSearch.trim()) {
       alert('يرجى إدخال أو اختيار اسم الموظف أولاً للمعاينة والتحرير');
       return;
     }
@@ -907,7 +910,14 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
           <div className="template-field-wrap">
             <label className="template-field-label">
               <User size={14} color="#1e3a8a" />
-              <span>اسم العضو / الموظف المعني:</span>
+              <span>
+                اسم العضو / الموظف المعني:
+                {selectedTemplateType === 'free_letter' && (
+                  <span style={{ fontSize: '11px', color: '#10b981', marginRight: '6px', fontWeight: 700 }}>
+                    (اختياري للمراسلة الحرة)
+                  </span>
+                )}
+              </span>
             </label>
             <ForceNameAutocomplete
               value={employeeSearch}
