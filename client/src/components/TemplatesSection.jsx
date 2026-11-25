@@ -427,7 +427,6 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       // Recipient & Greetings (الرسالة القديمة المعتمدة)
       recipient: content.recipient,
       greeting_1: 'بعد التحيـــــة والســــلام ،،،',
-      greeting_2: 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد',
       prayer_line: 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه',
 
       // Body text & Typography
@@ -1540,17 +1539,8 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                           <input
                             type="text"
                             className="editor-text-input"
-                            value={activeDocument.greeting_1 || 'بعد التحيـــــة والســــلام ،،،'}
+                            value={activeDocument.greeting_1 !== undefined ? activeDocument.greeting_1 : 'بعد التحيـــــة والســــلام ،،،'}
                             onChange={(e) => setActiveDocument({ ...activeDocument, greeting_1: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className="editor-control-lbl">الديباجة الإسلامية (التحية 2):</label>
-                          <input
-                            type="text"
-                            className="editor-text-input"
-                            value={activeDocument.greeting_2 || 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد'}
-                            onChange={(e) => setActiveDocument({ ...activeDocument, greeting_2: e.target.value })}
                           />
                         </div>
                         <div>
@@ -1558,7 +1548,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                           <input
                             type="text"
                             className="editor-text-input"
-                            value={activeDocument.prayer_line || 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه'}
+                            value={activeDocument.prayer_line !== undefined ? activeDocument.prayer_line : 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه'}
                             onChange={(e) => setActiveDocument({ ...activeDocument, prayer_line: e.target.value })}
                           />
                         </div>
@@ -2036,10 +2026,11 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
       </div>
 
       {/* Formal Greetings */}
-      <div className="a4-greetings-section">
-        <p className="greeting-line-1">{doc.greeting_1 || 'بعد التحيـــــة والســــلام ،،،'}</p>
-        <p className="greeting-line-2">{doc.greeting_2 || 'الحمد لله والصلاة والسلام على رسول الله وعلى اله وصحبه ومن اتبع هداه اما بعد'}</p>
-      </div>
+      {doc.greeting_1 && (
+        <div className="a4-greetings-section">
+          <p className="greeting-line-1">{doc.greeting_1}</p>
+        </div>
+      )}
 
       {/* Document Body Content */}
       <div className="a4-body-content">
@@ -2059,9 +2050,11 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
         >
           {doc.body_text}
         </div>
-        <p className="body-prayer-line">
-          {doc.prayer_line || 'وفقكم الله لما فيه خدمة الوطن والمواطن، والسلام عليكم ورحمة الله وبركاتــــه'}
-        </p>
+        {doc.prayer_line && (
+          <p className="body-prayer-line">
+            {doc.prayer_line}
+          </p>
+        )}
       </div>
 
       {/* Signature Block (Shown ONLY for free_letter / المراسلة الحرة) */}
