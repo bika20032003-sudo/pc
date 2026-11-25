@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import {
   X,
@@ -39,10 +39,19 @@ export default function IndictmentSheetModal({
   const [verdict, setVerdict] = useState(
     penalty?.PenaltyType ? `${penalty.PenaltyType}${penalty.DeductionDays > 0 ? ` (${penalty.DeductionDays} أيام)` : ''}` : 'خصم مالي'
   );
-  const [trialDate, setTrialDate] = useState('..... / ..... / 202 م');
+  const [trialDate, setTrialDate] = useState('');
   const [trialLocation, setTrialLocation] = useState('مديرية أمن أوباري');
+  const [approverName, setApproverName] = useState('');
+  const [approverRank, setApproverRank] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const trialDateInputRef = useRef(null);
+
+  const formatTrialDateDisplay = (dateStr) => {
+    if (!dateStr || !dateStr.includes('-')) return dateStr || '..... / ..... / 202 م';
+    const [y, m, d] = dateStr.split('-');
+    return `${d} / ${m} / ${y} م`;
+  };
 
   // Generate QR Code for verification
   useEffect(() => {
@@ -69,8 +78,10 @@ export default function IndictmentSheetModal({
         incidentLocation,
         charge,
         verdict,
-        trialDate,
-        trialLocation
+        trialDate: trialDate ? formatTrialDateDisplay(trialDate) : '..... / ..... / 202 م',
+        trialLocation,
+        approverName,
+        approverRank
       }
     });
   };
@@ -273,10 +284,9 @@ export default function IndictmentSheetModal({
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>تاريخ المحاكمة</label>
                   <input
-                    type="text"
+                    type="date"
                     value={trialDate}
                     onChange={(e) => setTrialDate(e.target.value)}
-                    placeholder="..... / ..... / 202 م"
                     style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
                   />
                 </div>
@@ -287,6 +297,26 @@ export default function IndictmentSheetModal({
                     value={trialLocation}
                     onChange={(e) => setTrialLocation(e.target.value)}
                     placeholder="...................."
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>اسم معتمد المحاكمة (اختياري)</label>
+                  <input
+                    type="text"
+                    value={approverName}
+                    onChange={(e) => setApproverName(e.target.value)}
+                    placeholder="يترك فارغاً للنقط ..........."
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>رتبة معتمد المحاكمة (اختياري)</label>
+                  <input
+                    type="text"
+                    value={approverRank}
+                    onChange={(e) => setApproverRank(e.target.value)}
+                    placeholder="يترك فارغاً للنقط ..........."
                     style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700 }}
                   />
                 </div>
@@ -447,20 +477,60 @@ export default function IndictmentSheetModal({
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '25px', tableLayout: 'fixed', border: 'none' }}>
               <tbody>
                 <tr>
-                  {/* Right (First TD in RTL): Signatures removed */}
+                  {/* Right (First TD in RTL): اعتماد المحاكمة */}
                   <td style={{ verticalAlign: 'bottom', width: '50%', textAlign: 'right', paddingRight: '15px', border: 'none' }}>
+                    <div style={{ display: 'inline-block', textAlign: 'right', lineHeight: '2.1', fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 900, color: '#000000', textDecoration: 'underline', marginBottom: '2px' }}>
+                        اعتماد المحاكمة
+                      </div>
+                      <div>الاسم : {approverName || '........................................'}</div>
+                      <div>الرتبة : {approverRank || '........................................'}</div>
+                      <div>التوقيع : ........................................</div>
+                    </div>
                   </td>
 
                   {/* Left (Second TD in RTL): Trial Schedule Box */}
                   <td style={{ verticalAlign: 'bottom', width: '50%', textAlign: 'left', paddingLeft: '15px', border: 'none' }}>
-                    <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '280px', fontSize: '12.5px', marginRight: 'auto', marginLeft: 0 }}>
+                    <table style={{ borderCollapse: 'collapse', border: '1.5px solid #000000', width: '300px', fontSize: '12.5px', marginRight: 'auto', marginLeft: 0 }}>
                       <tbody>
                         <tr>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', background: '#f8fafc', fontWeight: 800, width: '45%', textAlign: 'center' }}>
+                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', background: '#f8fafc', fontWeight: 800, width: '42%', textAlign: 'center' }}>
                             تاريخ المحاكمة
                           </td>
-                          <td style={{ border: '1.5px solid #000000', padding: '7px 10px', textAlign: 'center', fontWeight: 700, direction: 'ltr' }}>
-                            {trialDate}
+                          <td
+                            onClick={() => {
+                              if (trialDateInputRef.current) {
+                                try {
+                                  trialDateInputRef.current.showPicker();
+                                } catch {
+                                  trialDateInputRef.current.focus();
+                                  trialDateInputRef.current.click();
+                                }
+                              }
+                            }}
+                            style={{ border: '1.5px solid #000000', padding: '7px 10px', textAlign: 'center', fontWeight: 700, cursor: 'pointer', position: 'relative' }}
+                            title="انقر لاختيار تاريخ المحاكمة من التقويم"
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                              <span style={{ direction: 'ltr', fontWeight: 800, color: trialDate ? '#0f172a' : '#64748b' }}>
+                                {trialDate ? formatTrialDateDisplay(trialDate) : '..... / ..... / 202 م'}
+                              </span>
+                              <Calendar size={14} color="#1e3a8a" />
+                              <input
+                                ref={trialDateInputRef}
+                                type="date"
+                                value={trialDate}
+                                onChange={(e) => setTrialDate(e.target.value)}
+                                style={{
+                                  position: 'absolute',
+                                  opacity: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  inset: 0,
+                                  cursor: 'pointer'
+                                }}
+                              />
+                            </div>
                           </td>
                         </tr>
                         <tr>

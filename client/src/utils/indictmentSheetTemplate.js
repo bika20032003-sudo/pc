@@ -27,6 +27,8 @@ export function createIndictmentSheetHtml({
   const verdictOrAction = customFields.verdict || (penalty.PenaltyType ? `${penalty.PenaltyType}${penalty.DeductionDays > 0 ? ` (${penalty.DeductionDays} أيام)` : ''}` : 'خصم مالي');
   const trialDate = customFields.trialDate || '..... / ..... / 202 م';
   const trialLocation = customFields.trialLocation || 'مديرية أمن أوباري';
+  const approverName = customFields.approverName || '';
+  const approverRank = customFields.approverRank || '';
   const photo = member.photo || localStorage.getItem(`ubari_officer_photo_${member.id}`) || '';
 
   return `
@@ -141,8 +143,16 @@ export function createIndictmentSheetHtml({
       <!-- Bottom Signatures & Trial Box Section -->
       <table style="width: 100%; border-collapse: collapse; margin-top: 25px; table-layout: fixed; border: none;">
         <tr>
-          <!-- Right (First TD in RTL): Signatures removed -->
+          <!-- Right (First TD in RTL): اعتماد المحاكمة -->
           <td style="vertical-align: bottom; width: 50%; text-align: right; padding-right: 15px; border: none;">
+            <div style="display: inline-block; text-align: right; line-height: 2.1; font-size: 13.5px; font-weight: 800; color: #0f172a;">
+              <div style="font-size: 15px; font-weight: 900; color: #000000; text-decoration: underline; margin-bottom: 2px;">
+                اعتماد المحاكمة
+              </div>
+              <div>الاسم : ${approverName || '........................................'}</div>
+              <div>الرتبة : ${approverRank || '........................................'}</div>
+              <div>التوقيع : ........................................</div>
+            </div>
           </td>
 
           <!-- Left (Second TD in RTL): Trial Schedule Box -->
