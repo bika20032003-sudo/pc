@@ -423,7 +423,6 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
       // Subject & Pre-text
       subject: content.subject,
-      reference_subline: empName ? 'إشارة إلى السجلات الرسمية وقواعد بيانات منتسبي مديرية أمن أوباري المنظمة للعمل' : '',
 
       // Recipient & Greetings (الرسالة القديمة المعتمدة)
       recipient: content.recipient,
@@ -1695,16 +1694,6 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                         />
                       </div>
 
-                      <div style={{ marginTop: '14px' }}>
-                        <label className="editor-control-lbl">سطر الإشارة الرسمية:</label>
-                        <input
-                          type="text"
-                          className="editor-text-input"
-                          value={activeDocument.reference_subline || 'إشارة إلى السجلات الرسمية وقواعد بيانات منتسبي مديرية أمن أوباري المنظمة للعمل'}
-                          onChange={(e) => setActiveDocument({ ...activeDocument, reference_subline: e.target.value })}
-                        />
-                      </div>
-
                       <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <input
                           type="checkbox"
@@ -2040,13 +2029,6 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
         <span className="subject-title-lbl" style={{ fontSize: '15px', fontWeight: 800, whiteSpace: 'nowrap' }}>بخصوص /</span>
         <span className="subject-title-content" style={{ fontSize: '15px', fontWeight: 700, flex: 1 }}>{doc.subject}</span>
       </div>
-
-      {/* Reference Sub-line */}
-      {doc.reference_subline && (
-        <div className="a4-reference-subline">
-          <span>{doc.reference_subline}</span>
-        </div>
-      )}
 
       {/* Recipient Headline */}
       <div className="a4-recipient-headline">
