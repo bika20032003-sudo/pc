@@ -339,7 +339,7 @@ export async function initDatabase() {
     // 8. التحقق من وجود مستخدم المسؤول الافتراضي
     const adminUser = await dbInstance.get('SELECT id FROM users WHERE username = ?', ['admin']);
     if (!adminUser) {
-      const passwordHash = bcrypt.hashSync('admin', 10);
+      const passwordHash = bcrypt.hashSync('admin1234', 12);
       await dbInstance.run(`
         INSERT INTO users (username, email, password_hash, full_name, badge_number, rank_title, department, role, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -354,7 +354,7 @@ export async function initDatabase() {
         'super_admin',
         'active'
       ]);
-      console.log('👤 تم إنشاء حساب المسؤول الرئيسي في SQLite: admin / admin');
+      console.log('👤 تم إنشاء حساب المسؤول الرئيسي في SQLite: admin');
     }
 
     // 9. ترحيل سجلات القوة العمومية (2,211 فرداً) إذا كان الجدول فارغاً

@@ -111,7 +111,7 @@ const DEFAULT_SYSTEM_USERS = [
     phone: '',
     status: 'active',
     avatar: '',
-    password_sha256: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918',
+    password_sha256: 'ac9689e2272427085e35b9d3e3e8bed88cb3434828b43b86fc0596cad4c6e270',
     last_login: 'الآن (متصل)'
   }
 ];
@@ -788,9 +788,12 @@ export default function App() {
         return;
       }
 
-      // Require SHA-256 hash match (fallback to matching default admin hash only if user record belongs to seeded offline admin)
-      const expectedHash = foundUser.password_sha256 ||
+      // Verify SHA-256 digest (migrating any legacy offline localStorage entry seamlessly)
+      let expectedHash = foundUser.password_sha256 ||
         ((foundUser.username === 'admin' || foundUser.id === 1) ? DEFAULT_SYSTEM_USERS[0].password_sha256 : '');
+      if (!expectedHash && foundUser.password) {
+        expectedHash = await sha256Hex(foundUser.password);
+      }
       const passMatches = Boolean(passDigest && expectedHash && passDigest === expectedHash);
 
       if (passMatches) {
