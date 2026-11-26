@@ -9,6 +9,7 @@ import { normalizeArabicText } from '../utils/arabicUtils';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import QRCode from 'qrcode';
+import { apiFetch } from '../utils/apiClient';
 
 // دالة احتساب الحالات الزمنية والتنبيهات بدقة عالية
 function calculateLeaveStatus(leave, baseDate = new Date()) {
@@ -196,12 +197,23 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
   const fetchLeavesFromApi = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/leaves');
-      if (res.ok) {
+      let res = await apiFetch('/api/leaves').catch(() => null);
+      if (res && res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.leaves)) {
-          setLeaves(data.leaves);
-          localStorage.setItem('ubari_leaves', JSON.stringify(data.leaves));
+        const list = Array.isArray(data?.leaves) ? data.leaves : (Array.isArray(data?.data) ? data.data : null);
+        if (list) {
+          setLeaves(list);
+          localStorage.setItem('ubari_leaves', JSON.stringify(list));
+          return;
+        }
+      }
+      res = await apiFetch('api/get-leaves.php').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data?.leaves) ? data.leaves : (Array.isArray(data?.data) ? data.data : null);
+        if (list) {
+          setLeaves(list);
+          localStorage.setItem('ubari_leaves', JSON.stringify(list));
         }
       }
     } catch (err) {
@@ -460,13 +472,18 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
       }));
     }
 
-    // إرسال للخادم
+    // إرسال للخادم بالمصادقة الموحدة مع دعم بوابة cPanel البديلة
     try {
-      await fetch('/api/leaves', {
+      const res = await apiFetch('/api/leaves', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLeave)
-      });
+      }).catch(() => null);
+      if (!res || !res.ok) {
+        await apiFetch('api/leaves-update.php', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'add', leave: newLeave })
+        }).catch(() => {});
+      }
     } catch (err) {
       console.warn('تم الحفظ محلياً فقط:', err.message);
     }
@@ -510,16 +527,21 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
       }));
     }
 
-    // إرسال للخادم
+    // إرسال للخادم بالمصادقة الموحدة
     try {
-      await fetch(`/api/leaves/${leaveId}/resume`, {
+      const res = await apiFetch(`/api/leaves/${leaveId}/resume`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           resumptionDate,
           resumptionNotes
         })
-      });
+      }).catch(() => null);
+      if (!res || !res.ok) {
+        await apiFetch('api/leaves-update.php', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'resume', leave_id: leaveId, resumption_date: resumptionDate })
+        }).catch(() => {});
+      }
     } catch (err) {
       console.warn('تم حفظ المباشرة محلياً:', err.message);
     }
@@ -533,7 +555,13 @@ export default function LeavesSection({ forceMembers = [], setForceMembers, user
     if (window.confirm('هل أنت متأكد من حذف هذا القيد من سجل الإجازات المركزي؟')) {
       setLeaves(prev => prev.filter(l => l.LeaveID !== id));
       try {
-        await fetch(`/api/leaves/${id}`, { method: 'DELETE' });
+        const res = await apiFetch(`/api/leaves/${id}`, { method: 'DELETE' }).catch(() => null);
+        if (!res || !res.ok) {
+          await apiFetch('api/leaves-update.php', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete', leave_id: id })
+          }).catch(() => {});
+        }
       } catch (err) {
         console.warn('تم الحذف محلياً:', err.message);
       }

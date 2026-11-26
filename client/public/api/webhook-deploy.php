@@ -4,23 +4,37 @@
  * سكريبت التحديث التلقائي المباشر من GitHub إلى cPanel
  * المسار: api/webhook-deploy.php
  */
-
 header('Content-Type: application/json; charset=utf-8');
+header('X-Content-Type-Options: nosniff');
 
-// مفتاح الأمان لحماية السكريبت من الاستدعاء غير المصرح به (يدعم متغير البيئة DEPLOY_SECRET)
-$SECURITY_TOKEN = getenv('DEPLOY_SECRET') ?: 'ubari_moi_auto_sync_2026';
+// يجب ضبط DEPLOY_SECRET في متغيرات بيئة الاستضافة بدون أي مفتاح افتراضي ثابت
+$DEPLOY_SECRET = getenv('DEPLOY_SECRET') ?: '';
+if (empty($DEPLOY_SECRET)) {
+    http_response_code(503);
+    echo json_encode([
+        'success' => false,
+        'message' => 'التحديث التلقائي معطّل: متغير DEPLOY_SECRET غير مهيأ في بيئة الخادم'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
-// التحقق من مفتاح الأمان (عبر GET أو POST أو Header)
-$receivedToken = $_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_X_HUB_SIGNATURE'] ?? '';
+$rawPayload = file_get_contents('php://input');
+$githubSig = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
+$headerToken = $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
 
-// مقارنة التوكن بطريقة آمنة زمنياً لمنع هجمات التوقيت
-$isAuthorized = (!empty($receivedToken) && hash_equals($SECURITY_TOKEN, strval($receivedToken)));
+$isAuthorized = false;
+if (!empty($githubSig) && strpos($githubSig, 'sha256=') === 0) {
+    $expectedSig = 'sha256=' . hash_hmac('sha256', $rawPayload, $DEPLOY_SECRET);
+    $isAuthorized = hash_equals($expectedSig, $githubSig);
+} elseif (!empty($headerToken)) {
+    $isAuthorized = hash_equals($DEPLOY_SECRET, strval($headerToken));
+}
 
 if (!$isAuthorized) {
     http_response_code(403);
     echo json_encode([
         'success' => false,
-        'message' => 'غير مصرح بالوصول: مفتاح الأمان غير صحيح'
+        'message' => 'غير مصرح بالوصول: توقيع أو رمز التحقق غير صحيح'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -37,23 +51,23 @@ $logEntry = '[' . date('Y-m-d H:i:s') . '] بدء عملية التحديث ال
 $gitOutput = [];
 $gitStatus = -1;
 if (function_exists('exec')) {
-    @exec("cd {$rootDir} && git pull origin gh-pages 2>&1", $gitOutput, $gitStatus);
+    $escapedRoot = escapeshellarg($rootDir);
+    @exec("cd {$escapedRoot} && git pull origin gh-pages 2>&1", $gitOutput, $gitStatus);
 }
 
 if ($gitStatus === 0 && !empty($gitOutput)) {
-    $logEntry .= 'تم التحديث بنجاح عبر Git CLI: ' . implode(' | ', $gitOutput) . PHP_EOL;
-    @file_put_contents($logFile, $logEntry, FILE_APPEND);
+    $logEntry .= 'تم التحديث بنجاح عبر Git CLI' . PHP_EOL;
+    @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
     echo json_encode([
         'success' => true,
         'method' => 'git_pull',
         'message' => 'تم سحب وتطبيق أحدث كود بنجاح عبر Git',
-        'details' => $gitOutput,
         'timestamp' => date('Y-m-d H:i:s')
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// 2. إذا لم يكن Git CLI متاحاً، يتم سحب حزمة gh-pages مباشرة وفك ضغطها
+// 2. إذا لم يكن Git CLI متاحاً، يتم سحب حزمة gh-pages مباشرة وفك ضغطها بأمان
 $zipUrl = 'https://codeload.github.com/bika20032003-sudo/pc/zip/refs/heads/gh-pages';
 $tempZip = __DIR__ . '/data/temp_update.zip';
 
@@ -69,8 +83,8 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($httpCode !== 200 || empty($zipData)) {
-    $logEntry .= "فشل تنزيل حزمة التحديث من GitHub (رمز الخطأ: {$httpCode})" . PHP_EOL;
-    @file_put_contents($logFile, $logEntry, FILE_APPEND);
+    $logEntry .= "فشل تنزيل حزمة التحديث من GitHub (HTTP {$httpCode})" . PHP_EOL;
+    @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
     http_response_code(500);
     echo json_encode([
         'success' => false,
@@ -83,22 +97,21 @@ file_put_contents($tempZip, $zipData);
 
 $zip = new ZipArchive();
 if ($zip->open($tempZip) === TRUE) {
-    // اسم المجلد الداخلي في أرشيف جيثب هو pc-gh-pages
     $extractedFolder = 'pc-gh-pages';
-    
-    // فك الضغط في مجلد مؤقت
     $extractPath = __DIR__ . '/data/temp_extracted';
     if (!is_dir($extractPath)) {
         @mkdir($extractPath, 0755, true);
     }
-    
+
     $zip->extractTo($extractPath);
     $zip->close();
     @unlink($tempZip);
 
     $sourceDir = $extractPath . '/' . $extractedFolder;
     if (is_dir($sourceDir)) {
-        // نسخ الملفات إلى المجلد الرئيسي مع الحفاظ على قاعدة البيانات الحالية
+        // حماية جميع ملفات البيانات التشغيلية الحية من الاستبدال عند التحديث
+        $protectedFiles = ['force_data.json', 'leaves_data.json', 'penalties_data.json', 'vehicles_data.json', 'weapons_data.json', 'deploy.log'];
+
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
@@ -106,28 +119,34 @@ if ($zip->open($tempZip) === TRUE) {
 
         foreach ($iterator as $item) {
             $subPath = $iterator->getSubPathName();
+            if (strpos($subPath, '..') !== false) {
+                continue;
+            }
             $targetPath = $rootDir . '/' . $subPath;
 
-            // حماية قاعدة بيانات القوة العمومية الحالية من الاستبدال إذا كانت موجودة مسبقاً
-            if (strpos($subPath, 'force_data.json') !== false && file_exists($targetPath)) {
+            $isProtectedData = false;
+            foreach ($protectedFiles as $pf) {
+                if (strpos($subPath, $pf) !== false && file_exists($targetPath)) {
+                    $isProtectedData = true;
+                    break;
+                }
+            }
+            if ($isProtectedData) {
                 continue;
             }
 
             if ($item->isDir()) {
-                if (!is_dir($targetPath)) {
-                    @mkdir($targetPath, 0755, true);
-                }
+                if (!is_dir($targetPath)) @mkdir($targetPath, 0755, true);
             } else {
                 @copy($item, $targetPath);
             }
         }
 
-        // تنظيف الملفات المؤقتة
         function deleteDirectory($dir) {
             if (!file_exists($dir)) return true;
             if (!is_dir($dir)) return unlink($dir);
             foreach (scandir($dir) as $item) {
-                if ($item == '.' || $item == '..') continue;
+                if ($item === '.' || $item === '..') continue;
                 if (!deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) return false;
             }
             return rmdir($dir);
@@ -135,7 +154,7 @@ if ($zip->open($tempZip) === TRUE) {
         deleteDirectory($extractPath);
 
         $logEntry .= 'تم تطبيق التحديث التلقائي بنجاح وفك ضغط أحدث نسخة.' . PHP_EOL;
-        @file_put_contents($logFile, $logEntry, FILE_APPEND);
+        @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
 
         echo json_encode([
             'success' => true,

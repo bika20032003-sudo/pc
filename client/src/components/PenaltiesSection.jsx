@@ -25,6 +25,7 @@ import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import IndictmentSheetModal from './IndictmentSheetModal';
+import { apiFetch } from '../utils/apiClient';
 
 export default function PenaltiesSection({ forceMembers = [], user = {} }) {
   // State for penalties ledger
@@ -91,24 +92,26 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       setIsLoading(true);
       setSyncStatus('جارٍ المزامنة...');
       // 1. Try Node.js Express server
-      let res = await fetch('/api/penalties').catch(() => null);
+      let res = await apiFetch('/api/penalties').catch(() => null);
       if (res && res.ok) {
         const data = await res.json();
-        if (data && data.success && Array.isArray(data.penalties) && data.penalties.length > 0) {
-          setPenalties(data.penalties);
-          localStorage.setItem('ubari_penalties', JSON.stringify(data.penalties));
+        const list = Array.isArray(data) ? data : (data?.penalties || data?.data);
+        if (Array.isArray(list) && list.length > 0) {
+          setPenalties(list);
+          localStorage.setItem('ubari_penalties', JSON.stringify(list));
           setSyncStatus('متزامن مع الخادم المركزي');
           return;
         }
       }
 
       // 2. Try PHP backend endpoint (cPanel / Hostinger / Apache)
-      res = await fetch('api/get-penalties.php').catch(() => null);
+      res = await apiFetch('api/get-penalties.php').catch(() => null);
       if (res && res.ok) {
         const data = await res.json();
-        if (data && data.success && Array.isArray(data.penalties) && data.penalties.length > 0) {
-          setPenalties(data.penalties);
-          localStorage.setItem('ubari_penalties', JSON.stringify(data.penalties));
+        const list = Array.isArray(data) ? data : (data?.penalties || data?.data);
+        if (Array.isArray(list) && list.length > 0) {
+          setPenalties(list);
+          localStorage.setItem('ubari_penalties', JSON.stringify(list));
           setSyncStatus('متزامن عبر بوابة cPanel');
           return;
         }
@@ -263,23 +266,17 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       is_applied: false
     });
 
-    // Sync to backend and PHP API
-    const token = localStorage.getItem('token');
+    // Sync to backend and PHP API using unified authenticated moi_token
     try {
-      const res = await fetch('/api/penalties', {
+      const res = await apiFetch('/api/penalties', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
         body: JSON.stringify(newPenalty)
       }).catch(() => null);
 
       if (!res || !res.ok) {
         // Fallback to PHP script
-        await fetch('api/penalties-update.php', {
+        await apiFetch('api/penalties-update.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add', penalty: newPenalty })
         }).catch(err => console.warn('PHP sync notice:', err));
       }
@@ -297,20 +294,14 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
       return p;
     }));
 
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/penalties/${id}/toggle-applied`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
+      const res = await apiFetch(`/api/penalties/${id}/toggle-applied`, {
+        method: 'POST'
       }).catch(() => null);
 
       if (!res || !res.ok) {
-        await fetch('api/penalties-update.php', {
+        await apiFetch('api/penalties-update.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'toggle_applied', penalty_id: id })
         }).catch(err => console.warn('PHP toggle notice:', err));
       }
@@ -324,20 +315,14 @@ export default function PenaltiesSection({ forceMembers = [], user = {} }) {
     if (confirm('هل أنت متأكد من رغبتك في حذف هذا القيد من سجل العقوبات والانضباط؟')) {
       setPenalties(prev => prev.filter(p => p.PenaltyID !== id));
 
-      const token = localStorage.getItem('token');
       try {
-        const res = await fetch(`/api/penalties/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          }
+        const res = await apiFetch(`/api/penalties/${id}`, {
+          method: 'DELETE'
         }).catch(() => null);
 
         if (!res || !res.ok) {
-          await fetch('api/penalties-update.php', {
+          await apiFetch('api/penalties-update.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'delete', penalty_id: id })
           }).catch(err => console.warn('PHP delete notice:', err));
         }

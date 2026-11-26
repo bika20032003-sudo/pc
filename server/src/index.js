@@ -1,10 +1,11 @@
+import './config/env.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initDatabase } from './config/db.js';
+import { apiLimiter } from './middleware/rateLimitMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import forceRoutes from './routes/forceRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -14,8 +15,6 @@ import leaveRoutes from './routes/leaveRoutes.js';
 import mailRoutes from './routes/mailRoutes.js';
 import weaponsRoutes from './routes/weaponsRoutes.js';
 import penaltiesRoutes from './routes/penaltiesRoutes.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -55,16 +54,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Basic Security Headers
+// Security Headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   next();
 });
 
-app.use(express.json({ limit: '25mb' }));
-app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -122,9 +124,10 @@ app.use('/api/*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
   const status = err.status || 500;
+  const isProd = process.env.NODE_ENV === 'production';
   res.status(status).json({
     success: false,
-    message: err.message || 'حدث خطأ داخلي في مخدم المنظومة'
+    message: isProd && status >= 500 ? 'حدث خطأ داخلي في مخدم المنظومة' : (err.message || 'حدث خطأ داخلي في مخدم المنظومة')
   });
 });
 

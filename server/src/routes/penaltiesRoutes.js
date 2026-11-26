@@ -4,8 +4,8 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 
 const router = express.Router();
 
-// GET all penalties (public/authenticated read)
-router.get('/', getPenalties);
+// GET all penalties (authenticated)
+router.get('/', authenticateToken, getPenalties);
 
 // POST create penalty (authenticated)
 router.post('/', authenticateToken, createPenalty);

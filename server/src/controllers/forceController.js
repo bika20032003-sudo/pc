@@ -1,5 +1,6 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { safeWriteJson } from '../utils/fileUtils.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,51 +8,89 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// طابور ذكي غير متزامن ومجمّع لتحديث ملف force_data.json في الخلفية دون تعطيل استجابة الخادم
+const FORCE_JSON_PATHS = [
+  path.resolve(__dirname, '../data/force_data.json'),
+  path.resolve(__dirname, '../../../client/public/api/data/force_data.json'),
+  path.resolve(__dirname, '../../../client/src/data/force_data.json')
+];
+
+function sanitizeDigits(val) {
+  if (val === undefined || val === null) return '';
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  return String(val)
+    .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
+    .replace(/\D/g, '')
+    .trim();
+}
+
+// طابور ذكي غير متزامن ومجمّع لتحديث ملف force_data.json في الخلفية دون تعطيل استجابة الخادم أو فقدان التحديثات المتزامنة
 const pendingJsonUpdates = new Map();
 let jsonBatchTimer = null;
 let isFlushingJson = false;
 
-function scheduleJsonSync(id, updates) {
-  pendingJsonUpdates.set(Number(id), updates);
-  if (jsonBatchTimer) return;
+async function flushJsonSync() {
+  if (isFlushingJson || pendingJsonUpdates.size === 0) return;
+  isFlushingJson = true;
 
-  jsonBatchTimer = setTimeout(async () => {
-    jsonBatchTimer = null;
-    if (isFlushingJson || pendingJsonUpdates.size === 0) return;
-    isFlushingJson = true;
+  // التقط لقطة آمنة للتعديلات المعلقة وأفرغ الخريطة قبل البدء بالكتابة حتى لا تضيع أي تحديثات تصل أثناء الحفظ
+  const batchSnapshot = new Map(pendingJsonUpdates);
+  pendingJsonUpdates.clear();
 
-    try {
-      const pathsToSync = [
-        path.resolve(__dirname, '../data/force_data.json'),
-        path.resolve(__dirname, '../../../client/public/api/data/force_data.json'),
-        path.resolve(__dirname, '../../../client/src/data/force_data.json')
-      ];
-
-      for (const forceJsonPath of pathsToSync) {
-        if (fs.existsSync(forceJsonPath)) {
-          try {
-            const fileContent = await fs.promises.readFile(forceJsonPath, 'utf8');
-            const list = JSON.parse(fileContent);
-            if (Array.isArray(list)) {
-              for (const [memberId, fields] of pendingJsonUpdates.entries()) {
-                const idx = list.findIndex(item => Number(item.id) === memberId);
-                if (idx !== -1) {
-                  list[idx] = { ...list[idx], ...fields, self_updated: true };
-                }
+  try {
+    for (const forceJsonPath of FORCE_JSON_PATHS) {
+      if (fs.existsSync(forceJsonPath)) {
+        try {
+          const fileContent = await fs.promises.readFile(forceJsonPath, 'utf8');
+          let list = JSON.parse(fileContent);
+          if (Array.isArray(list)) {
+            for (const [memberId, fields] of batchSnapshot.entries()) {
+              if (fields && fields.__deleted) {
+                list = list.filter(item => Number(item.id) !== memberId);
+                continue;
               }
-              await fs.promises.writeFile(forceJsonPath, JSON.stringify(list, null, 2), 'utf8');
+              const idx = list.findIndex(item => Number(item.id) === memberId);
+              if (idx !== -1) {
+                list[idx] = { ...list[idx], ...fields };
+              } else if (fields && fields.__created) {
+                const { __created, ...cleanRecord } = fields;
+                list.unshift(cleanRecord);
+              }
             }
-          } catch (e) { }
+            safeWriteJson(forceJsonPath, list);
+          }
+        } catch (e) {
+          console.warn(`تنبيه: تعذر تحديث ملف JSON (${forceJsonPath}):`, e.message);
         }
       }
-      pendingJsonUpdates.clear();
-    } catch (err) {
-      console.warn('تنبيه: تعذر مزامنة نسخة JSON بالخلفية:', err.message);
-    } finally {
-      isFlushingJson = false;
     }
-  }, 1000); // تجميع كافة الطلبات التي تصل خلال ثانية واحدة في عملية كتابة قرصية واحدة
+  } catch (err) {
+    console.warn('تنبيه: تعذر مزامنة نسخة JSON بالخلفية:', err.message);
+  } finally {
+    isFlushingJson = false;
+    // إذا وصلت تحديثات جديدة أثناء الكتابة السابقة، أعد الجدولة فوراً حتى لا تُفقد
+    if (pendingJsonUpdates.size > 0 && !jsonBatchTimer) {
+      jsonBatchTimer = setTimeout(() => {
+        jsonBatchTimer = null;
+        flushJsonSync();
+      }, 400);
+    }
+  }
+}
+
+function scheduleJsonSync(id, updates) {
+  const numId = Number(id);
+  const prev = pendingJsonUpdates.get(numId);
+  if (updates && updates.__deleted) {
+    pendingJsonUpdates.set(numId, { __deleted: true });
+  } else {
+    pendingJsonUpdates.set(numId, prev ? { ...prev, ...updates } : updates);
+  }
+  if (jsonBatchTimer) return;
+
+  jsonBatchTimer = setTimeout(() => {
+    jsonBatchTimer = null;
+    flushJsonSync();
+  }, 800);
 }
 
 /**
@@ -222,6 +261,9 @@ export async function createForceMember(req, res) {
     ]);
 
     const created = await db.get('SELECT * FROM force_members WHERE id = ?', [newId]);
+    if (created) {
+      scheduleJsonSync(newId, { ...created, __created: true });
+    }
 
     return res.status(201).json({
       success: true,
@@ -338,6 +380,9 @@ export async function updateForceMember(req, res) {
     ]);
 
     const updated = await db.get('SELECT * FROM force_members WHERE id = ?', [id]);
+    if (updated) {
+      scheduleJsonSync(id, updated);
+    }
 
     return res.status(200).json({
       success: true,
@@ -359,6 +404,8 @@ export async function deleteForceMember(req, res) {
     if (result.changes === 0) {
       return res.status(404).json({ success: false, message: 'السجل غير موجود' });
     }
+
+    scheduleJsonSync(id, { __deleted: true });
 
     return res.status(200).json({
       success: true,
@@ -453,6 +500,13 @@ export async function replaceForceList(req, res) {
     await insertStmt.finalize();
     await db.run('COMMIT;');
 
+    const snapshot = await db.all('SELECT * FROM force_members ORDER BY id ASC');
+    for (const jsonPath of FORCE_JSON_PATHS) {
+      if (fs.existsSync(jsonPath)) {
+        safeWriteJson(jsonPath, snapshot);
+      }
+    }
+
     console.log(`✅ تم استبدال وتأمين القوة العمومية في SQLite بنجاح: ${members.length} عضو`);
 
     return res.status(200).json({
@@ -469,47 +523,97 @@ export async function replaceForceList(req, res) {
 }
 
 /**
+ * التحقق الصارم 1-إلى-1 من هوية المنتسب عبر (الرقم الوطني أو الإداري/المالي) + (رقم القيد)
+ */
+async function verifyMemberIdentity(db, { id, identifier, national_id, financial_number, record_number }) {
+  const cleanId = Number(id) || 0;
+  const cleanIdent = sanitizeDigits(identifier || national_id || financial_number);
+  const cleanNat = sanitizeDigits(national_id);
+  const cleanFin = sanitizeDigits(financial_number);
+  const cleanRec = sanitizeDigits(record_number);
+
+  if (!cleanIdent && !cleanNat && !cleanFin) {
+    return { ok: false, status: 400, message: 'يرجى إدخال الرقم الوطني أو الإداري الصحيح' };
+  }
+  if (!cleanRec) {
+    return { ok: false, status: 400, message: 'يلزم إدخال رقم القيد المربوط بالرقم الوطني أو الإداري' };
+  }
+
+  // البحث بالرقم الوطني أو المالي أو الوظيفي (دون السماح بالبحث بالمعرف وحده عبر OR)
+  const candidates = await db.all(`
+    SELECT * FROM force_members
+    WHERE
+      (national_id IS NOT NULL AND national_id != '' AND REPLACE(national_id, ' ', '') IN (?, ?, ?))
+      OR (financial_number IS NOT NULL AND financial_number != '' AND REPLACE(financial_number, ' ', '') IN (?, ?, ?))
+      OR (job_number IS NOT NULL AND job_number != '' AND REPLACE(job_number, ' ', '') IN (?, ?, ?))
+  `, [
+    cleanIdent || '___NONE___', cleanNat || '___NONE___', cleanFin || '___NONE___',
+    cleanIdent || '___NONE___', cleanNat || '___NONE___', cleanFin || '___NONE___',
+    cleanIdent || '___NONE___', cleanNat || '___NONE___', cleanFin || '___NONE___'
+  ]);
+
+  if (!candidates || candidates.length === 0) {
+    return { ok: false, status: 404, message: 'فشل التحقق الأمني: لا يوجد قيد مطابق للرقم الوطني أو الإداري المدخل' };
+  }
+
+  // إذا مُرِّر المعرف id، يُشترط تطابقه مع أحد المرشحين (AND) وليس كبديل (OR)
+  const pool = cleanId > 0
+    ? candidates.filter(m => Number(m.id) === cleanId)
+    : candidates;
+
+  if (pool.length === 0) {
+    return { ok: false, status: 403, message: 'فشل التحقق الأمني: تعارض بين المعرف والرقم الوطني أو المالي المسجل' };
+  }
+
+  const matched = pool.find(m => {
+    const dbRec = sanitizeDigits(m.family_record);
+    return dbRec && dbRec === cleanRec;
+  });
+
+  if (!matched) {
+    const anyHasRecord = pool.some(m => Boolean(sanitizeDigits(m.family_record)));
+    return {
+      ok: false,
+      status: 403,
+      message: anyHasRecord
+        ? 'رقم القيد المدخل غير متطابق مع السجل المربوط بالرقم الوطني أو الإداري.'
+        : 'لم يتم ربط رقم القيد لهذا المنتسب في السجل المركزي بعد؛ يرجى مراجعة قسم شؤون الضباط والأفراد.'
+    };
+  }
+
+  return { ok: true, member: matched };
+}
+
+/**
+ * استعلام فردي آمن للخدمة الذاتية (يرجع سجل منتسب واحد فقط بعد التحقق الثنائي)
+ */
+export async function selfInquiryForceMember(req, res) {
+  try {
+    const { identifier, record_number } = req.body || {};
+    const { db } = getDb();
+    const check = await verifyMemberIdentity(db, { identifier, record_number });
+
+    if (!check.ok) {
+      return res.status(check.status).json({ success: false, message: check.message });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: check.member
+    });
+  } catch (error) {
+    console.error('Error in selfInquiryForceMember:', error);
+    return res.status(500).json({ success: false, message: 'حدث خطأ أثناء الاستعلام' });
+  }
+}
+
+/**
  * بوابة الاستعلام والتحديث الذاتي لبيانات المنتسبين
- * مصممة لتحمل ضغط العمل العالي (High-Concurrency) والتحقق المشدد 1-إلى-1 لمنع أي تداخل أو تشابك بين بيانات الموظفين
+ * مصممة لتحمل ضغط العمل العالي (High-Concurrency) والتحقق المشدد 1-إلى-1 (AND) لمنع أي تداخل أو انتحال
  */
 export async function selfUpdateForceMember(req, res) {
   try {
-    const { id, national_id, financial_number, updates } = req.body;
-
-    if (!id || (!national_id && !financial_number)) {
-      return res.status(400).json({
-        success: false,
-        message: 'بيانات التحقق غير مكتملة (المعرف والرقم الوطني أو المالي إلزامي)'
-      });
-    }
-
-    const { db } = getDb();
-    const cleanId = Number(id);
-    const cleanNat = national_id ? String(national_id).trim().replace(/\D/g, '') : '';
-    const cleanFin = financial_number ? String(financial_number).trim().replace(/\D/g, '') : '';
-
-    // التحقق المرن والصارم 1-إلى-1: التأكد من مطابقة السجل بالمعرف أو الرقم الوطني أو الرقم المالي لمنع أي خطأ وتحديث السجل بدقة
-    const existing = await db.get(`
-      SELECT * FROM force_members
-      WHERE (id = ? AND ? > 0) OR (
-        (national_id IS NOT NULL AND national_id != '' AND (REPLACE(national_id, ' ', '') = ? OR REPLACE(national_id, ' ', '') = ?)) OR
-        (financial_number IS NOT NULL AND financial_number != '' AND (REPLACE(financial_number, ' ', '') = ? OR REPLACE(financial_number, ' ', '') = ?)) OR
-        (job_number IS NOT NULL AND job_number != '' AND (REPLACE(job_number, ' ', '') = ? OR REPLACE(job_number, ' ', '') = ?))
-      )
-      LIMIT 1
-    `, [
-      cleanId, cleanId,
-      cleanNat || '___NONE___', cleanFin || '___NONE___',
-      cleanFin || '___NONE___', cleanNat || '___NONE___',
-      cleanFin || '___NONE___', cleanNat || '___NONE___'
-    ]);
-
-    if (!existing) {
-      return res.status(403).json({
-        success: false,
-        message: 'فشل التحقق الأمني: لا يتطابق المعرف مع الرقم الوطني أو المالي المسجل لهذا المنتسب.'
-      });
-    }
+    const { id, national_id, financial_number, record_number, updates } = req.body;
 
     if (!updates || typeof updates !== 'object') {
       return res.status(400).json({
@@ -517,6 +621,23 @@ export async function selfUpdateForceMember(req, res) {
         message: 'لم يتم تقديم أي حقول للتحديث'
       });
     }
+
+    const { db } = getDb();
+    const check = await verifyMemberIdentity(db, {
+      id,
+      national_id,
+      financial_number,
+      record_number: record_number || updates.family_record
+    });
+
+    if (!check.ok) {
+      return res.status(check.status).json({
+        success: false,
+        message: check.message
+      });
+    }
+
+    const existing = check.member;
 
     // السماح فقط بالحقول الشخصية وحقول الاتصال والمهمات العسكرية والمصرفية المعتمدة
     // الحقول السيادية (الاسم، الرتبة، الرقم الوطني، الرقم المالي، الإدارة) غير قابلة للتعديل الذاتي

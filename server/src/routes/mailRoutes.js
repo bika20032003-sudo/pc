@@ -7,14 +7,15 @@ import {
   deleteMail,
   getMailStats
 } from '../controllers/mailController.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/stats', getMailStats);
-router.get('/', getMail);
-router.get('/:id', getMailById);
-router.post('/', createMail);
-router.put('/:id', updateMail);
-router.delete('/:id', deleteMail);
+router.get('/stats', authenticateToken, getMailStats);
+router.get('/', authenticateToken, getMail);
+router.get('/:id', authenticateToken, getMailById);
+router.post('/', authenticateToken, createMail);
+router.put('/:id', authenticateToken, updateMail);
+router.delete('/:id', authenticateToken, requireAdmin, deleteMail);
 
 export default router;

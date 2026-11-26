@@ -10,7 +10,7 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 
 const router = express.Router();
 
-router.get('/', getVehicleList);
+router.get('/', authenticateToken, getVehicleList);
 router.post('/replace', authenticateToken, requireAdmin, replaceVehicleList);
 router.post('/', authenticateToken, createVehicle);
 router.put('/:id', authenticateToken, updateVehicle);

@@ -62,12 +62,22 @@ export async function getPenalties(req, res) {
       IsApplied: Boolean(r.is_applied)
     }));
 
-    return res.status(200).json(formatted);
+    return res.status(200).json({
+      success: true,
+      count: formatted.length,
+      penalties: formatted,
+      data: formatted
+    });
   } catch (error) {
     console.error('Error in getPenalties:', error);
     // Fallback to reading file
     const fallback = safeReadJson(jsonPaths[0], []);
-    return res.status(200).json(fallback);
+    return res.status(200).json({
+      success: true,
+      count: Array.isArray(fallback) ? fallback.length : 0,
+      penalties: Array.isArray(fallback) ? fallback : [],
+      data: Array.isArray(fallback) ? fallback : []
+    });
   }
 }
 

@@ -6,6 +6,7 @@ import path from 'path';
  * Atomic File Writer with Safe Temp Replacement
  */
 export function safeWriteJson(filePath, data) {
+  const tempPath = `${filePath}.${Date.now()}.tmp`;
   try {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
@@ -13,7 +14,6 @@ export function safeWriteJson(filePath, data) {
     }
 
     const jsonString = JSON.stringify(data, null, 2);
-    const tempPath = `${filePath}.${Date.now()}.tmp`;
 
     // 1. الكتابة في ملف مؤقت أولاً
     fs.writeFileSync(tempPath, jsonString, 'utf8');
@@ -23,10 +23,9 @@ export function safeWriteJson(filePath, data) {
     return true;
   } catch (error) {
     console.error(`❌ فشل الحفظ الآمن للملف (${filePath}):`, error);
-    // محاولة تنظيف الملف المؤقت إذا وجد
+    // تنظيف الملف المؤقت إذا وجد باستخدام نفس المسار المؤقت
     try {
-      const tempPattern = `${filePath}.${Date.now()}.tmp`;
-      if (fs.existsSync(tempPattern)) fs.unlinkSync(tempPattern);
+      if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     } catch (_) {}
     return false;
   }

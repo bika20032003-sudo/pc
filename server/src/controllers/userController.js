@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from '../config/db.js';
+import { BCRYPT_ROUNDS } from '../config/jwt.js';
 
 export async function getAllUsers(req, res) {
   try {
@@ -54,7 +55,7 @@ export async function createUser(req, res) {
       return res.status(400).json({ success: false, message: 'اسم المستخدم أو البريد الإلكتروني مسجل مسبقاً' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const sectionsJson = JSON.stringify(Array.isArray(allowed_sections) ? allowed_sections : (role === 'super_admin' ? ['all'] : ['dashboard', 'force']));
 
     const result = await db.run(`
@@ -106,7 +107,7 @@ export async function updateUser(req, res) {
 
     let passwordHash = user.password_hash;
     if (password && password.trim().length > 0) {
-      passwordHash = await bcrypt.hash(password, 10);
+      passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     }
 
     const sectionsJson = allowed_sections !== undefined
@@ -161,12 +162,6 @@ export async function updateUser(req, res) {
         allowed_sections: parsedSections
       }
     });
-
-    return res.status(200).json({
-      success: true,
-      message: 'تم تحديث بيانات المستخدم بنجاح',
-      user: updated
-    });
   } catch (error) {
     console.error('Error updating user:', error);
     return res.status(500).json({ success: false, message: 'خطأ في تحديث المستخدم', error: error.message });
@@ -199,10 +194,15 @@ export async function updateProfile(req, res) {
     const { id, full_name, email, current_password, new_password, avatar } = req.body;
     const { db } = getDb();
 
-    // Must target valid user ID
-    const targetId = id || (req.user && req.user.id);
+    // Prevent IDOR: non-admin users may ONLY update their own authenticated account
+    const isAdmin = req.user && (req.user.role === 'super_admin' || req.user.role === 'admin');
+    const targetId = isAdmin && id ? Number(id) : (req.user && req.user.id);
     if (!targetId) {
-      return res.status(400).json({ success: false, message: 'معرف المستخدم غير محدد' });
+      return res.status(401).json({ success: false, message: 'جلسة غير صالحة أو معرف المستخدم غير محدد' });
+    }
+
+    if (!isAdmin && id && Number(id) !== Number(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل ملف مستخدم آخر' });
     }
 
     const user = await db.get('SELECT * FROM users WHERE id = ?', [targetId]);
@@ -219,7 +219,7 @@ export async function updateProfile(req, res) {
       if (!match) {
         return res.status(400).json({ success: false, message: 'كلمة المرور الحالية غير صحيحة' });
       }
-      passwordHash = await bcrypt.hash(new_password, 10);
+      passwordHash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
     }
 
     await db.run(`

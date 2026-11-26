@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'interior_ministry_super_secure_jwt_secret_key_2026';
+import { JWT_SECRET } from '../config/jwt.js';
 
 /**
  * وسيط التحقق الإلزامي من الجلسة وتوكن JWT
@@ -22,8 +21,7 @@ export function authenticateToken(req, res, next) {
   } catch (err) {
     return res.status(401).json({
       success: false,
-      message: 'انتهت صلاحية جلسة العمل أو أن التوكن غير صالح',
-      error: err.message
+      message: 'انتهت صلاحية جلسة العمل أو أن التوكن غير صالح'
     });
   }
 }

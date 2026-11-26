@@ -46,6 +46,7 @@ import initialReferredMail from '../data/referred_mail_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
+import { apiFetch } from '../utils/apiClient';
 
 // Default initial Outgoing Mail matching Image 1 & Image 3
 const INITIAL_OUTGOING_MAIL = [
@@ -219,7 +220,7 @@ export default function MailSection({ user, forceMembers = [] }) {
     const fetchMail = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/mail');
+        const res = await apiFetch('/api/mail');
         if (!res.ok) throw new Error('Network error');
         const data = await res.json();
         if (isMounted && data.success && Array.isArray(data.mail)) {
@@ -377,9 +378,8 @@ export default function MailSection({ user, forceMembers = [] }) {
 
     // حفظ حقيقي في خادم وقاعدة بيانات المنظومة المركزية
     try {
-      const res = await fetch('/api/mail', {
+      const res = await apiFetch('/api/mail', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord)
       });
       const data = await res.json();
@@ -441,9 +441,8 @@ export default function MailSection({ user, forceMembers = [] }) {
 
     // حفظ حقيقي في خادم وقاعدة بيانات SQLite
     try {
-      const res = await fetch('/api/mail', {
+      const res = await apiFetch('/api/mail', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord)
       });
       const data = await res.json();
@@ -483,7 +482,7 @@ export default function MailSection({ user, forceMembers = [] }) {
       localStorage.setItem('ubari_outgoing_mail', JSON.stringify(updated));
 
       try {
-        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/mail/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('تم حذف الصادر محلياً:', err.message);
       }
@@ -501,7 +500,7 @@ export default function MailSection({ user, forceMembers = [] }) {
       localStorage.setItem('ubari_incoming_mail', JSON.stringify(updated));
 
       try {
-        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/mail/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('تم حذف الوارد محلياً:', err.message);
       }
@@ -519,7 +518,7 @@ export default function MailSection({ user, forceMembers = [] }) {
       localStorage.setItem('ubari_referred_mail', JSON.stringify(updated));
 
       try {
-        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/mail/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('تم حذف المحال محلياً:', err.message);
       }
@@ -546,9 +545,8 @@ export default function MailSection({ user, forceMembers = [] }) {
     // تحديث حقيقي في قاعدة بيانات SQLite
     try {
       if (previewLetter.id) {
-        await fetch(`/api/mail/${previewLetter.id}`, {
+        await apiFetch(`/api/mail/${previewLetter.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(previewLetter)
         });
       }
@@ -854,7 +852,7 @@ export default function MailSection({ user, forceMembers = [] }) {
   const handleRefreshMailData = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/mail');
+      const res = await apiFetch('/api/mail');
       const data = await res.json();
       if (data.success && Array.isArray(data.mail)) {
         const out = data.mail.filter(m => m.type === 'outgoing' || m.type === 'official_letter');

@@ -33,6 +33,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import initialVehiclesData from '../data/vehicles_data.json';
+import { apiFetch } from '../utils/apiClient';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 
 const API_BASE_URL = '/api/vehicles';
@@ -97,7 +98,7 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
   const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(API_BASE_URL);
+      const res = await apiFetch(API_BASE_URL);
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -392,9 +393,8 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
           ...editingVehicle,
           ...formData
         };
-        const res = await fetch(`${API_BASE_URL}/${editingVehicle.id}`, {
+        const res = await apiFetch(`${API_BASE_URL}/${editingVehicle.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updated)
         });
         if (res.ok) {
@@ -412,9 +412,8 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
           ...formData,
           created_at: new Date().toISOString()
         };
-        const res = await fetch(API_BASE_URL, {
+        const res = await apiFetch(API_BASE_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newVehicle)
         });
         if (res.ok) {
@@ -441,7 +440,7 @@ export default function VehiclesSection({ user, forceMembers = [] }) {
   const handleDeleteVehicle = async (id, plate) => {
     if (!window.confirm(`هل أنت متأكد من حذف المركبة ذات اللوحة (${plate}) من السجل؟`)) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setVehicles(prev => prev.filter(v => v.id !== id));
       } else {

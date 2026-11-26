@@ -26,6 +26,7 @@ import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import initialPenalties from '../data/penalties_data.json';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import IndictmentSheetModal from './IndictmentSheetModal';
+import { apiFetch } from '../utils/apiClient';
 
 const EMPTY_FORCE_FORM = {
   type: 'شرطي', // شرطي أو مدني
@@ -187,9 +188,8 @@ export default function ForceSection({
       localStorage.setItem('ubari_force_members', JSON.stringify(updated));
     } catch (e) {}
 
-    fetch(`/api/force/${id}`, {
+    apiFetch(`/api/force/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ job_status: newStatus, status: newStatus })
     }).catch(() => {});
 
@@ -218,9 +218,8 @@ export default function ForceSection({
       } catch (e) {}
 
       // Sync with API
-      fetch(`/api/force/${editingMemberId}`, {
+      apiFetch(`/api/force/${editingMemberId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(forceFormData)
       }).catch(() => {});
 
@@ -240,9 +239,8 @@ export default function ForceSection({
       } catch (e) {}
 
       // Sync with API
-      fetch('/api/force', {
+      apiFetch('/api/force', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newMember)
       }).catch(() => {});
 
@@ -267,7 +265,7 @@ export default function ForceSection({
         localStorage.setItem('ubari_force_members', JSON.stringify(updated));
       } catch (e) {}
 
-      fetch(`/api/force/${id}`, { method: 'DELETE' }).catch(() => {});
+      apiFetch(`/api/force/${id}`, { method: 'DELETE' }).catch(() => {});
 
       if (setNotificationMsg) {
         setNotificationMsg(`تم حذف قيد (${name}) بنجاح`);

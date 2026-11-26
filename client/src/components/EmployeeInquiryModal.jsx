@@ -260,8 +260,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
   };
 
   // Strict Two-Factor Verification: (الرقم الوطني أو الإداري) + (رقم القيد)
-  // من لم يدخل رقم القيد أو لم يتطابق مع سجله لا يظهر له الاستعلام إطلاقاً
-  const handleSearch = (e) => {
+  // يتحقق من الخادم الحي أولاً (عند الاتصال) ثم من السجل المحلي في حالة العرض الثابت
+  const handleSearch = async (e) => {
     if (e) e.preventDefault();
     setSearchError(null);
     setSubmitSuccess(false);
@@ -281,7 +281,29 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       return;
     }
 
-    // Lookup candidates by National ID, Financial/Administrative Number, Job Number, or Military Number
+    // 1. محاولة التحقق الفوري من الخادم المركزي (Node / cPanel) لجلب أحدث نسخة معتمدة دون كشف بقية السجلات
+    for (const ep of ['api/force/self-inquiry', '/api/force/self-inquiry', 'api/get-force.php', '/api/get-force.php']) {
+      try {
+        const res = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: cleanId, record_number: cleanRecord })
+        });
+        if (res.status === 404 || res.status === 405) continue;
+        const json = await res.json().catch(() => null);
+        if (res.ok && json && json.success && json.data) {
+          loadMemberIntoForm({ ...json.data, family_record: json.data.family_record || cleanRecord });
+          return;
+        }
+        if (res.status === 403 || res.status === 400) {
+          setSearchError(json?.message || 'رقم القيد المدخل غير متطابق مع الرقم الوطني أو الإداري.');
+          setVerifiedMember(null);
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // 2. التحقق المحلي الاحتياطي في وضع العرض الثابت (بدون خادم)
     const candidates = forceMembers.filter((m) => {
       const nat = sanitizeDigits(m.national_id);
       const fin = sanitizeDigits(m.financial_number);
@@ -398,7 +420,14 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
 
       // Call parent updater which updates memory, localStorage, and calls backend API safely
       if (onUpdateMember) {
-        await onUpdateMember(verifiedMember.id, updates);
+        const res = await onUpdateMember(verifiedMember.id, {
+          ...updates,
+          family_record: updates.family_record || sanitizeDigits(recordNumberInput)
+        });
+        if (res && res.success === false) {
+          setSubmitError(res.message || 'تعذر حفظ التعديلات على الخادم المركزي.');
+          return;
+        }
       }
 
       // Update verifiedMember in local view

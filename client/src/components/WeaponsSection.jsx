@@ -25,6 +25,7 @@ import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { normalizeArabicText } from '../utils/arabicUtils';
 import initialWeaponsData from '../data/weapons_data.json';
+import { apiFetch } from '../utils/apiClient';
 
 const API_BASE_URL = '/api/weapons';
 
@@ -121,7 +122,7 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
     let isMounted = true;
     async function fetchFromBackend() {
       try {
-        const res = await fetch(API_BASE_URL);
+        const res = await apiFetch(API_BASE_URL);
         if (res.ok) {
           const result = await res.json();
           if (result.success && Array.isArray(result.data) && result.data.length > 0) {
@@ -344,9 +345,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
     try {
       if (editingId) {
         // Try backend update
-        fetch(`${API_BASE_URL}/${editingId}`, {
+        apiFetch(`${API_BASE_URL}/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         }).catch(() => {});
 
@@ -361,9 +361,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
         showToast('تم تحديث بيانات عهدة السلاح بنجاح 🔄');
       } else {
         // Try backend create
-        fetch(API_BASE_URL, {
+        apiFetch(API_BASE_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         }).catch(() => {});
 
@@ -397,7 +396,7 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
       return;
     }
 
-    fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' }).catch(() => {});
+    apiFetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' }).catch(() => {});
     const updated = weapons.filter(item => (item.id || item.WeaponID) !== id);
     saveWeaponsState(updated);
     showToast(`تم مسح السلاح رقم (${num}) من السجلات بنجاح 🗑️`);
@@ -519,9 +518,8 @@ export default function WeaponsSection({ user, forceMembers = [] }) {
           const updated = [...newRecords, ...weapons];
           saveWeaponsState(updated);
           // Try backend bulk import
-          fetch(`${API_BASE_URL}/import`, {
+          apiFetch(`${API_BASE_URL}/import`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ weapons: newRecords })
           }).catch(() => {});
           showToast(`تم استيراد ${importedCount} قطعة سلاح بنجاح! (تم تخطي ${skippedCount} مكررة)`);

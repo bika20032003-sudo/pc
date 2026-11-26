@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { normalizeArabicText } from './utils/arabicUtils.js';
+import { apiFetch, getAuthToken, sha256Hex } from './utils/apiClient.js';
 import {
   LayoutDashboard,
   Radio,
@@ -58,25 +59,25 @@ import {
 } from 'lucide-react';
 
 import importedForceData from './data/force_data.json';
-import VehiclesSection from './components/VehiclesSection';
-import FuelSection from './components/FuelSection';
-import WeaponsSection from './components/WeaponsSection';
-import ForceSection from './components/ForceSection';
-import DepartmentsSection from './components/DepartmentsSection';
-import DashboardSection from './components/DashboardSection';
-import OfficerCardModal from './components/OfficerCardModal';
-import LeavesSection from './components/LeavesSection';
-import PenaltiesSection from './components/PenaltiesSection';
-import OperationsSection from './components/OperationsSection';
-import MailSection from './components/MailSection';
-import ReferredMailSection from './components/ReferredMailSection';
-import TemplatesSection from './components/TemplatesSection';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
-import CommandPaletteModal from './components/CommandPaletteModal';
-import EmployeeInquiryModal from './components/EmployeeInquiryModal';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
-import * as XLSX from 'xlsx';
+
+const VehiclesSection = lazy(() => import('./components/VehiclesSection'));
+const FuelSection = lazy(() => import('./components/FuelSection'));
+const WeaponsSection = lazy(() => import('./components/WeaponsSection'));
+const ForceSection = lazy(() => import('./components/ForceSection'));
+const DepartmentsSection = lazy(() => import('./components/DepartmentsSection'));
+const DashboardSection = lazy(() => import('./components/DashboardSection'));
+const OfficerCardModal = lazy(() => import('./components/OfficerCardModal'));
+const LeavesSection = lazy(() => import('./components/LeavesSection'));
+const PenaltiesSection = lazy(() => import('./components/PenaltiesSection'));
+const OperationsSection = lazy(() => import('./components/OperationsSection'));
+const MailSection = lazy(() => import('./components/MailSection'));
+const ReferredMailSection = lazy(() => import('./components/ReferredMailSection'));
+const TemplatesSection = lazy(() => import('./components/TemplatesSection'));
+const CommandPaletteModal = lazy(() => import('./components/CommandPaletteModal'));
+const EmployeeInquiryModal = lazy(() => import('./components/EmployeeInquiryModal'));
 
 // Official Sections of Ubari Security Directorate (مديرية أمن أوباري)
 export const SECTIONS = [
@@ -110,6 +111,7 @@ const DEFAULT_SYSTEM_USERS = [
     phone: '',
     status: 'active',
     avatar: '',
+    password_sha256: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918',
     last_login: 'الآن (متصل)'
   }
 ];
@@ -320,15 +322,19 @@ export default function App() {
   // Employee Self-Service Inquiry Portal Modal State
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
-  // Live Central Force Synchronization Handler across all connected devices
+  // Live Central Force Synchronization Handler across authenticated devices
   const fetchForceFromServer = useCallback(async (silent = true) => {
+    const activeToken = getAuthToken();
+    if (!activeToken) return false;
+
     try {
-      // Support both relative & absolute endpoints and direct PHP endpoints
+      // Support Node Express API and fallback PHP endpoints with Bearer authentication
       const endpoints = ['api/force', '/api/force', 'api/get-force.php', '/api/get-force.php'];
       let res = null;
       for (const ep of endpoints) {
         try {
-          const r = await fetch(ep);
+          const r = await apiFetch(ep);
+          if (r.status === 401 || r.status === 403) return false;
           if (r.ok) {
             res = r;
             break;
@@ -340,14 +346,7 @@ export default function App() {
       const list = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
       if (list && list.length > 0) {
         setForceMembers((prevMembers) => {
-          const currentMap = new Map();
-          (prevMembers || []).forEach(m => {
-            if (m.id) currentMap.set(Number(m.id), m);
-            const nat = m.national_id ? String(m.national_id).replace(/\D/g, '') : '';
-            if (nat) currentMap.set(nat, m);
-          });
-
-          // Read resilient registry of self-updates
+          // Read only pending unsynced self-updates registry
           let registry = {};
           try {
             const raw = localStorage.getItem('ubari_self_updates_registry');
@@ -357,27 +356,12 @@ export default function App() {
           const merged = list.map((serverMember) => {
             const sNat = serverMember.national_id ? String(serverMember.national_id).replace(/\D/g, '') : '';
             const sFin = serverMember.financial_number ? String(serverMember.financial_number).replace(/\D/g, '') : '';
-            const local = currentMap.get(Number(serverMember.id)) || (sNat ? currentMap.get(sNat) : null);
             const regUpdate = registry[String(serverMember.id)] || (sNat && registry[sNat]) || (sFin && registry[sFin]);
 
             let mergedItem = { ...serverMember };
 
-            // Merge local fields: never allow a server empty string to wipe out non-empty local fields
-            if (local) {
-              Object.keys(local).forEach((key) => {
-                const localVal = local[key];
-                const serverVal = serverMember[key];
-                const isServerEmpty = serverVal === undefined || serverVal === null || String(serverVal).trim() === '' || String(serverVal).trim() === '-';
-                const isLocalFilled = localVal !== undefined && localVal !== null && String(localVal).trim() !== '' && String(localVal).trim() !== '-';
-
-                if (isServerEmpty && isLocalFilled) {
-                  mergedItem[key] = localVal;
-                }
-              });
-            }
-
-            // Always apply registry updates
-            if (regUpdate && regUpdate.updates) {
+            // Only re-apply registry updates that have not yet been acknowledged by the server
+            if (regUpdate && regUpdate.updates && regUpdate.pendingSync) {
               mergedItem = {
                 ...mergedItem,
                 ...regUpdate.updates,
@@ -445,6 +429,7 @@ export default function App() {
         national_id: target?.national_id,
         financial_number: target?.financial_number,
         updates,
+        pendingSync: true,
         updated_at: new Date().toISOString()
       };
       if (memberId) registry[String(memberId)] = regEntry;
@@ -455,12 +440,13 @@ export default function App() {
       console.warn('LocalStorage save error:', err);
     }
 
-    // 3. Sync to central backend API (Node.js / cPanel / PHP)
+    // 3. Sync to central backend API (Node.js / cPanel / PHP) with full 2FA verification
     try {
       const payload = {
         id: memberId,
         national_id: target?.national_id,
         financial_number: target?.financial_number,
+        record_number: updates?.family_record || target?.family_record || target?.record_number || '',
         updates
       };
 
@@ -479,16 +465,26 @@ export default function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-          if (r.ok) {
-            res = r;
-            break;
+          if (r.status === 404 || r.status === 405) continue;
+          if (!r.ok) {
+            const errJson = await r.json().catch(() => null);
+            return { success: false, message: errJson?.message || 'فشل التحقق أو رفض الخادم التعديل' };
           }
+          res = r;
+          break;
         } catch (e) {}
       }
 
       if (res) {
         const data = await res.json();
         if (data && data.success) {
+          try {
+            const registry = JSON.parse(localStorage.getItem('ubari_self_updates_registry') || '{}');
+            if (memberId) delete registry[String(memberId)];
+            if (natKey) delete registry[natKey];
+            if (finKey) delete registry[finKey];
+            localStorage.setItem('ubari_self_updates_registry', JSON.stringify(registry));
+          } catch (_) {}
           fetchForceFromServer(true);
         }
         return data;
@@ -623,27 +619,30 @@ export default function App() {
   });
 
 
-  // Fetch sync users from API
+  // Fetch sync users from API (only when authenticated)
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
+    if (!user || !token) return;
+    apiFetch('/api/users')
+      .then(res => (res.ok ? res.json() : null))
       .then(json => {
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setSystemUsers(json.data);
-          localStorage.setItem('ubari_system_users', JSON.stringify(json.data));
+        const usersList = json && (json.users || json.data);
+        if (json?.success && Array.isArray(usersList) && usersList.length > 0) {
+          setSystemUsers(usersList);
+          localStorage.setItem('ubari_system_users', JSON.stringify(usersList));
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user, token]);
 
-  // Fetch sync force from API if available & enable live 15-second background sync across all devices
+  // Fetch sync force from API only when authenticated & sync every 30s across devices
   useEffect(() => {
+    if (!user || !token) return;
     fetchForceFromServer(true);
     const syncInterval = setInterval(() => {
       fetchForceFromServer(true);
-    }, 15000);
+    }, 30000);
     return () => clearInterval(syncInterval);
-  }, [fetchForceFromServer]);
+  }, [fetchForceFromServer, user, token]);
 
   // Auto Advance Carousel
   useEffect(() => {
@@ -679,6 +678,7 @@ export default function App() {
     const normId = normalizeArabicText(cleanId);
 
     // 1. First attempt login through backend API
+    let backendResponded = false;
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -686,9 +686,19 @@ export default function App() {
         body: JSON.stringify({ identifier: cleanId, password: cleanPass })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const isJsonApi = contentType.includes('application/json');
 
-      if (data.success && data.user) {
+      if (isJsonApi && response.status !== 404) {
+        backendResponded = true;
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.user) {
+          setErrorMessage(data?.message || 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم أو كلمة المرور.');
+          setIsLoading(false);
+          return;
+        }
+
         let userAvatar = data.user.avatar || '';
         const generalAvatar = localStorage.getItem('ubari_user_avatar') || '';
         if (data.user.username !== 'admin' && data.user.id !== 1) {
@@ -736,7 +746,13 @@ export default function App() {
       console.warn('API authentication network attempt notice:', apiErr);
     }
 
-    // 2. Client-Side Fallback Verification (Ubari System Users in LocalStorage & State)
+    if (backendResponded) {
+      setIsLoading(false);
+      return;
+    }
+
+    // 2. Static-Hosting / Offline Verification ONLY when central server is unavailable (hashed SHA-256, zero plaintext bypass)
+    const passDigest = await sha256Hex(cleanPass);
     let localUsers = systemUsers || [];
     try {
       const saved = localStorage.getItem('ubari_system_users');
@@ -766,21 +782,16 @@ export default function App() {
     });
 
     if (foundUser) {
-      // Check if user is active
       if (foundUser.status === 'suspended') {
         setErrorMessage('هذا الحساب معلق مؤقتاً. يرجى مراجعة إدارة المنظومة.');
         setIsLoading(false);
         return;
       }
 
-      // Check password match
-      const passMatches =
-        !foundUser.password ||
-        foundUser.password === cleanPass ||
-        foundUser.password_raw === cleanPass ||
-        cleanPass === 'admin' ||
-        cleanPass === '123456' ||
-        cleanPass === '12341234';
+      // Require SHA-256 hash match (fallback to matching default admin hash only if user record belongs to seeded offline admin)
+      const expectedHash = foundUser.password_sha256 ||
+        ((foundUser.username === 'admin' || foundUser.id === 1) ? DEFAULT_SYSTEM_USERS[0].password_sha256 : '');
+      const passMatches = Boolean(passDigest && expectedHash && passDigest === expectedHash);
 
       if (passMatches) {
         let userAvatar = foundUser.avatar || '';
@@ -834,16 +845,16 @@ export default function App() {
         setIsLoading(false);
         return;
       } else {
-        setErrorMessage('كلمة المرور غير صحيحة لهذا المستخدم.');
+        setErrorMessage('كلمة المرور غير صحيحة أو أن هذا الحساب يتطلب اتصالاً بالخادم المركزي للتحقق.');
         setIsLoading(false);
         return;
       }
     }
 
-    // 3. Fallback for default commander account
+    // 3. Static offline default commander account (verified strictly via SHA-256 digest)
     if (
       (normId === 'admin' || normId.includes('موسى') || normId.includes('البدين')) &&
-      (cleanPass === 'admin' || cleanPass === 'admin123' || cleanPass === '123456' || cleanPass === '12341234')
+      passDigest === DEFAULT_SYSTEM_USERS[0].password_sha256
     ) {
       const adminUser = {
         id: 1,
@@ -937,9 +948,8 @@ export default function App() {
       console.warn('Storage warning for ubari_force_members:', e);
     }
 
-    fetch(`/api/force/${memberId}`, {
+    apiFetch(`/api/force/${memberId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photo: photoDataUrl })
     }).catch(() => {});
 
@@ -979,7 +989,8 @@ export default function App() {
         const json = JSON.parse(text);
         rawArray = Array.isArray(json) ? json : (json.data || json.members || []);
       } else {
-        // Excel (.xlsx, .xls) or CSV
+        // Excel (.xlsx, .xls) or CSV (dynamic import keeps XLSX out of initial bundle)
+        const XLSX = await import('xlsx');
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
@@ -1185,9 +1196,8 @@ export default function App() {
 
     // Sync full combined list with backend API
     try {
-      await fetch('/api/force/replace', {
+      await apiFetch('/api/force/replace', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ members: mergedList })
       });
     } catch (e) {
@@ -1425,27 +1435,30 @@ export default function App() {
       return;
     }
 
-    const newUser = {
-      ...newUserFormData,
+    const { password: rawNewPassword, ...userWithoutPlaintext } = newUserFormData;
+    const passwordDigest = rawNewPassword ? await sha256Hex(rawNewPassword) : '';
+
+    const localUserEntry = {
+      ...userWithoutPlaintext,
       id: Date.now(),
+      ...(passwordDigest ? { password_sha256: passwordDigest } : {}),
       last_login: 'لم يسجل دخول بعد',
       created_at: new Date().toISOString()
     };
 
-    const nextUsers = [newUser, ...systemUsers];
+    const nextUsers = [localUserEntry, ...systemUsers];
     setSystemUsers(nextUsers);
     localStorage.setItem('ubari_system_users', JSON.stringify(nextUsers));
 
     try {
-      await fetch('/api/users', {
+      await apiFetch('/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify({ ...newUserFormData, id: localUserEntry.id })
       });
     } catch (err) {}
 
     setShowAddUserModal(false);
-    setNotificationMsg(`تمت إضافة وتفعيل حساب (${newUser.full_name}) بنجاح`);
+    setNotificationMsg(`تمت إضافة وتفعيل حساب (${localUserEntry.full_name}) بنجاح`);
     setTimeout(() => setNotificationMsg(''), 4500);
   };
 
@@ -1454,14 +1467,20 @@ export default function App() {
     if (e) e.preventDefault();
     if (!editingUserData) return;
 
-    const nextUsers = systemUsers.map(u => u.id === editingUserData.id ? editingUserData : u);
+    const { password: rawEditedPassword, ...cleanEditUser } = editingUserData;
+    const editedDigest = rawEditedPassword ? await sha256Hex(rawEditedPassword) : '';
+    const localUpdatedUser = {
+      ...cleanEditUser,
+      ...(editedDigest ? { password_sha256: editedDigest } : {})
+    };
+
+    const nextUsers = systemUsers.map(u => u.id === localUpdatedUser.id ? localUpdatedUser : u);
     setSystemUsers(nextUsers);
     localStorage.setItem('ubari_system_users', JSON.stringify(nextUsers));
 
     try {
-      await fetch(`/api/users/${editingUserData.id}`, {
+      await apiFetch(`/api/users/${editingUserData.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingUserData)
       });
     } catch (err) {}
@@ -1484,9 +1503,8 @@ export default function App() {
     setSystemUsers(nextUsers);
     localStorage.setItem('ubari_system_users', JSON.stringify(nextUsers));
 
-    fetch(`/api/users/${id}`, {
+    apiFetch(`/api/users/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
     }).catch(() => {});
 
@@ -1527,7 +1545,7 @@ export default function App() {
     localStorage.setItem('ubari_system_users', JSON.stringify(nextUsers));
 
     try {
-      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
     } catch (err) {}
 
     setShowDeleteUserModal(false);
@@ -2317,7 +2335,9 @@ export default function App() {
 
           {/* Dynamic Module View */}
           <div className="dashboard-content">
-            {renderContent()}
+            <Suspense fallback={<div style={{ padding: '48px', textAlign: 'center', fontWeight: 700, color: '#1e3a8a' }}>جارٍ تحميل القسم...</div>}>
+              {renderContent()}
+            </Suspense>
           </div>
         </main>
 
@@ -3329,30 +3349,34 @@ export default function App() {
 
         {/* Personnel Preview Modal (بطاقة المعاينة الشاملة والهوية الأمنية المعتمدة) */}
         {showPreviewModal && previewMember && (
-          <OfficerCardModal
-            member={previewMember}
-            onClose={() => setShowPreviewModal(false)}
-            onEdit={(m) => handleOpenEdit(m)}
-            onUpdatePhoto={handleUpdateMemberPhoto}
-          />
+          <Suspense fallback={null}>
+            <OfficerCardModal
+              member={previewMember}
+              onClose={() => setShowPreviewModal(false)}
+              onEdit={(m) => handleOpenEdit(m)}
+              onUpdatePhoto={handleUpdateMemberPhoto}
+            />
+          </Suspense>
         )}
 
         {/* Global Command Palette / Quick Search (Ctrl + K) */}
-        <CommandPaletteModal
-          isOpen={isCommandPaletteOpen}
-          onClose={() => setIsCommandPaletteOpen(false)}
-          sections={userAllowedSections}
-          forceMembers={forceMembers}
-          onSelectSection={(secId) => {
-            setActiveSection(secId);
-            setIsCommandPaletteOpen(false);
-          }}
-          onViewOfficer={(member) => {
-            setPreviewMember(member);
-            setShowPreviewModal(true);
-            setIsCommandPaletteOpen(false);
-          }}
-        />
+        <Suspense fallback={null}>
+          <CommandPaletteModal
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            sections={userAllowedSections}
+            forceMembers={forceMembers}
+            onSelectSection={(secId) => {
+              setActiveSection(secId);
+              setIsCommandPaletteOpen(false);
+            }}
+            onViewOfficer={(member) => {
+              setPreviewMember(member);
+              setShowPreviewModal(true);
+              setIsCommandPaletteOpen(false);
+            }}
+          />
+        </Suspense>
 
         {/* Global Sovereign Toast Notification */}
         <GlobalToast
@@ -3362,14 +3386,16 @@ export default function App() {
 
         {/* Employee Self-Service Inquiry Portal Modal */}
         {showInquiryModal && (
-          <EmployeeInquiryModal
-            isOpen={showInquiryModal}
-            onClose={() => {
-              setShowInquiryModal(false);
-            }}
-            forceMembers={forceMembers}
-            onUpdateMember={handleSelfUpdateForceMember}
-          />
+          <Suspense fallback={null}>
+            <EmployeeInquiryModal
+              isOpen={showInquiryModal}
+              onClose={() => {
+                setShowInquiryModal(false);
+              }}
+              forceMembers={forceMembers}
+              onUpdateMember={handleSelfUpdateForceMember}
+            />
+          </Suspense>
         )}
       </div>
     );
@@ -3704,14 +3730,16 @@ export default function App() {
 
       {/* Employee Self-Service Inquiry Portal Modal */}
       {showInquiryModal && (
-        <EmployeeInquiryModal
-          isOpen={showInquiryModal}
-          onClose={() => {
-            setShowInquiryModal(false);
-          }}
-          forceMembers={forceMembers}
-          onUpdateMember={handleSelfUpdateForceMember}
-        />
+        <Suspense fallback={null}>
+          <EmployeeInquiryModal
+            isOpen={showInquiryModal}
+            onClose={() => {
+              setShowInquiryModal(false);
+            }}
+            forceMembers={forceMembers}
+            onUpdateMember={handleSelfUpdateForceMember}
+          />
+        </Suspense>
       )}
     </div>
   );

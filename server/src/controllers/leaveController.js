@@ -1,5 +1,28 @@
 import { getDb } from '../config/db.js';
 import { updateForceMemberStatusDirect } from './forceController.js';
+import { safeWriteJson } from '../utils/fileUtils.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const LEAVES_JSON_PATHS = [
+  path.resolve(__dirname, '../data/leaves_data.json'),
+  path.resolve(__dirname, '../../../client/public/api/data/leaves_data.json'),
+  path.resolve(__dirname, '../../../client/src/data/leaves_data.json')
+];
+
+async function syncLeavesJson(db) {
+  try {
+    const rows = await db.all('SELECT * FROM leaves ORDER BY id DESC');
+    for (const p of LEAVES_JSON_PATHS) {
+      safeWriteJson(p, rows);
+    }
+  } catch (err) {
+    console.warn('Sync leaves JSON error:', err.message);
+  }
+}
 
 function parseValidDate(dateInput) {
   if (!dateInput) return null;
@@ -124,6 +147,7 @@ export async function createLeave(req, res) {
     }
 
     await db.run('COMMIT;');
+    await syncLeavesJson(db);
 
     const created = await db.get('SELECT * FROM leaves WHERE id = ?', [result.lastID]);
 
@@ -177,6 +201,7 @@ export async function resumeDuty(req, res) {
     }
 
     await db.run('COMMIT;');
+    await syncLeavesJson(db);
 
     const updated = await db.get('SELECT * FROM leaves WHERE id = ?', [leaveId]);
 
@@ -236,6 +261,7 @@ export async function updateLeave(req, res) {
       leaveId
     ]);
 
+    await syncLeavesJson(db);
     const updated = await db.get('SELECT * FROM leaves WHERE id = ?', [leaveId]);
 
     return res.status(200).json({
@@ -258,6 +284,8 @@ export async function deleteLeave(req, res) {
     if (result.changes === 0) {
       return res.status(404).json({ success: false, message: 'الإجازة غير موجودة' });
     }
+
+    await syncLeavesJson(db);
 
     return res.status(200).json({
       success: true,
