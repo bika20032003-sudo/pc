@@ -47,6 +47,7 @@ import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 import { apiFetch } from '../utils/apiClient';
+import { OFFICIAL_EDITOR_FONTS } from '../utils/editorFonts';
 
 // Default initial Outgoing Mail matching Image 1 & Image 3
 const INITIAL_OUTGOING_MAIL = [
@@ -1202,15 +1203,13 @@ export default function MailSection({ user, forceMembers = [] }) {
                     className="toolbar-select font-family-select"
                     value={previewLetter.font_family || "'Cairo', sans-serif"}
                     onChange={(e) => setPreviewLetter(prev => ({ ...prev, font_family: e.target.value }))}
-                    style={{ minWidth: '145px', fontWeight: 'bold' }}
+                    style={{ minWidth: '175px', fontWeight: 'bold' }}
                   >
-                    <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
-                    <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
-                    <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
-                    <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
-                    <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
-                    <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
-                    <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
+                    {OFFICIAL_EDITOR_FONTS.map((f) => (
+                      <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                        {f.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

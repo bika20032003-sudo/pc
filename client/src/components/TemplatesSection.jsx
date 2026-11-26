@@ -45,6 +45,7 @@ import {
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { OFFICIAL_EDITOR_FONTS } from '../utils/editorFonts';
 
 // Sample pre-seeded employees matching reference image 4 + directorate officers
 const SAMPLE_EMPLOYEES = [
@@ -1379,15 +1380,13 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                               className="toolbar-select font-family-select"
                               value={activeDocument.font_family || "'Cairo', sans-serif"}
                               onChange={(e) => setActiveDocument({ ...activeDocument, font_family: e.target.value })}
-                              style={{ minWidth: '130px', fontWeight: 'bold' }}
+                              style={{ minWidth: '170px', fontWeight: 'bold' }}
                             >
-                              <option value="'Cairo', sans-serif">خط كايرو الرسمي (Cairo)</option>
-                              <option value="'Amiri', serif">خط الأميري النسخي (Amiri)</option>
-                              <option value="'Scheherazade New', serif">خط شهرزاد الفاخر (Scheherazade)</option>
-                              <option value="'Tajawal', sans-serif">خط تجوال الحديث (Tajawal)</option>
-                              <option value="'Almarai', sans-serif">خط المراعي المعاصر (Almarai)</option>
-                              <option value="'Noto Naskh Arabic', serif">خط نوتو نسخ (Noto Naskh)</option>
-                              <option value="'Traditional Arabic', serif">خط عربي تقليدي (Traditional)</option>
+                              {OFFICIAL_EDITOR_FONTS.map((f) => (
+                                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                                  {f.label}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
@@ -1491,6 +1490,16 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                         <textarea
                           rows={8}
                           className="rich-body-textarea"
+                          style={{
+                            fontFamily: activeDocument.font_family || "'Cairo', sans-serif",
+                            fontSize: activeDocument.font_size || '16.5px',
+                            lineHeight: activeDocument.line_height || '2',
+                            textAlign: activeDocument.text_align || 'right',
+                            fontWeight: activeDocument.font_weight || 'normal',
+                            fontStyle: activeDocument.font_style || 'normal',
+                            textDecoration: activeDocument.text_decoration || 'none',
+                            color: activeDocument.text_color || '#000000'
+                          }}
                           value={activeDocument.body_text || ''}
                           onChange={(e) => setActiveDocument({ ...activeDocument, body_text: e.target.value })}
                           placeholder="اكتب أو عدّل نص المستند وصياغته بحرية كاملة..."
