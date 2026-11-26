@@ -45,7 +45,7 @@ import {
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
-import { OFFICIAL_EDITOR_FONTS } from '../utils/editorFonts';
+import { OFFICIAL_EDITOR_FONTS, OFFICIAL_CONTACT_DEFAULTS, resolveOfficialPhone, resolveOfficialEmail } from '../utils/editorFonts';
 
 // Sample pre-seeded employees matching reference image 4 + directorate officers
 const SAMPLE_EMPLOYEES = [
@@ -464,8 +464,8 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       // Footer
       editor: (user && user.full_name && user.full_name.includes('عبدالصمد')) ? 'عبدالصمد' : (user?.full_name || 'عبدالصمد'),
       printer: (user && user.full_name && user.full_name.includes('عبدالصمد')) ? 'عبدالصمد' : (user?.full_name || 'عبدالصمد'),
-      phone: '0915938137',
-      email: 'Info@ubari-security.ly',
+      phone: OFFICIAL_CONTACT_DEFAULTS.phone,
+      email: OFFICIAL_CONTACT_DEFAULTS.email,
       created_at: new Date().toISOString()
     };
   };
@@ -1917,7 +1917,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                             type="text"
                             className="editor-text-input"
                             dir="ltr"
-                            value={activeDocument.phone || '0915938137'}
+                            value={resolveOfficialPhone(activeDocument.phone)}
                             onChange={(e) => setActiveDocument({ ...activeDocument, phone: e.target.value })}
                           />
                         </div>
@@ -1928,7 +1928,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
                             type="text"
                             className="editor-text-input"
                             dir="ltr"
-                            value={activeDocument.email || 'Info@ubari-security.ly'}
+                            value={resolveOfficialEmail(activeDocument.email)}
                             onChange={(e) => setActiveDocument({ ...activeDocument, email: e.target.value })}
                           />
                         </div>
@@ -2118,10 +2118,10 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
             <span>الطباعة: {doc.printer || 'عبدالصمد'}</span>
           </div>
           <div className="footer-cell phone-cell">
-            <span>Phone: {doc.phone || '0915938137'}</span>
+            <span>Phone: <span dir="ltr">{resolveOfficialPhone(doc.phone)}</span></span>
           </div>
           <div className="footer-cell email-cell">
-            <span>Email: {doc.email || 'Info@ubari-security.ly'}</span>
+            <span>Email: <span dir="ltr">{resolveOfficialEmail(doc.email)}</span></span>
           </div>
         </div>
       </footer>

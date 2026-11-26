@@ -612,7 +612,7 @@ export async function initDatabase() {
           o.recipient, o.recipient_title, '', o.date, '', o.subject,
           o.delivery_method, o.sender_employee, o.editor_employee, '',
           o.print_employee, o.status, o.attachment_name, o.letter_body, o.cc_list,
-          'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '0915938137', 'Info@ubari-security.ly',
+          'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '0921250071', 'moderytamnobari@gmail.com',
           '', '', ''
         ]);
       }

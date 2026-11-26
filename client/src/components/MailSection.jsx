@@ -47,7 +47,7 @@ import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { createOfficialLetterHtml } from '../utils/officialLetterTemplate';
 import { apiFetch } from '../utils/apiClient';
-import { OFFICIAL_EDITOR_FONTS } from '../utils/editorFonts';
+import { OFFICIAL_EDITOR_FONTS, OFFICIAL_CONTACT_DEFAULTS, resolveOfficialPhone, resolveOfficialEmail } from '../utils/editorFonts';
 
 // Default initial Outgoing Mail matching Image 1 & Image 3
 const INITIAL_OUTGOING_MAIL = [
@@ -85,8 +85,8 @@ const INITIAL_OUTGOING_MAIL = [
     ],
     signer_name: 'لواء / موسى سعد محمد البدين',
     signer_title: 'مدير مديرية أمن أوباري',
-    phone: '0915938137',
-    email: 'Info@ubari-security.ly',
+    phone: OFFICIAL_CONTACT_DEFAULTS.phone,
+    email: OFFICIAL_CONTACT_DEFAULTS.email,
     created_at: '2026-10-11T10:30:00'
   },
   {
@@ -119,8 +119,8 @@ const INITIAL_OUTGOING_MAIL = [
     ],
     signer_name: 'لواء / موسى سعد محمد البدين',
     signer_title: 'مدير مديرية أمن أوباري',
-    phone: '0915938137',
-    email: 'Info@ubari-security.ly',
+    phone: OFFICIAL_CONTACT_DEFAULTS.phone,
+    email: OFFICIAL_CONTACT_DEFAULTS.email,
     created_at: '2026-10-08T09:15:00'
   }
 ];
@@ -372,8 +372,8 @@ export default function MailSection({ user, forceMembers = [] }) {
         'الغرفة الأمنية المشتركة',
         'الإدارة العامة للتفتيش والمتابعة'
       ],
-      phone: '0915938137',
-      email: 'Info@ubari-security.ly',
+      phone: OFFICIAL_CONTACT_DEFAULTS.phone,
+      email: OFFICIAL_CONTACT_DEFAULTS.email,
       created_at: new Date().toISOString()
     };
 
@@ -782,8 +782,8 @@ export default function MailSection({ user, forceMembers = [] }) {
         'الغرفة الأمنية المشتركة',
         'الإدارة العامة للتفتيش والمتابعة'
       ],
-      phone: '0915938137',
-      email: 'Info@ubari-security.ly'
+      phone: OFFICIAL_CONTACT_DEFAULTS.phone,
+      email: OFFICIAL_CONTACT_DEFAULTS.email
     };
   };
 
@@ -1612,7 +1612,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                   <input
                     type="text"
                     className="editor-text-input"
-                    value={previewLetter.phone || '0915938137'}
+                    value={resolveOfficialPhone(previewLetter.phone)}
                     onChange={(e) => setPreviewLetter(prev => ({ ...prev, phone: e.target.value }))}
                   />
                 </div>
@@ -1621,7 +1621,7 @@ export default function MailSection({ user, forceMembers = [] }) {
                   <input
                     type="text"
                     className="editor-text-input"
-                    value={previewLetter.email || 'Info@ubari-security.ly'}
+                    value={resolveOfficialEmail(previewLetter.email)}
                     onChange={(e) => setPreviewLetter(prev => ({ ...prev, email: e.target.value }))}
                   />
                 </div>
@@ -3332,10 +3332,10 @@ function OfficialLetterSheet({ letter, qrUrl }) {
             <span>الطباعة: {letter.print_employee || 'عبدالصمد'}</span>
           </div>
           <div className="footer-cell phone-cell">
-            <span>Phone: {letter.phone || '0915938137'}</span>
+            <span>Phone: <span dir="ltr">{resolveOfficialPhone(letter.phone)}</span></span>
           </div>
           <div className="footer-cell email-cell">
-            <span>Email: {letter.email || 'Info@ubari-security.ly'}</span>
+            <span>Email: <span dir="ltr">{resolveOfficialEmail(letter.email)}</span></span>
           </div>
         </div>
       </footer>

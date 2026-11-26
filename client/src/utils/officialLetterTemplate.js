@@ -4,6 +4,8 @@ import { MOI_LOGO_BASE64 } from './logoBase64.js';
  * منشئ المراسلات والرسائل الرسمية المعتمدة لوزارة الداخلية - مديرية أمن أوباري
  * يولد قالباً رسمياً A4 عالي الدقة متوافقاً مع معايير المراسلات الحكومية الليبية
  */
+import { OFFICIAL_CONTACT_DEFAULTS, resolveOfficialPhone, resolveOfficialEmail } from './editorFonts.js';
+
 export function createOfficialLetterHtml({
   reference = '12/2026',
   recordNumber = '1',
@@ -29,12 +31,14 @@ export function createOfficialLetterHtml({
   ],
   editor = 'عبدالصمد',
   printer = 'عبدالصمد',
-  phone = '0915938137',
-  email = 'Info@ubari-security.ly',
+  phone = OFFICIAL_CONTACT_DEFAULTS.phone,
+  email = OFFICIAL_CONTACT_DEFAULTS.email,
   showStamp = true,
   showSignature = true,
   qrCodeUrl = ''
 }) {
+  const resolvedPhone = resolveOfficialPhone(phone);
+  const resolvedEmail = resolveOfficialEmail(email);
   const contentBody = bodyHtml || `<p style="line-height: 2.1; font-size: 15px; margin: 0; text-align: justify; white-space: pre-line;">${bodyText || 'إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وتدابير وفق ما تقتضيه المصلحة الأمنية العامة وخدمة الوطن والمواطن.'}</p>`;
 
   const halfCc = Math.ceil(ccList.length / 2);
@@ -191,8 +195,8 @@ export function createOfficialLetterHtml({
       <div style="border-top: 2px solid #000000; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #475569; font-weight: 700;">
         <div>المحرر: <strong style="color: #000000;">${editor}</strong></div>
         <div>الطباعة: <strong style="color: #000000;">${printer}</strong></div>
-        <div>الهاتف: <strong style="color: #000000; direction: ltr; display: inline-block;">${phone}</strong></div>
-        <div>البريد: <strong style="color: #1e3a8a; direction: ltr; display: inline-block;">${email}</strong></div>
+        <div>الهاتف: <strong style="color: #000000; direction: ltr; display: inline-block;">${resolvedPhone}</strong></div>
+        <div>البريد: <strong style="color: #1e3a8a; direction: ltr; display: inline-block;">${resolvedEmail}</strong></div>
       </div>
     </div>
   `;
