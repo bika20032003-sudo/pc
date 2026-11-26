@@ -1194,10 +1194,10 @@ export default function ForceSection({
               {/* Row 5 */}
               <div className="grid-4-cols">
                 <div className="input-field-group">
-                  <label>رقم قيد العائلة</label>
+                  <label>رقم القيد (قيد العائلة / السجل المدني)</label>
                   <input
                     type="text"
-                    placeholder="رقم قيد العائلة..."
+                    placeholder="رقم القيد المعتمد للاستعلام..."
                     value={forceFormData.family_record}
                     onChange={(e) => setForceFormData({ ...forceFormData, family_record: e.target.value })}
                   />

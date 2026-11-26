@@ -34,9 +34,6 @@ import {
 } from 'lucide-react';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 
-// Official Google Cloud Console Client ID for Ministry Portal
-const OFFICIAL_GOOGLE_CLIENT_ID = '368836718086-jb8f3bq2gh0ea143jjkk3gvpnpm7jnib.apps.googleusercontent.com';
-
 // Helper: Normalize Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) to standard English ASCII digits (0123456789)
 function sanitizeDigits(val) {
   if (!val) return '';
@@ -108,35 +105,11 @@ const HEALTH_CONDITIONS = [
   'أخرى (يرجى التدوين في الملاحظات)'
 ];
 
-// Official Google 4-Color SVG Icon
-const GoogleIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-  </svg>
-);
-
-export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [], onUpdateMember, autoTriggerGoogle = false }) {
-  // Search States (Strictly National ID)
+export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [], onUpdateMember }) {
+  // Search States (Strictly National/Admin ID + رقم القيد Two-Factor Verification)
   const [searchInput, setSearchInput] = useState('');
+  const [recordNumberInput, setRecordNumberInput] = useState('');
   const [searchError, setSearchError] = useState(null);
-
-  // Google Authentication State
-  const [googleUser, setGoogleUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ubari_employee_google_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [googleModalEmail, setGoogleModalEmail] = useState('');
-  const [googleModalName, setGoogleModalName] = useState('');
-  const [googleLoginNotice, setGoogleLoginNotice] = useState('');
-  const [isPairingGoogle, setIsPairingGoogle] = useState(false);
 
   // Active Verified Employee
   const [verifiedMember, setVerifiedMember] = useState(null);
@@ -180,7 +153,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     // Contact & Residence (الاتصال والإقامة)
     { key: 'phone', label: 'رقم الهاتف الشخصي', tab: 'contact' },
     { key: 'emergency_contact', label: 'هاتف الطوارئ / قريب', tab: 'contact' },
-    { key: 'email', label: 'البريد الإلكتروني (حساب Google)', tab: 'contact' },
+    { key: 'email', label: 'البريد الإلكتروني', tab: 'contact' },
     { key: 'residence', label: 'محل الإقامة الفعلي', tab: 'contact' },
     { key: 'tribe_city', label: 'القبيلة / المدينة', tab: 'contact' },
 
@@ -286,163 +259,62 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setActiveTab('career');
   };
 
-  // Handle Search Verification - Strictly 1-to-1 matching via National ID or Administrative Number (الرقم الوطني أو الرقم الإداري)
+  // Strict Two-Factor Verification: (الرقم الوطني أو الإداري) + (رقم القيد)
+  // من لم يدخل رقم القيد أو لم يتطابق مع سجله لا يظهر له الاستعلام إطلاقاً
   const handleSearch = (e) => {
     if (e) e.preventDefault();
     setSearchError(null);
     setSubmitSuccess(false);
     setSubmitError(null);
 
-    if (!googleUser) {
-      setSearchError('يلزم تسجيل الدخول بحساب Google المعتمد أولاً قبل الاستعلام عن الملف.');
-      return;
-    }
-
-    const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length < 5 || clean.length > 12) {
-      setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري (10 أرقام) أو الرقم المالي الصحيح للاستعلام عن الملف.');
-      return;
-    }
-
-    // High performance in-memory lookup by National ID, Administrative Number, or Financial/Job Number
-    const match = forceMembers.find((m) => {
-      const nat = sanitizeDigits(m.national_id);
-      const fin = sanitizeDigits(m.financial_number);
-      const job = sanitizeDigits(m.job_number);
-      return (nat && nat === clean) || (fin && fin === clean) || (job && job === clean);
-    });
-
-    if (!match) {
-      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم بشكل صحيح.`);
+    const cleanId = sanitizeDigits(searchInput);
+    if (!cleanId || cleanId.length < 4 || cleanId.length > 14) {
+      setSearchError('يرجى إدخال الرقم الوطني المعتمد (12 رقماً) أو الرقم الإداري / الوظيفي الصحيح.');
       setVerifiedMember(null);
       return;
     }
 
-    loadMemberIntoForm(match);
-  };
-
-  // Google Login Success Handler
-  const handleGoogleSuccess = (userInfo) => {
-    setGoogleUser(userInfo);
-    try {
-      localStorage.setItem('ubari_employee_google_user', JSON.stringify(userInfo));
-    } catch (e) { }
-
-    setShowGoogleModal(false);
-    setSearchError(null);
-
-    // Look for matching force member with this email
-    const cleanEmail = userInfo.email?.trim().toLowerCase();
-    const match = forceMembers.find((m) => {
-      const mEmail = m.email ? String(m.email).trim().toLowerCase() : '';
-      return mEmail && mEmail === cleanEmail;
-    });
-
-    if (match) {
-      loadMemberIntoForm(match, userInfo.email);
-      setGoogleLoginNotice(`تم التحقق بنجاح من هوية المنتسب [${match.name}] بواسطة حساب Google: ${userInfo.email}`);
-    } else {
-      setIsPairingGoogle(true);
-      setGoogleLoginNotice(`تم تأكيد حساب Google (${userInfo.email}) بنجاح. يرجى إدخال رقمك الوطني أو الإداري لمرة واحدة لربط حساب Google بملفك بالقوة العمومية.`);
-    }
-  };
-
-  // Google Pairing with National/Admin/Financial ID
-  const handlePairGoogle = (e) => {
-    if (e) e.preventDefault();
-    const clean = sanitizeDigits(searchInput);
-    if (!clean || clean.length < 5 || clean.length > 12) {
-      setSearchError('يرجى إدخال الرقم الوطني (12 رقماً) أو الإداري (10 أرقام) أو الرقم المالي لربط حساب Google.');
+    const cleanRecord = sanitizeDigits(recordNumberInput);
+    if (!recordNumberInput.trim() || !cleanRecord) {
+      setSearchError('تنبيه أمني: يلزم إدخال رقم القيد المربوط بالرقم الوطني أو الإداري؛ لا يمكن عرض الاستعلام لمن لم يدخل رقم القيد.');
+      setVerifiedMember(null);
       return;
     }
 
-    const match = forceMembers.find((m) => {
+    // Lookup candidates by National ID, Financial/Administrative Number, Job Number, or Military Number
+    const candidates = forceMembers.filter((m) => {
       const nat = sanitizeDigits(m.national_id);
       const fin = sanitizeDigits(m.financial_number);
       const job = sanitizeDigits(m.job_number);
-      return (nat && nat === clean) || (fin && fin === clean) || (job && job === clean);
+      const mil = sanitizeDigits(m.military_number);
+      return (nat && nat === cleanId) || (fin && fin === cleanId) || (job && job === cleanId) || (mil && mil === cleanId);
     });
 
-    if (!match) {
-      setSearchError(`لم يتم العثور على أي قيد مطابق للرقم المدخل [${searchInput}]. يرجى التأكد من كتابة الرقم بدقة.`);
+    if (candidates.length === 0) {
+      setSearchError(`عفواً، لم يتم العثور على أي قيد مطابق للرقم الوطني أو الإداري المدخل [${searchInput}]. يرجى التأكد من كتابته بدقة.`);
+      setVerifiedMember(null);
       return;
     }
 
-    // Pair and load
-    loadMemberIntoForm(match, googleUser?.email);
-    setIsPairingGoogle(false);
-    setSearchError(null);
-    setGoogleLoginNotice(`تم ربط حساب Google (${googleUser?.email}) بملف المنتسب (${match.name}) بنجاح!`);
+    // Verify linked رقم القيد (family_record / record_number)
+    const getRecordDigits = (m) => sanitizeDigits(m.family_record || m.record_number);
+    const exactMatch = candidates.find((m) => {
+      const rec = getRecordDigits(m);
+      return rec && rec === cleanRecord;
+    });
 
-    // Auto-save the email binding to the backend
-    if (onUpdateMember && googleUser?.email) {
-      onUpdateMember(match.id, { email: googleUser.email });
-    }
-  };
-
-  // Auto-trigger Google sign-in if opened from direct Google button on login page
-  useEffect(() => {
-    if (isOpen && autoTriggerGoogle && !verifiedMember) {
-      const timer = setTimeout(() => {
-        handleGoogleSignInClick();
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, autoTriggerGoogle, verifiedMember]);
-
-  // Trigger Google Sign-In (Official OAuth 2.0 or Token Client with interactive fallback)
-  const handleGoogleSignInClick = () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || OFFICIAL_GOOGLE_CLIENT_ID;
-
-    // 1. Official Google Identity Services OAuth 2.0 Token Client (Popup flow)
-    if (clientId && window.google?.accounts?.oauth2) {
-      try {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                });
-                const profile = await res.json();
-                if (profile && profile.email) {
-                  handleGoogleSuccess({
-                    email: profile.email,
-                    name: profile.name || profile.email.split('@')[0],
-                    avatar: profile.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || profile.email)}&background=4285F4&color=fff`
-                  });
-                  return;
-                }
-              } catch (fetchErr) {
-                console.warn('Google userinfo fetch error:', fetchErr);
-              }
-            }
-          },
-          error_callback: (err) => {
-            console.warn('Google OAuth popup cancelled or closed:', err);
-            // Strict Security: NEVER open fallback modal or unlock inquiry if user cancelled or closed Google login
-            setSearchError('تم إيقاف أو إلغاء تسجيل الدخول بـ Google. يلزم تسجيل الدخول للوصول للاستعلام.');
-          }
-        });
-        client.requestAccessToken();
-        return;
-      } catch (err) {
-        console.warn('Google GSI init fallback:', err);
+    if (!exactMatch) {
+      const anyHasRecord = candidates.some((m) => Boolean(getRecordDigits(m)));
+      if (!anyHasRecord) {
+        setSearchError('عذراً، لم يتم ربط وتفعيل رقم القيد لهذا المنتسب في السجل المركزي بعد. يرجى مراجعة قسم شؤون الضباط والأفراد لإضافة رقم القيد، ولا يمكن إظهار الاستعلام بدونه.');
+      } else {
+        setSearchError('عذراً، رقم القيد المدخل غير متطابق مع الرقم الوطني أو الإداري لهذا المنتسب. تم حجب البيانات لحماية الخصوصية.');
       }
+      setVerifiedMember(null);
+      return;
     }
 
-    setSearchError('جاري تحميل خدمة Google، يرجى المحاولة بعد قليل...');
-  };
-
-  const handleGoogleSignOut = () => {
-    setGoogleUser(null);
-    try {
-      localStorage.removeItem('ubari_employee_google_user');
-    } catch (e) { }
-    setIsPairingGoogle(false);
-    setGoogleLoginNotice('');
+    loadMemberIntoForm(exactMatch);
   };
 
   // Reset to search another employee
@@ -453,6 +325,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
     setSubmitSuccess(false);
     setSubmitError(null);
     setSearchInput('');
+    setRecordNumberInput('');
     setShowEmptyOnly(false);
   };
 
@@ -694,8 +567,8 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
         {/* Modal Scrollable Body */}
         <div style={{ padding: '22px 24px', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
           {!verifiedMember ? (
-            /* STEP 1: Strict Identity Verification & Google Sign-In */
-            <div style={{ maxWidth: '640px', margin: '15px auto', textAlign: 'center' }}>
+            /* STEP 1: Strict Two-Factor Verification (الرقم الوطني أو الإداري + رقم القيد) */
+            <div style={{ maxWidth: '600px', margin: '15px auto', textAlign: 'center' }}>
               <div
                 style={{
                   width: '68px',
@@ -710,373 +583,154 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                   margin: '0 auto 16px'
                 }}
               >
-                <Search size={34} style={{ color: '#1e3a8a' }} />
+                <ShieldCheck size={34} style={{ color: '#1e3a8a' }} />
               </div>
 
               <h3 style={{ fontSize: '19px', fontWeight: 900, color: '#0a192f', marginBottom: '8px' }}>
                 بوابة استعلام واستيفاء بيانات المنتسب
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.6, marginBottom: '20px' }}>
-                يمكنك الاستعلام الفوري والوصول المباشر لملفك بالقوة العمومية عبر <strong>تسجيل الدخول بحساب Google</strong> أو بإدخال <strong>الرقم الوطني / الإداري المعتمد</strong> مباشرة وبشكل آمن.
+                لحماية خصوصية البيانات ومنع الاطلاع غير المصرح به، يلزم إدخال <strong>الرقم الوطني أو الإداري</strong> مع <strong>رقم القيد</strong> المربوط بالملف معاً.
               </p>
 
-              {googleLoginNotice && (
-                <div style={{
-                  padding: '12px 16px',
-                  background: '#f0fdf4',
-                  border: '1.5px solid #86efac',
-                  borderRadius: '10px',
-                  color: '#15803d',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  marginBottom: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  textAlign: 'right'
-                }}>
-                  <CheckCircle2 size={18} style={{ color: '#22c55e', flexShrink: 0 }} />
-                  <span>{googleLoginNotice}</span>
-                </div>
-              )}
-
-              {isPairingGoogle ? (
-                /* Google First-Time Pairing Form */
-                <div style={{
-                  background: '#ffffff',
-                  border: '2px solid #4285F4',
-                  borderRadius: '14px',
-                  padding: '20px',
-                  boxShadow: '0 4px 18px rgba(66, 133, 244, 0.12)',
-                  marginBottom: '20px',
-                  textAlign: 'right'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <GoogleIcon size={24} />
-                    <div>
-                      <div style={{ fontSize: '14.5px', fontWeight: 900, color: '#1e3a8a' }}>ربط حساب Google بملف القوة العمومية</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>تم التحقق من الحساب: <strong>{googleUser?.email}</strong></div>
-                    </div>
-                  </div>
-
-                  <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6, marginBottom: '14px' }}>
-                    لإتمام الربط الأمني لمرة واحدة، يرجى إدخال <strong>الرقم الوطني (12 رقماً)</strong> أو <strong>الرقم الإداري (10 أرقام)</strong> الخاص بك لإقران حسابك بسجلك الرسمي:
-                  </p>
-
-                  <form onSubmit={handlePairGoogle}>
-                    <div style={{ position: 'relative', marginBottom: '14px' }}>
-                      <input
-                        type="text"
-                        dir="ltr"
-                        maxLength={12}
-                        placeholder="أدخل الرقم الوطني أو الإداري..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          paddingLeft: '44px',
-                          borderRadius: '10px',
-                          border: '2px solid #1e3a8a',
-                          fontSize: '16px',
-                          fontWeight: 800,
-                          fontFamily: 'monospace',
-                          boxSizing: 'border-box'
-                        }}
-                        autoFocus
-                      />
-                      <Search size={20} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#1e3a8a' }} />
-                    </div>
-
-                    {searchError && (
-                      <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '12.5px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <AlertCircle size={16} />
-                        <span>{searchError}</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button
-                        type="submit"
-                        style={{
-                          flex: 1,
-                          padding: '12px',
-                          background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-                          color: '#fff',
-                          border: '1.5px solid #d4af37',
-                          borderRadius: '8px',
-                          fontWeight: 900,
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        تأكيد الربط وعرض الملف
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsPairingGoogle(false)}
-                        style={{
-                          padding: '12px 18px',
-                          background: '#f1f5f9',
-                          color: '#475569',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '8px',
-                          fontWeight: 800,
-                          fontSize: '13px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                /* Standard Query & Google Sign-In Form */
-                <>
-                  {/* Google Connected Quick Login Card (if previously signed in) */}
-                  {googleUser && (
-                    <div style={{
-                      marginBottom: '18px',
-                      padding: '14px 18px',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
-                      border: '1.5px solid #86efac',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      textAlign: 'right',
-                      boxShadow: '0 2px 10px rgba(34, 197, 94, 0.08)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '50%',
-                          background: '#22c55e',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          fontSize: '17px',
-                          overflow: 'hidden',
-                          border: '2px solid #ffffff',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                        }}>
-                          {googleUser.avatar ? (
-                            <img src={googleUser.avatar} alt="Google" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            googleUser.name?.charAt(0) || 'G'
-                          )}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <GoogleIcon size={14} />
-                            <span>{googleUser.name || 'حساب Google متصل'}</span>
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#15803d' }}>
-                            {googleUser.email}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleGoogleSuccess(googleUser)}
-                          style={{
-                            padding: '8px 14px',
-                            background: '#15803d',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontSize: '12.5px',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          <CheckCircle2 size={14} />
-                          <span>دخول فوري</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleGoogleSignOut}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#dc2626',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          تبديل
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Google Sign-In Main Button */}
-                  <div style={{ marginBottom: '20px' }}>
-                    <button
-                      type="button"
-                      onClick={handleGoogleSignInClick}
+              <form onSubmit={handleSearch} style={{
+                background: '#ffffff',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '14px',
+                padding: '22px',
+                textAlign: 'right',
+                boxShadow: '0 4px 16px rgba(10, 25, 47, 0.06)'
+              }}>
+                {/* Field 1: National ID or Administrative Number */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                    1. الرقم الوطني أو الرقم الإداري المعتمد (الرقم الوظيفي / المالي):
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      maxLength={14}
+                      placeholder="مثال: 119960541445 أو 8163151"
+                      value={searchInput}
+                      onChange={(e) => {
+                        setSearchInput(e.target.value);
+                        if (searchError) setSearchError(null);
+                      }}
+                      required
                       style={{
                         width: '100%',
-                        padding: '13px 20px',
-                        background: '#ffffff',
-                        color: '#1f2937',
-                        border: '1.5px solid #dadce0',
+                        padding: '12px 16px',
+                        paddingLeft: '44px',
                         borderRadius: '10px',
-                        fontSize: '15px',
+                        border: '2px solid #cbd5e1',
+                        fontSize: '15.5px',
                         fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        boxShadow: '0 2px 8px rgba(60, 64, 67, 0.08)',
-                        transition: 'all 0.2s ease'
+                        fontFamily: 'monospace',
+                        boxSizing: 'border-box',
+                        outline: 'none'
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#4285F4';
-                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(66, 133, 244, 0.18)';
-                        e.currentTarget.style.background = '#f8fafc';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#dadce0';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(60, 64, 67, 0.08)';
-                        e.currentTarget.style.background = '#ffffff';
-                      }}
-                    >
-                      <GoogleIcon size={22} />
-                      <span>تسجيل الدخول والاستعلام باستخدام Google</span>
-                    </button>
+                      autoFocus
+                    />
+                    <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>
+                      <Hash size={20} />
+                    </div>
                   </div>
+                </div>
 
-                  {googleUser ? (
-                    <>
-                      {/* Or Divider */}
-                      <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 18px', gap: '14px' }}>
-                        <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
-                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#64748b' }}>الاستعلام بالرقم الوطني أو الإداري المعتمد</span>
-                        <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }} />
-                      </div>
+                {/* Field 2: Linked Record Number (رقم القيد) - Mandatory */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                    <span>2. رقم القيد (مربوط بالرقم الوطني أو الإداري):</span>
+                    <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: 800, background: '#fef2f2', padding: '2px 8px', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                      إلزامي للتحقق *
+                    </span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      maxLength={20}
+                      placeholder="أدخل رقم القيد المعتمد..."
+                      value={recordNumberInput}
+                      onChange={(e) => {
+                        setRecordNumberInput(e.target.value);
+                        if (searchError) setSearchError(null);
+                      }}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        paddingLeft: '44px',
+                        borderRadius: '10px',
+                        border: recordNumberInput.trim() ? '2px solid #1e3a8a' : '2px solid #f59e0b',
+                        fontSize: '15.5px',
+                        fontWeight: 800,
+                        fontFamily: 'monospace',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        background: recordNumberInput.trim() ? '#ffffff' : '#fffbeb'
+                      }}
+                    />
+                    <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#1e3a8a' }}>
+                      <Lock size={19} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 700, marginTop: '6px' }}>
+                    تنبيه أمني: من لم يدخل رقم القيد المطابق لرقمه الوطني أو الإداري لن يتمكن من فتح الاستعلام أو عرض البيانات.
+                  </div>
+                </div>
 
-                      <form onSubmit={handleSearch} style={{ textAlign: 'right' }}>
-                        <div style={{ marginBottom: '8px' }}>
-                          <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                            الرقم الوطني أو الرقم الإداري المعتمد (10 - 12 رقماً):
-                          </label>
-                        </div>
-
-                        <div style={{ position: 'relative', marginBottom: '14px' }}>
-                          <input
-                            type="text"
-                            dir="ltr"
-                            maxLength={12}
-                            placeholder="مثال: 119960541445 أو 5198606410"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '14px 18px',
-                              paddingLeft: '48px',
-                              borderRadius: '10px',
-                              border: '2px solid #1e3a8a',
-                              fontSize: '16px',
-                              fontWeight: 800,
-                              fontFamily: 'monospace',
-                              boxSizing: 'border-box',
-                              boxShadow: '0 4px 12px rgba(30, 58, 138, 0.08)'
-                            }}
-                            autoFocus
-                          />
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: '14px',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              color: '#1e3a8a'
-                            }}
-                          >
-                            <Search size={22} />
-                          </div>
-                        </div>
-
-                        {searchError && (
-                          <div
-                            style={{
-                              padding: '12px 14px',
-                              background: '#fef2f2',
-                              border: '1px solid #fecaca',
-                              borderRadius: '8px',
-                              color: '#b91c1c',
-                              fontSize: '13px',
-                              fontWeight: 700,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              marginBottom: '14px'
-                            }}
-                          >
-                            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                            <span>{searchError}</span>
-                          </div>
-                        )}
-
-                        <button
-                          type="submit"
-                          style={{
-                            width: '100%',
-                            padding: '14px',
-                            background: 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
-                            color: '#ffffff',
-                            border: '1.5px solid #d4af37',
-                            borderRadius: '10px',
-                            fontSize: '15px',
-                            fontWeight: 900,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            boxShadow: '0 4px 14px rgba(10, 25, 47, 0.2)'
-                          }}
-                        >
-                          <Search size={18} />
-                          <span>التحقق من الهوية وعرض الملف</span>
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <div style={{
-                      marginTop: '15px',
-                      padding: '16px 20px',
-                      background: '#fffbeb',
-                      border: '1.5px solid #fde68a',
-                      borderRadius: '12px',
-                      textAlign: 'center',
-                      color: '#92400e',
+                {searchError && (
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      color: '#b91c1c',
                       fontSize: '13px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px'
-                    }}>
-                      <Lock size={20} style={{ color: '#d97706', flexShrink: 0 }} />
-                      <span>حقول الاستعلام محجوبة ومقفلة لحين إتمام تسجيل الدخول بحساب Google</span>
-                    </div>
-                  )}
-                </>
-              )}
+                      gap: '8px',
+                      marginBottom: '14px'
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                    <span>{searchError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!searchInput.trim() || !recordNumberInput.trim()}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    background: (!searchInput.trim() || !recordNumberInput.trim())
+                      ? '#94a3b8'
+                      : 'linear-gradient(135deg, #1e3a8a 0%, #0a192f 100%)',
+                    color: '#ffffff',
+                    border: (!searchInput.trim() || !recordNumberInput.trim())
+                      ? '1.5px solid #cbd5e1'
+                      : '1.5px solid #d4af37',
+                    borderRadius: '10px',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    cursor: (!searchInput.trim() || !recordNumberInput.trim()) ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: (!searchInput.trim() || !recordNumberInput.trim()) ? 'none' : '0 4px 14px rgba(10, 25, 47, 0.2)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Search size={18} />
+                  <span>التحقق من رقم القيد وعرض الملف</span>
+                </button>
+              </form>
 
               {/* Official Advisory & Employee Appreciation Banner */}
               <div
@@ -1137,26 +791,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                     gap: '8px'
                   }}
                 >
-                  {formData.email && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        background: '#eff6ff',
-                        border: '1px solid #bfdbfe',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        color: '#1e40af'
-                      }}
-                      title={`مرتبط بحساب Google: ${formData.email}`}
-                    >
-                      <GoogleIcon size={14} />
-                      <span>Google موثق</span>
-                    </div>
-                  )}
                   <div
                     style={{
                       display: 'flex',
@@ -2139,20 +1773,19 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                       </div>
                     )}
 
-                    {/* Google Account / Official Email */}
+                    {/* Official Email */}
                     {(!showEmptyOnly || isFieldEmpty('email')) && (
                       <div style={{ background: '#ffffff', padding: '14px', borderRadius: '10px', border: isFieldEmpty('email') ? '1.5px solid #f59e0b' : '1px solid #e2e8f0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <GoogleIcon size={16} />
-                            <span>البريد الإلكتروني (حساب Google المعتمد):</span>
+                            <span>البريد الإلكتروني:</span>
                           </label>
                           <FieldStatusBadge fieldKey="email" />
                         </div>
                         <input
                           type="email"
                           dir="ltr"
-                          placeholder="name@gmail.com"
+                          placeholder="name@example.com"
                           value={formData.email || ''}
                           onChange={(e) => handleChange('email', e.target.value)}
                           style={{
@@ -2166,7 +1799,7 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
                           }}
                         />
                         <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
-                          يُستخدم لتسجيل الدخول السريع والاستعلام المباشر عبر Google
+                          البريد الإلكتروني الشخصي أو الرسمي للتواصل
                         </span>
                       </div>
                     )}
@@ -2769,144 +2402,6 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
           )}
         </div>
       </div>
-
-      {/* Interactive Google Sign-In Dialog */}
-      {showGoogleModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.65)',
-          zIndex: 10005,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            maxWidth: '440px',
-            width: '100%',
-            padding: '28px 24px',
-            textAlign: 'center',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-            border: '1px solid #e2e8f0',
-            position: 'relative',
-            animation: 'fadeIn 0.25s ease-out'
-          }}>
-            <button
-              type="button"
-              onClick={() => setShowGoogleModal(false)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                left: '16px',
-                background: 'transparent',
-                border: 'none',
-                color: '#64748b',
-                cursor: 'pointer'
-              }}
-            >
-              <X size={20} />
-            </button>
-
-            {/* Google Logo */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-              <GoogleIcon size={44} />
-            </div>
-
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1e293b', marginBottom: '6px' }}>
-              تسجيل الدخول باستخدام Google
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
-              المتابعة إلى بوابة منتسبي وزارة الداخلية - مديرية أمن أوباري
-            </p>
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!googleModalEmail || !googleModalEmail.includes('@')) {
-                alert('يرجى إدخال بريد إلكتروني صحيح من Google (@gmail.com)');
-                return;
-              }
-              handleGoogleSuccess({
-                email: googleModalEmail.trim(),
-                name: googleModalName.trim() || googleModalEmail.split('@')[0],
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(googleModalName || googleModalEmail)}&background=4285F4&color=fff`
-              });
-            }} style={{ textAlign: 'right' }}>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#334155', marginBottom: '6px' }}>
-                  حساب Google أو بريدك الإلكتروني (Gmail):
-                </label>
-                <input
-                  type="email"
-                  dir="ltr"
-                  placeholder="name@gmail.com"
-                  value={googleModalEmail}
-                  onChange={(e) => setGoogleModalEmail(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '1.5px solid #cbd5e1',
-                    fontSize: '14.5px',
-                    boxSizing: 'border-box'
-                  }}
-                  autoFocus
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: '#334155', marginBottom: '6px' }}>
-                  الاسم الكامل (اختياري):
-                </label>
-                <input
-                  type="text"
-                  placeholder="أدخل اسمك كما في حساب Google..."
-                  value={googleModalName}
-                  onChange={(e) => setGoogleModalName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '1.5px solid #cbd5e1',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  width: '100%',
-                  padding: '13px',
-                  background: '#4285F4',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 12px rgba(66, 133, 244, 0.3)'
-                }}
-              >
-                <GoogleIcon size={18} />
-                <span>المتابعة وتسجيل الدخول</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
