@@ -62,6 +62,7 @@ import VehiclesSection from './components/VehiclesSection';
 import FuelSection from './components/FuelSection';
 import WeaponsSection from './components/WeaponsSection';
 import ForceSection from './components/ForceSection';
+import DepartmentsSection from './components/DepartmentsSection';
 import DashboardSection from './components/DashboardSection';
 import OfficerCardModal from './components/OfficerCardModal';
 import LeavesSection from './components/LeavesSection';
@@ -82,6 +83,7 @@ export const SECTIONS = [
   { id: 'dashboard', name: 'لوحة التحكم والمتابعة', icon: LayoutDashboard },
   { id: 'operations', name: 'غرفة العمليات', icon: Radio },
   { id: 'force', name: 'القوة العمومية', icon: Users },
+  { id: 'departments', name: 'الأقسام والمراكز', icon: Building2 },
   { id: 'vehicles', name: 'الآليات والمركبات', icon: Car },
   { id: 'fuel', name: 'قسم الوقود والمحروقات', icon: Fuel },
   { id: 'weapons', name: 'الأسلحة والذخائر والعهد', icon: Crosshair },
@@ -188,7 +190,7 @@ export default function App() {
           }
 
           if (isAbdulSamad) {
-            parsed.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management'];
+            parsed.allowed_sections = ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management'];
           }
         }
         localStorage.setItem('moi_user', JSON.stringify(parsed));
@@ -530,7 +532,7 @@ export default function App() {
         (updated.full_name && updated.full_name.includes('عبدالصمد'));
 
       if (isAbdulSamad) {
-        updated.allowed_sections = ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management'];
+        updated.allowed_sections = ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management'];
         if (updated.avatar === generalAvatar) {
           updated.avatar = '';
         }
@@ -707,7 +709,7 @@ export default function App() {
           (data.user.full_name && data.user.full_name.includes('عبدالصمد'));
 
         const userSections = isAbdulSamad
-          ? ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']
+          ? ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']
           : ((Array.isArray(data.user.allowed_sections) && data.user.allowed_sections.length > 0)
               ? data.user.allowed_sections
               : ['dashboard', 'force']);
@@ -801,7 +803,7 @@ export default function App() {
           (foundUser.full_name && foundUser.full_name.includes('عبدالصمد'));
 
         const rawSections = isAbdulSamad
-          ? ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']
+          ? ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']
           : ((Array.isArray(foundUser.allowed_sections) && foundUser.allowed_sections.length > 0)
               ? foundUser.allowed_sections
               : ['dashboard', 'force']);
@@ -1828,6 +1830,10 @@ export default function App() {
       );
     }
 
+    if (activeSection === 'departments') {
+      return <DepartmentsSection forceMembers={forceMembers} />;
+    }
+
     if (activeSection === 'dashboard') {
       return (
         <DashboardSection
@@ -2665,7 +2671,7 @@ export default function App() {
                           let label = 'مدخل بيانات';
                           let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']; }
                           else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'leaves', 'penalties']; }
                           else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles', 'fuel']; }
                           else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
@@ -2835,7 +2841,7 @@ export default function App() {
                           let label = 'مدخل بيانات';
                           let sections = ['dashboard', 'force'];
                           if (val === 'super_admin') { label = 'مدير عام المنظومة (صلاحيات كاملة)'; sections = ['all']; }
-                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']; }
+                          else if (val === 'admin') { label = 'مدير نظام (صلاحيات شاملة)'; sections = ['dashboard', 'operations', 'force', 'departments', 'vehicles', 'fuel', 'weapons', 'leaves', 'penalties', 'mail', 'referred', 'letters', 'user_management']; }
                           else if (val === 'force_manager') { label = 'مسؤول القوة العمومية والبيانات'; sections = ['dashboard', 'force', 'leaves', 'penalties']; }
                           else if (val === 'vehicles_manager') { label = 'مسؤول الآليات والمركبات'; sections = ['dashboard', 'vehicles', 'fuel']; }
                           else if (val === 'leaves_manager') { label = 'مسؤول سجل الإجازات'; sections = ['dashboard', 'leaves']; }
