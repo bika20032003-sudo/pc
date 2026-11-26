@@ -415,8 +415,8 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       date: dateFormatted,
 
       // Header fields
-      header_moi_ar: 'وزارة الداخليـــــــــــــــــــة',
-      header_dir_ar: 'مديرية أمن أوبـــــــــــــــــاري',
+      header_moi_ar: 'وزارة الداخلية',
+      header_dir_ar: 'مديرية أمن أوباري',
       header_moi_en: 'Ministry of Interior',
       header_dir_en: 'Ubari Security Directorate',
       show_header_emblem: true,
@@ -1957,10 +1957,18 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 function OfficialTemplateA4Sheet({ doc, qrUrl }) {
   if (!doc) return null;
 
+  const cleanArHeader = (text, fallback) =>
+    (text ? String(text).replace(/\u0640+/g, '') : fallback);
+
+  const sigPos = doc.sig_position || 'left';
+  const sigJustify = sigPos === 'center' ? 'center' : (sigPos === 'right' ? 'flex-start' : 'flex-end');
+  const sigMargin = sigPos === 'center' ? '0 auto' : (sigPos === 'right' ? '0 auto 0 16px' : '0 auto 0 16px');
+  const hasCc = Array.isArray(doc.cc_list) && doc.cc_list.length > 0;
+
   return (
-    <div className="official-a4-letter-sheet" id="official-template-to-print" style={{ width: '100%', maxWidth: '190mm', minHeight: '265mm', padding: '6mm 10mm', boxSizing: 'border-box', background: '#ffffff', color: '#000000', display: 'flex', flexDirection: 'column', direction: 'rtl', margin: '0 auto', fontFamily: "'Cairo', sans-serif" }}>
+    <div className="official-a4-letter-sheet" id="official-template-to-print" style={{ width: '100%', maxWidth: '190mm', minHeight: '273mm', padding: '6mm 10mm', boxSizing: 'border-box', background: '#ffffff', color: '#000000', display: 'flex', flexDirection: 'column', direction: 'rtl', margin: '0 auto', fontFamily: "'Cairo', sans-serif" }}>
       {/* الشريط الوطني الليبي المعتمد (4 ألوان) */}
-      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
+      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
         <div style={{ flex: 1, background: '#e11d48' }}></div>
         <div style={{ flex: 2, background: '#000000' }}></div>
         <div style={{ flex: 1, background: '#16a34a' }}></div>
@@ -1969,8 +1977,8 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
       {/* Top Header Block matching Directorate Standard */}
       <header className="a4-letter-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px', boxSizing: 'border-box' }}>
         <div className="header-lang-right" style={{ flex: 1, textAlign: 'right' }}>
-          <h2 className="title-moi-ar" style={{ fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '0.5px', lineHeight: 1.25 }}>{doc.header_moi_ar || 'وزارة الداخليـــــــــــــــــــة'}</h2>
-          <h3 className="title-dir-ar" style={{ fontSize: '15.5px', fontWeight: 700, margin: '3px 0 0 0', lineHeight: 1.25 }}>{doc.header_dir_ar || 'مديرية أمن أوبـــــــــــــــــاري'}</h3>
+          <h2 className="title-moi-ar" style={{ fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: 0, lineHeight: 1.3 }}>{cleanArHeader(doc.header_moi_ar, 'وزارة الداخلية')}</h2>
+          <h3 className="title-dir-ar" style={{ fontSize: '15.5px', fontWeight: 700, margin: '3px 0 0 0', letterSpacing: 0, lineHeight: 1.3 }}>{cleanArHeader(doc.header_dir_ar, 'مديرية أمن أوباري')}</h3>
         </div>
 
         {doc.show_header_emblem !== false && (
@@ -2005,7 +2013,7 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{doc.date}</span>
             </div>
             <div className="meta-cell code-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px' }}>
-              <span className="meta-lbl">:Code No</span>
+              <span className="meta-lbl" dir="ltr">Code No:</span>
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{doc.code_no || '2026-T01'}</span>
             </div>
           </div>
@@ -2068,18 +2076,30 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
 
       {/* Signature Block (Shown ONLY for free_letter / المراسلة الحرة) */}
       {(doc.template_type_id === 'free_letter' || doc.template_type === 'free_letter' || doc.type === 'free_letter' || doc.id === 'free_letter') && (
-        <div className={`a4-signature-block pos-${doc.sig_position || 'left'}`} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 'auto', marginBottom: '12px', boxSizing: 'border-box' }}>
-          <div className={`sig-inner ${doc.stamp_layout === 'side' ? 'layout-side' : 'layout-stacked'}`} style={{ textAlign: 'center', minWidth: '240px', maxWidth: '300px', marginRight: 'auto', marginLeft: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className={`a4-signature-block pos-${sigPos}`} style={{ display: 'flex', flexDirection: 'row', justifyContent: sigJustify, width: '100%', marginTop: '22px', marginBottom: '16px', boxSizing: 'border-box' }}>
+          <div
+            className={`sig-inner ${doc.stamp_layout === 'side' ? 'layout-side' : 'layout-stacked'}`}
+            style={{
+              textAlign: 'center',
+              minWidth: '220px',
+              maxWidth: '340px',
+              margin: sigPos === 'right' ? '0 16px 0 auto' : sigMargin,
+              display: 'flex',
+              flexDirection: doc.stamp_layout === 'side' ? 'row' : 'column',
+              alignItems: 'center',
+              gap: doc.stamp_layout === 'side' ? '16px' : '6px'
+            }}
+          >
             <div className="sig-text-side">
               <h4 className="sig-officer-name" style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 2px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_name || 'لواء / موسى سعد محمد البدين'}</h4>
               <h5 className="sig-officer-rank" style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 5px 0', color: '#000000', whiteSpace: 'nowrap' }}>{doc.signer_title || 'مدير مديرية أمن أوباري'}</h5>
             </div>
             {doc.show_stamp !== false && (
               <div className="sig-stamp-side">
-                <div className="official-stamp-seal-circle" style={{ width: '74px', height: '74px', border: '1.5px dashed #1e3a8a', borderRadius: '50%', margin: '2px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <div className="stamp-top-arc">{doc.stamp_text_1 || 'وزارة الداخلية'}</div>
-                  <div className="stamp-center-title">{doc.stamp_text_2 || 'مديرية أمن أوباري'}</div>
-                  <div className="stamp-sub-title">{doc.stamp_text_3 || '* مكتب المدير *'}</div>
+                <div className="official-stamp-seal-circle" style={{ width: '76px', height: '76px', border: '1.5px dashed #1e3a8a', borderRadius: '50%', margin: '2px auto 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, textAlign: 'center' }}>
+                  <div className="stamp-top-arc" style={{ fontSize: '8.5px', fontWeight: 800, color: '#1e3a8a' }}>{doc.stamp_text_1 || 'وزارة الداخلية'}</div>
+                  <div className="stamp-center-title" style={{ fontSize: '8.5px', fontWeight: 800, color: '#1e3a8a' }}>{doc.stamp_text_2 || 'مديرية أمن أوباري'}</div>
+                  <div className="stamp-sub-title" style={{ fontSize: '7.5px', fontWeight: 800, color: '#b91c1c' }}>{doc.stamp_text_3 || '* مكتب المدير *'}</div>
                 </div>
               </div>
             )}
@@ -2088,8 +2108,8 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
       )}
 
       {/* CC Distribution List (Two Columns) */}
-      {Array.isArray(doc.cc_list) && doc.cc_list.length > 0 && (
-        <div className="a4-cc-distribution-block" style={{ marginTop: '6px', marginBottom: '6px', borderRight: '3px solid #d4af37', paddingRight: '10px' }}>
+      {hasCc && (
+        <div className="a4-cc-distribution-block" style={{ marginTop: 'auto', marginBottom: '8px', borderRight: '3px solid #d4af37', paddingRight: '10px' }}>
           <div className="cc-header" style={{ fontSize: '12px', fontWeight: 800, color: '#000000', marginBottom: '3px', textDecoration: 'underline' }}>صورة منه إلى :-</div>
           <div className="cc-grid-2cols" style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
             <ul className="cc-col" style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '11px', color: '#334155' }}>
@@ -2107,7 +2127,7 @@ function OfficialTemplateA4Sheet({ doc, qrUrl }) {
       )}
 
       {/* Bottom Footer Line & Details */}
-      <footer className="a4-letter-footer" style={{ marginTop: 'auto', width: '100%', fontSize: '11px' }}>
+      <footer className="a4-letter-footer" style={{ marginTop: hasCc ? '6px' : 'auto', width: '100%', fontSize: '11px' }}>
         <div className="footer-solid-divider" style={{ height: '1px', background: '#cbd5e1', marginBottom: '5px' }} />
         <div className="footer-details-row" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', color: '#64748b' }}>
           <div className="footer-cell editor-cell">

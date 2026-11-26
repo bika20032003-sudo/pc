@@ -4044,7 +4044,7 @@ body {
   font-weight: 800;
   color: #000000;
   margin: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .title-dir-ar {
@@ -4391,7 +4391,11 @@ body {
 
 /* Footer Line & Contact Details matching Image 3 */
 .a4-letter-footer {
-  margin-top: 10px;
+  margin-top: auto;
+}
+
+.a4-cc-distribution-block + .a4-letter-footer {
+  margin-top: 8px;
 }
 
 .footer-solid-divider {
@@ -4642,22 +4646,38 @@ body {
     display: block !important;
   }
 
-  /* 6. Strictly position A4 letter sheet at top-left with crisp printing */
+  /* 6. Strictly position A4 letter sheet full-height with crisp printing */
   #official-letter-to-print,
   #official-template-to-print,
+  .official-a4-letter-sheet {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 186mm !important;
+    min-height: 273mm !important;
+    height: auto !important;
+    padding: 3mm 5mm !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   #moi-exit-permit-to-print,
   .official-exit-permit-sheet,
-  #official-leave-form-99,
-  .official-a4-letter-sheet {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+  #official-leave-form-99 {
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 100% !important;
+    min-height: auto !important;
     padding: 6mm 10mm !important;
     box-sizing: border-box !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     box-shadow: none !important;
     border: none !important;
     background: #ffffff !important;

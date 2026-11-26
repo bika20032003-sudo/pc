@@ -46,10 +46,10 @@ export function createOfficialLetterHtml({
   const ccCol2 = ccList.slice(halfCc);
 
   return `
-    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 186mm; margin: 0 auto; background: #ffffff; padding: 0; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative;">
+    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 186mm; min-height: 273mm; margin: 0 auto; background: #ffffff; padding: 3mm 5mm; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative; display: flex; flex-direction: column;">
       
-      <!-- الشريط الوطني الليبي المعتمد (4 ألوان) -->
-      <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+      <!-- الشريط الوطني الليبي المعتمد -->
+      <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
         <div style="flex: 1; background: #e11d48;"></div>
         <div style="flex: 2; background: #000000;"></div>
         <div style="flex: 1; background: #16a34a;"></div>
@@ -59,9 +59,9 @@ export function createOfficialLetterHtml({
       <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 14px;">
         <tr>
           <td style="text-align: right; vertical-align: middle; width: 40%;">
-            <div style="font-size: 15px; font-weight: 900; color: #1e3a8a; line-height: 1.3;">دولة ليبيـــــــــــــــا</div>
-            <div style="font-size: 14px; font-weight: 800; color: #000000; line-height: 1.3;">وزارة الداخليـــــــــــــــة</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #1e3a8a; line-height: 1.3;">مديرية أمن أوبــــــــاري</div>
+            <div style="font-size: 15px; font-weight: 900; color: #1e3a8a; line-height: 1.3;">دولة ليبيا</div>
+            <div style="font-size: 14px; font-weight: 800; color: #000000; line-height: 1.3;">وزارة الداخلية</div>
+            <div style="font-size: 13.5px; font-weight: 800; color: #1e3a8a; line-height: 1.3;">مديرية أمن أوباري</div>
             <div style="font-size: 11px; font-weight: 700; color: #475569; margin-top: 2px;">${department}</div>
           </td>
           <td style="text-align: center; vertical-align: middle; width: 20%;">
@@ -192,7 +192,7 @@ export function createOfficialLetterHtml({
       ` : ''}
 
       <!-- تذييل الصفحة الرسمي وبيانات الاتصال -->
-      <div style="border-top: 2px solid #000000; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #475569; font-weight: 700;">
+      <div class="a4-letter-footer" style="margin-top: auto; border-top: 2px solid #000000; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #475569; font-weight: 700;">
         <div>المحرر: <strong style="color: #000000;">${editor}</strong></div>
         <div>الطباعة: <strong style="color: #000000;">${printer}</strong></div>
         <div>الهاتف: <strong style="color: #000000; direction: ltr; display: inline-block;">${resolvedPhone}</strong></div>

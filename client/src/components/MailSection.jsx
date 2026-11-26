@@ -3164,9 +3164,9 @@ function OfficialLetterSheet({ letter, qrUrl }) {
   const col2 = ccItems.slice(half);
 
   return (
-    <div className="official-a4-letter-sheet" id="official-letter-to-print" style={{ width: '100%', maxWidth: '190mm', minHeight: '265mm', padding: '6mm 10mm', boxSizing: 'border-box', background: '#ffffff', color: '#000000', display: 'flex', flexDirection: 'column', direction: 'rtl', margin: '0 auto', fontFamily: "'Cairo', sans-serif" }}>
+    <div className="official-a4-letter-sheet" id="official-letter-to-print" style={{ width: '100%', maxWidth: '190mm', minHeight: '273mm', padding: '6mm 10mm', boxSizing: 'border-box', background: '#ffffff', color: '#000000', display: 'flex', flexDirection: 'column', direction: 'rtl', margin: '0 auto', fontFamily: "'Cairo', sans-serif" }}>
       {/* الشريط الوطني الليبي المعتمد (4 ألوان) */}
-      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
+      <div style={{ height: '5px', width: '100%', display: 'flex', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
         <div style={{ flex: 1, background: '#e11d48' }}></div>
         <div style={{ flex: 2, background: '#000000' }}></div>
         <div style={{ flex: 1, background: '#16a34a' }}></div>
@@ -3175,8 +3175,8 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       {/* Top Header Block matching Image 3 */}
       <header className="a4-letter-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px', boxSizing: 'border-box' }}>
         <div className="header-lang-right" style={{ flex: 1, textAlign: 'right' }}>
-          <h2 className="title-moi-ar" style={{ fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '0.5px', lineHeight: 1.25 }}>وزارة الداخليـــــــــــــــــــة</h2>
-          <h3 className="title-dir-ar" style={{ fontSize: '15.5px', fontWeight: 700, margin: '3px 0 0 0', lineHeight: 1.25 }}>مديرية أمن أوبـــــــــــــــــاري</h3>
+          <h2 className="title-moi-ar" style={{ fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: 0, lineHeight: 1.3 }}>وزارة الداخلية</h2>
+          <h3 className="title-dir-ar" style={{ fontSize: '15.5px', fontWeight: 700, margin: '3px 0 0 0', letterSpacing: 0, lineHeight: 1.3 }}>مديرية أمن أوباري</h3>
         </div>
 
         <div className="header-emblem-center" style={{ width: '80px', textAlign: 'center', flexShrink: 0, margin: '0 10px' }}>
@@ -3209,7 +3209,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{letter.date || '11/10/2026'}</span>
             </div>
             <div className="meta-cell code-cell" style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '5px 12px', fontSize: '13px' }}>
-              <span className="meta-lbl">:Code No</span>
+              <span className="meta-lbl" dir="ltr">Code No:</span>
               <span className="meta-val" dir="ltr" style={{ unicodeBidi: 'plaintext' }}>{letter.code_no || '2026-002'}</span>
             </div>
           </div>
@@ -3283,7 +3283,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* Signature & Stamp Block (Positioned on the LEFT in Libyan correspondence) */}
-      <div className="a4-signature-block pos-left" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 'auto', marginBottom: '10px', boxSizing: 'border-box' }}>
+      <div className="a4-signature-block pos-left" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: '22px', marginBottom: '14px', boxSizing: 'border-box' }}>
         <div className="sig-inner layout-stacked" style={{ textAlign: 'center', minWidth: '240px', maxWidth: '300px', marginRight: 'auto', marginLeft: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {letter.show_signature !== false && (
             <div className="sig-text-side">
@@ -3304,7 +3304,7 @@ function OfficialLetterSheet({ letter, qrUrl }) {
       </div>
 
       {/* CC List matching Image 3 (2 columns) */}
-      <div className="a4-cc-distribution-block" style={{ marginTop: '6px', marginBottom: '6px', borderRight: '3px solid #d4af37', paddingRight: '10px' }}>
+      <div className="a4-cc-distribution-block" style={{ marginTop: 'auto', marginBottom: '8px', borderRight: '3px solid #d4af37', paddingRight: '10px' }}>
         <div className="cc-header" style={{ fontSize: '12px', fontWeight: 800, color: '#000000', marginBottom: '3px', textDecoration: 'underline' }}>صورة منه إلى :-</div>
         <div className="cc-grid-2cols" style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
           <ul className="cc-col" style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '11px', color: '#334155' }}>

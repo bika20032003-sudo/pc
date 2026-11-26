@@ -58,7 +58,7 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
         <title>${documentTitle}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;600;700&family=Scheherazade+New:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
         ${parentStyles}
         <style>
           * {
@@ -142,20 +142,23 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
+          #official-letter-to-print,
+          #official-template-to-print,
           .official-a4-letter-sheet {
+            position: relative !important;
             box-shadow: none !important;
             border: none !important;
             margin: 0 auto !important;
             width: 100% !important;
             max-width: 186mm !important;
-            min-height: auto !important;
-            padding: 0 !important;
+            min-height: 273mm !important;
+            height: auto !important;
+            padding: 3mm 5mm !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             color: #000000 !important;
             display: flex !important;
             flex-direction: column !important;
-            position: relative !important;
             direction: rtl !important;
           }
           /* Leaves Section Forms: Form ن ش 1/99 & Exit Permit (Strict 1-page A4) */
@@ -256,15 +259,16 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             font-weight: 800 !important;
             color: #000000 !important;
             margin: 0 !important;
-            letter-spacing: 0.5px !important;
-            line-height: 1.25 !important;
+            letter-spacing: 0 !important;
+            line-height: 1.3 !important;
           }
           .title-dir-ar {
             font-size: 15.5px !important;
             font-weight: 700 !important;
             color: #000000 !important;
             margin: 3px 0 0 0 !important;
-            line-height: 1.25 !important;
+            letter-spacing: 0 !important;
+            line-height: 1.3 !important;
           }
           .header-emblem-center {
             width: 80px !important;
@@ -423,9 +427,9 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           }
           .a4-body-content {
             margin-bottom: 18px !important;
-            line-height: 1.8 !important;
-            font-size: 15px !important;
-            flex: 1 1 auto !important;
+            line-height: 1.85 !important;
+            font-size: 15.5px !important;
+            flex: 0 0 auto !important;
           }
           .body-main-clause {
             white-space: pre-line !important;
@@ -433,28 +437,49 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
           .body-prayer-line {
             font-size: 15px !important;
             font-weight: 700 !important;
-            margin-top: 12px !important;
+            margin-top: 14px !important;
             margin-bottom: 0 !important;
           }
-          /* Signature Block: Placed strictly on the LEFT in Libyan letters */
+          /* Signature Block: Anchored cleanly below body closing, aligned per sig_position */
           .a4-signature-block {
             display: flex !important;
             flex-direction: row !important;
             justify-content: flex-end !important;
             width: 100% !important;
-            margin-top: auto !important;
-            margin-bottom: 10px !important;
+            margin-top: 22px !important;
+            margin-bottom: 16px !important;
             box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .a4-signature-block.pos-center {
+            justify-content: center !important;
+          }
+          .a4-signature-block.pos-right {
+            justify-content: flex-start !important;
           }
           .sig-inner {
             text-align: center !important;
-            min-width: 240px !important;
-            max-width: 300px !important;
+            min-width: 220px !important;
+            max-width: 340px !important;
             margin-right: auto !important;
-            margin-left: 20px !important;
+            margin-left: 14px !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
+            gap: 8px !important;
+          }
+          .a4-signature-block.pos-center .sig-inner {
+            margin-right: auto !important;
+            margin-left: auto !important;
+          }
+          .a4-signature-block.pos-right .sig-inner {
+            margin-right: 14px !important;
+            margin-left: auto !important;
+          }
+          .sig-inner.layout-side {
+            flex-direction: row !important;
+            gap: 16px !important;
           }
           .sig-officer-name {
             font-size: 16px !important;
@@ -471,31 +496,44 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             white-space: nowrap !important;
           }
           .official-stamp-seal-circle {
-            width: 74px !important;
-            height: 74px !important;
+            width: 76px !important;
+            height: 76px !important;
             border: 1.5px dashed #1e3a8a !important;
             border-radius: 50% !important;
             margin: 2px auto 0 auto !important;
             display: flex !important;
+            flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
             flex-shrink: 0 !important;
+            text-align: center !important;
           }
-          .stamp-inner-text {
+          .stamp-inner-text,
+          .stamp-top-arc,
+          .stamp-center-title,
+          .stamp-sub-title {
             font-size: 8.5px !important;
             font-weight: 800 !important;
             color: #1e3a8a !important;
+            line-height: 1.25 !important;
+            text-align: center !important;
+          }
+          .stamp-inner-text {
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            line-height: 1.3 !important;
-            text-align: center !important;
+          }
+          .stamp-sub-title {
+            color: #b91c1c !important;
+            font-size: 7.5px !important;
           }
           .a4-cc-distribution-block {
-            margin-top: 6px !important;
-            margin-bottom: 6px !important;
+            margin-top: auto !important;
+            margin-bottom: 8px !important;
             border-right: 3px solid #d4af37 !important;
             padding-right: 10px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .cc-header {
             font-size: 12px !important;
@@ -523,6 +561,11 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
             margin-top: auto !important;
             width: 100% !important;
             font-size: 11px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .a4-cc-distribution-block + .a4-letter-footer {
+            margin-top: 6px !important;
           }
           .footer-solid-divider {
             height: 1px !important;
@@ -587,11 +630,29 @@ export const printDocumentInIframe = (contentHtml, documentTitle = 'وثيقة �
       }
     };
 
-    // Trigger print after iframe renders
-    iframe.onload = () => {
-      setTimeout(trigger, 150);
+    // Wait for fonts and images inside iframe before opening print dialog (max 700ms safety net)
+    const waitAndPrint = async () => {
+      try {
+        const imgs = Array.from(doc.querySelectorAll('img')).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(res => {
+            img.addEventListener('load', res, { once: true });
+            img.addEventListener('error', res, { once: true });
+          });
+        });
+        const fontsReady = doc.fonts && doc.fonts.ready ? doc.fonts.ready.catch(() => {}) : Promise.resolve();
+        await Promise.race([
+          Promise.all([fontsReady, ...imgs]),
+          new Promise(res => setTimeout(res, 650))
+        ]);
+      } catch (_) {}
+      trigger();
     };
-    setTimeout(trigger, 400);
+
+    iframe.onload = () => {
+      setTimeout(waitAndPrint, 80);
+    };
+    setTimeout(waitAndPrint, 500);
   } catch (err) {
     console.error('Iframe creation error:', err);
   }

@@ -1,8 +1,8 @@
-import{r as a,j as e}from"./vendor-react-0RU1ubfM.js";import{b as he}from"./vendor-qrcode-CjSdxGTc.js";import{p as Q}from"./printHelper-CmwQZ4ut.js";import{M as v,n as te}from"./index-B2jDFnN8.js";import{r as be,O as ie,a as ye}from"./editorFonts-BrLT2E2l.js";import{i as ue,I as ve}from"./IndictmentSheetModal-Bqh4iVDk.js";import{r as X,a3 as oe,$ as O,i as de,X as ne,f as le,a4 as se,S as J,d as q,n as re,t as Z,B as je,a5 as me,A as we,g as ze,q as Se}from"./vendor-icons-BCWJvmsE.js";import"./data-force-db-CUxU07jc.js";function ke({reference:t="12/2026",recordNumber:C="1",date:P=new Date().toLocaleDateString("ar-LY"),codeNo:R="MOI-UBR-2026",department:j="قسم الشؤون الإدارية والمالية",recipientTitle:b="إلى السيد / آمر المنطقة العسكرية الجنوبية",subject:$="التنسيق الأمني وتسيير الدوريات الأمنية وتأمين المداخل",replyToReference:k="",replyDate:I="",greeting:E="بعد التحية والاحترام ،،،",bodyText:_="",bodyHtml:N="",closing:d="والسلام عليكم ورحمة الله وبركاته",signerName:F="لواء / موسى سعد محمد",signerTitle:m="مدير مديرية أمن أوباري",deptOfficerName:U="نقيب / علي سالم محمد",deptOfficerTitle:z="رئيس القسم المختص",ccList:W=["مكتب السيد وزير الداخلية","الإدارة العامة للعمليات الأمنية","الإدارة العامة للتفتيش والمتابعة"],editor:M="عبدالصمد",printer:S="عبدالصمد",phone:c=ie.phone,email:s=ie.email,showStamp:n=!0,showSignature:T=!0,qrCodeUrl:L=""}){const H=be(c),G=ye(s),D=N||`<p style="line-height: 2.1; font-size: 15px; margin: 0; text-align: justify; white-space: pre-line;">${_||"إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وتدابير وفق ما تقتضيه المصلحة الأمنية العامة وخدمة الوطن والمواطن."}</p>`,V=Math.ceil(W.length/2),A=W.slice(0,V),p=W.slice(V);return`
-    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 186mm; margin: 0 auto; background: #ffffff; padding: 0; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative;">
+import{r as a,j as e}from"./vendor-react-0RU1ubfM.js";import{b as he}from"./vendor-qrcode-CjSdxGTc.js";import{p as Q}from"./printHelper-Da8XnqdD.js";import{M as v,n as te}from"./index-DaTokJrZ.js";import{r as be,O as ie,a as ye}from"./editorFonts-BrLT2E2l.js";import{i as ue,I as ve}from"./IndictmentSheetModal-Dpd_EUmg.js";import{r as X,a3 as oe,$ as O,i as de,X as ne,f as le,a4 as se,S as J,d as q,n as re,t as Z,B as je,a5 as me,A as we,g as ze,q as Se}from"./vendor-icons-BCWJvmsE.js";import"./data-force-db-CUxU07jc.js";function ke({reference:t="12/2026",recordNumber:C="1",date:P=new Date().toLocaleDateString("ar-LY"),codeNo:R="MOI-UBR-2026",department:j="قسم الشؤون الإدارية والمالية",recipientTitle:b="إلى السيد / آمر المنطقة العسكرية الجنوبية",subject:$="التنسيق الأمني وتسيير الدوريات الأمنية وتأمين المداخل",replyToReference:k="",replyDate:I="",greeting:E="بعد التحية والاحترام ،،،",bodyText:_="",bodyHtml:N="",closing:d="والسلام عليكم ورحمة الله وبركاته",signerName:F="لواء / موسى سعد محمد",signerTitle:m="مدير مديرية أمن أوباري",deptOfficerName:U="نقيب / علي سالم محمد",deptOfficerTitle:z="رئيس القسم المختص",ccList:W=["مكتب السيد وزير الداخلية","الإدارة العامة للعمليات الأمنية","الإدارة العامة للتفتيش والمتابعة"],editor:M="عبدالصمد",printer:S="عبدالصمد",phone:c=ie.phone,email:s=ie.email,showStamp:n=!0,showSignature:T=!0,qrCodeUrl:L=""}){const H=be(c),G=ye(s),D=N||`<p style="line-height: 2.1; font-size: 15px; margin: 0; text-align: justify; white-space: pre-line;">${_||"إليكم من حيث الاختصاص للتفضل بالعلم واتخاذ ما يلزم من إجراءات وتدابير وفق ما تقتضيه المصلحة الأمنية العامة وخدمة الوطن والمواطن."}</p>`,V=Math.ceil(W.length/2),A=W.slice(0,V),p=W.slice(V);return`
+    <div class="official-a4-letter-sheet" style="width: 100%; max-width: 186mm; min-height: 273mm; margin: 0 auto; background: #ffffff; padding: 3mm 5mm; font-family: 'Cairo', 'Amiri', Arial, sans-serif; direction: rtl; color: #000000; box-sizing: border-box; position: relative; display: flex; flex-direction: column;">
       
-      <!-- الشريط الوطني الليبي المعتمد (4 ألوان) -->
-      <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px;">
+      <!-- الشريط الوطني الليبي المعتمد -->
+      <div style="height: 5px; width: 100%; display: flex; border-radius: 2px; overflow: hidden; margin-bottom: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
         <div style="flex: 1; background: #e11d48;"></div>
         <div style="flex: 2; background: #000000;"></div>
         <div style="flex: 1; background: #16a34a;"></div>
@@ -12,9 +12,9 @@ import{r as a,j as e}from"./vendor-react-0RU1ubfM.js";import{b as he}from"./vend
       <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 14px;">
         <tr>
           <td style="text-align: right; vertical-align: middle; width: 40%;">
-            <div style="font-size: 15px; font-weight: 900; color: #1e3a8a; line-height: 1.3;">دولة ليبيـــــــــــــــا</div>
-            <div style="font-size: 14px; font-weight: 800; color: #000000; line-height: 1.3;">وزارة الداخليـــــــــــــــة</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #1e3a8a; line-height: 1.3;">مديرية أمن أوبــــــــاري</div>
+            <div style="font-size: 15px; font-weight: 900; color: #1e3a8a; line-height: 1.3;">دولة ليبيا</div>
+            <div style="font-size: 14px; font-weight: 800; color: #000000; line-height: 1.3;">وزارة الداخلية</div>
+            <div style="font-size: 13.5px; font-weight: 800; color: #1e3a8a; line-height: 1.3;">مديرية أمن أوباري</div>
             <div style="font-size: 11px; font-weight: 700; color: #475569; margin-top: 2px;">${j}</div>
           </td>
           <td style="text-align: center; vertical-align: middle; width: 20%;">
@@ -145,7 +145,7 @@ import{r as a,j as e}from"./vendor-react-0RU1ubfM.js";import{b as he}from"./vend
       `:""}
 
       <!-- تذييل الصفحة الرسمي وبيانات الاتصال -->
-      <div style="border-top: 2px solid #000000; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #475569; font-weight: 700;">
+      <div class="a4-letter-footer" style="margin-top: auto; border-top: 2px solid #000000; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #475569; font-weight: 700;">
         <div>المحرر: <strong style="color: #000000;">${M}</strong></div>
         <div>الطباعة: <strong style="color: #000000;">${S}</strong></div>
         <div>الهاتف: <strong style="color: #000000; direction: ltr; display: inline-block;">${H}</strong></div>
