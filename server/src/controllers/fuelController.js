@@ -113,8 +113,8 @@ export async function dispenseFuel(req, res) {
     }
 
     const col = isSub ? 'sub_balance' : 'main_balance';
-    const countRow = await db.get('SELECT COUNT(*) as c FROM fuel_transactions');
-    const seq = (countRow?.c || 0) + 1;
+    const maxRow = await db.get('SELECT MAX(id) as maxId FROM fuel_transactions');
+    const seq = (maxRow?.maxId || 0) + 1;
     const voucherNo = `FUEL-${new Date().getFullYear()}-${String(seq).padStart(4, '0')}`;
     const txDate = new Date().toISOString();
 

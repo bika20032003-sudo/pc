@@ -1,6 +1,6 @@
 import { getDb } from '../config/db.js';
 import { updateForceMemberStatusDirect } from './forceController.js';
-import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
+import { sendServerError, syncJsonPaths, parsePagination } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,7 +24,14 @@ async function syncLeavesJson(db) {
 
 function parseValidDate(dateInput) {
   if (!dateInput) return null;
-  const d = new Date(dateInput);
+  const raw = String(dateInput).trim();
+  const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    const [, day, month, year] = dmyMatch;
+    const d = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -65,10 +72,21 @@ export async function getLeaves(req, res) {
       };
     });
 
+    const pag = parsePagination(req.query);
+    const totalCount = enrichedLeaves.length;
+    const totalPages = pag.enabled ? (Math.ceil(totalCount / pag.limit) || 1) : 1;
+    const pagedLeaves = pag.enabled ? enrichedLeaves.slice(pag.offset, pag.offset + pag.limit) : enrichedLeaves;
+
     return res.status(200).json({
       success: true,
-      count: enrichedLeaves.length,
-      leaves: enrichedLeaves
+      count: totalCount,
+      leaves: pagedLeaves,
+      pagination: {
+        total: totalCount,
+        page: pag.page,
+        limit: pag.enabled ? pag.limit : totalCount,
+        totalPages
+      }
     });
   } catch (error) {
     console.error('Error fetching leaves from SQLite:', error);

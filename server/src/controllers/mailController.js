@@ -1,16 +1,26 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import { sendServerError, writeAuditLog } from '../utils/controllerUtils.js';
+import { sendServerError, writeAuditLog, parsePagination } from '../utils/controllerUtils.js';
+
+const MAIL_LIST_COLUMNS = `
+  id, type, code_no, record_number, reference, reply_to_reference, reply_date,
+  recipient, recipient_title, source_entity, date, time, subject,
+  delivery_method, sender_employee, editor_employee, receiver_employee,
+  print_employee, status, attachment_name,
+  CASE WHEN attachment_data IS NOT NULL AND attachment_data != '' THEN 1 ELSE 0 END AS has_attachment,
+  letter_body, cc_list, signer_name, signer_title, phone, email, template_type,
+  force_member_id, director_notes, target_dept, notes, created_at, updated_at
+`;
 
 /**
- * جلب سجلات البريد والمراسلات مع دعم التصفية والبحث الذكي
+ * جلب سجلات البريد والمراسلات مع دعم التصفية والترقيم واستبعاد المرفقات الثقيلة من العرض الإجمالي
  */
 export async function getMail(req, res) {
   try {
     const { type, search, status } = req.query;
     const { db } = getDb();
 
-    let query = 'SELECT * FROM mail_records WHERE 1=1';
+    let query = `SELECT ${MAIL_LIST_COLUMNS} FROM mail_records WHERE 1=1`;
     const params = [];
 
     if (type && type !== 'all') {
@@ -74,10 +84,21 @@ export async function getMail(req, res) {
       };
     });
 
+    const pag = parsePagination(req.query);
+    const totalCount = parsedRows.length;
+    const totalPages = pag.enabled ? (Math.ceil(totalCount / pag.limit) || 1) : 1;
+    const pagedRows = pag.enabled ? parsedRows.slice(pag.offset, pag.offset + pag.limit) : parsedRows;
+
     return res.status(200).json({
       success: true,
-      count: parsedRows.length,
-      mail: parsedRows
+      count: totalCount,
+      mail: pagedRows,
+      pagination: {
+        total: totalCount,
+        page: pag.page,
+        limit: pag.enabled ? pag.limit : totalCount,
+        totalPages
+      }
     });
   } catch (error) {
     return sendServerError(res, error, 'Error in getMail', 'تعذر جلب سجلات البريد');
@@ -169,14 +190,15 @@ export async function createMail(req, res) {
 
     const { db } = getDb();
 
-    // احتساب رقم القيد التلقائي والكود إذا لم يتم تزويدهما
+    // احتساب رقم القيد التلقائي والكود بالاعتماد على أعلى معرف لمنع التكرار عند الحذف
     const maxRow = await db.get('SELECT MAX(id) as maxId, COUNT(*) as total FROM mail_records WHERE type = ?', [type]);
-    const nextNum = (maxRow?.total || 0) + 1;
+    const nextSeq = (maxRow?.maxId || 0) + 1;
+    const nextRecordSeq = (maxRow?.total || 0) + 1;
     const currentYear = new Date().getFullYear();
 
-    const computedCode = code_no || `${currentYear}-${String(nextNum).padStart(3, '0')}`;
-    const computedRecord = record_number || String(nextNum);
-    const computedRef = reference || `${nextNum}/${currentYear}`;
+    const computedCode = code_no || `${currentYear}-${String(nextSeq).padStart(3, '0')}`;
+    const computedRecord = record_number || String(nextRecordSeq);
+    const computedRef = reference || `${nextSeq}/${currentYear}`;
     const computedDate = date || new Date().toLocaleDateString('en-GB');
 
     const serializedCc = Array.isArray(cc_list) ? JSON.stringify(cc_list) : (cc_list || '[]');

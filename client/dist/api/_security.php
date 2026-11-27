@@ -91,25 +91,23 @@ function requireApiAuth() {
         exit;
     }
 
-    $secret = getenv('JWT_SECRET') ?: '';
-    if (!empty($secret)) {
-        $claims = verifyJwtToken($token, $secret);
-        if (!$claims) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'انتهت صلاحية الجلسة أو التوكن غير صالح'], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
-        return $claims;
-    }
-
-    // In PHP-only hosting where JWT_SECRET isn't configured, require a valid JWT structure (3 base64url segments)
-    if (count(explode('.', $token)) !== 3) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'توكن المصادقة غير صالح'], JSON_UNESCAPED_UNICODE);
+    $secret = getenv('JWT_SECRET') ?: ($_ENV['JWT_SECRET'] ?? '');
+    if (empty($secret)) {
+        http_response_code(503);
+        echo json_encode([
+            'success' => false,
+            'message' => 'الخدمة غير متاحة: مفتاح التحقق JWT_SECRET غير مهيأ في بيئة الخادم'
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    return ['token_present' => true];
+    $claims = verifyJwtToken($token, $secret);
+    if (!$claims) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'انتهت صلاحية الجلسة أو التوكن غير صالح'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    return $claims;
 }
 
 function normalizeDigits($str) {

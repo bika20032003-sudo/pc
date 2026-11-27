@@ -292,44 +292,51 @@ export async function importWeapons(req, res) {
     let imported = 0;
     let skipped = 0;
 
-    for (const w of weapons) {
-      const num = String(w.weapon_number || w.WeaponNumber || w.serial_number || '').trim();
-      if (!num) {
-        skipped++;
-        continue;
+    await db.run('BEGIN TRANSACTION;');
+    try {
+      for (const w of weapons) {
+        const num = String(w.weapon_number || w.WeaponNumber || w.serial_number || '').trim();
+        if (!num) {
+          skipped++;
+          continue;
+        }
+
+        const exists = await db.get('SELECT id FROM weapons WHERE weapon_number = ?', [num]);
+        if (exists) {
+          skipped++;
+          continue;
+        }
+
+        const type = w.weapon_type || w.WeaponType || 'سلاح ناري';
+        const isPistol = type.includes('مسدس');
+        const caliber = w.caliber || (isPistol ? '9x19 ملم' : '7.62x39 ملم');
+
+        await db.run(`
+          INSERT INTO weapons (
+            weapon_type, weapon_number, serial_number, caliber,
+            ammo_count, magazines_count, receiving_entity, receiver_name,
+            status, issue_date, notes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          type,
+          num,
+          num,
+          caliber,
+          parseInt(w.ammo_count || w.AmmoCount, 10) || 0,
+          parseInt(w.magazines_count || w.MagazinesCount, 10) || 0,
+          w.receiving_entity || w.ReceivingEntity || 'مخزن المديرية',
+          w.receiver_name || w.ReceiverName || '',
+          w.status || 'صالح للعمل ومصروف',
+          w.issue_date || w.IssueDate ? String(w.issue_date || w.IssueDate).split('T')[0] : new Date().toISOString().split('T')[0],
+          w.notes || 'مستورد'
+        ]);
+
+        imported++;
       }
-
-      const exists = await db.get('SELECT id FROM weapons WHERE weapon_number = ?', [num]);
-      if (exists) {
-        skipped++;
-        continue;
-      }
-
-      const type = w.weapon_type || w.WeaponType || 'سلاح ناري';
-      const isPistol = type.includes('مسدس');
-      const caliber = w.caliber || (isPistol ? '9x19 ملم' : '7.62x39 ملم');
-
-      await db.run(`
-        INSERT INTO weapons (
-          weapon_type, weapon_number, serial_number, caliber,
-          ammo_count, magazines_count, receiving_entity, receiver_name,
-          status, issue_date, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        type,
-        num,
-        num,
-        caliber,
-        parseInt(w.ammo_count || w.AmmoCount, 10) || 0,
-        parseInt(w.magazines_count || w.MagazinesCount, 10) || 0,
-        w.receiving_entity || w.ReceivingEntity || 'مخزن المديرية',
-        w.receiver_name || w.ReceiverName || '',
-        w.status || 'صالح للعمل ومصروف',
-        w.issue_date || w.IssueDate ? String(w.issue_date || w.IssueDate).split('T')[0] : new Date().toISOString().split('T')[0],
-        w.notes || 'مستورد'
-      ]);
-
-      imported++;
+      await db.run('COMMIT;');
+    } catch (txError) {
+      await db.run('ROLLBACK;').catch(() => {});
+      throw txError;
     }
 
     const allWeapons = await db.all('SELECT * FROM weapons ORDER BY id ASC');

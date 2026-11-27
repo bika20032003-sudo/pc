@@ -100,6 +100,8 @@ export async function createPenalty(req, res) {
       return res.status(400).json({ success: false, message: 'اسم المنتسب وسبب العقوبة حقول إلزامية' });
     }
 
+    const maxRow = await db.get('SELECT MAX(id) as maxId FROM penalties');
+    const nextSeq = (maxRow?.maxId || 0) + 1;
     const newId = p.PenaltyID || Date.now();
     await db.run(`
       INSERT INTO penalties (
@@ -116,7 +118,7 @@ export async function createPenalty(req, res) {
       p.Reason.trim(),
       p.PenaltyDate || new Date().toISOString().slice(0, 10),
       Number(p.DeductionDays) || 0,
-      p.DecisionNumber || ('2026/ق.ت/' + Math.floor(100 + Math.random() * 900)),
+      p.DecisionNumber || `${new Date().getFullYear()}/ق.ت/${String(nextSeq).padStart(3, '0')}`,
       p.IsApplied ? 1 : 0
     ]);
 
