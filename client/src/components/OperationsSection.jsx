@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { apiFetch } from '../utils/apiClient';
 
 // Ubari valley tactical locations & checkpoints with verified coordinates
 const UBRI_LOCATIONS = [
@@ -383,26 +384,73 @@ export default function OperationsSection() {
 
   const [activeLayer, setActiveLayer] = useState('google-hybrid'); // 'google-hybrid', 'google-roadmap', 'carto-tactical'
   const [selectedFilter, setSelectedFilter] = useState('gate'); // default to 'gate' so checkpoints are prominent!
-  const [selectedLocation, setSelectedLocation] = useState(UBRI_LOCATIONS[0]);
+  const [locations, setLocations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ubari_ops_locations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return UBRI_LOCATIONS;
+  });
+  const [selectedLocation, setSelectedLocation] = useState(() => locations[0] || UBRI_LOCATIONS[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [quickNote, setQuickNote] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+  const [opsStatusFeedback, setOpsStatusFeedback] = useState('');
 
-  const [liveLog, setLiveLog] = useState([
-    { id: 1, time: '17:05', text: 'بوابة أوباري الشرقية: تفتيش دقيق للمركبات المتجهة نحو سبها، الحالة مستقرة وتنسيق مع دوريات النجدة.', tag: 'نقاط تفتيش' },
-    { id: 2, time: '16:40', text: 'بوابة الفجيج: ضبط مركبة بدون لوحات معدنية وإحالتها لقسم المرور والتراخيص.', tag: 'ضبطيات' },
-    { id: 3, time: '16:15', text: 'بوابة أوباري الغربية (مفرق جرمة): تمركز كامل للدورية المسلحة وتأمين حركة المواطنين.', tag: 'تأمين' },
-    { id: 4, time: '15:50', text: 'محطة وقود 711 المركزية: استمرار التوزيع بإشراف لجنة الوقود بنظام الحصة المعتمدة.', tag: 'وقود' }
-  ]);
+  const [liveLog, setLiveLog] = useState(() => {
+    try {
+      const savedLogs = localStorage.getItem('ubari_ops_logs');
+      if (savedLogs) {
+        const parsed = JSON.parse(savedLogs);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [
+      { id: 1, time: '17:05', text: 'بوابة أوباري الشرقية: تفتيش دقيق للمركبات المتجهة نحو سبها، الحالة مستقرة وتنسيق مع دوريات النجدة.', tag: 'نقاط تفتيش' },
+      { id: 2, time: '16:40', text: 'بوابة الفجيج: ضبط مركبة بدون لوحات معدنية وإحالتها لقسم المرور والتراخيص.', tag: 'ضبطيات' },
+      { id: 3, time: '16:15', text: 'بوابة أوباري الغربية (مفرق جرمة): تمركز كامل للدورية المسلحة وتأمين حركة المواطنين.', tag: 'تأمين' },
+      { id: 4, time: '15:50', text: 'محطة وقود 711 المركزية: استمرار التوزيع بإشراف لجنة الوقود بنظام الحصة المعتمدة.', tag: 'وقود' }
+    ];
+  });
+
+  // Fetch persistent operations locations & radio logs from backend SQLite on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadOperations = async () => {
+      try {
+        const res = await apiFetch('/api/operations');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isMounted || !data.success) return;
+
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setLocations(data.data);
+          try { localStorage.setItem('ubari_ops_locations', JSON.stringify(data.data)); } catch (e) {}
+          setSelectedLocation((prev) => data.data.find((l) => l.id === prev?.id) || data.data[0]);
+        }
+        if (Array.isArray(data.logs)) {
+          setLiveLog(data.logs);
+          try { localStorage.setItem('ubari_ops_logs', JSON.stringify(data.logs)); } catch (e) {}
+        }
+      } catch (e) {
+        // Offline resilience: retain localStorage / seed locations
+      }
+    };
+    loadOperations();
+    return () => { isMounted = false; };
+  }, []);
 
   // Statistics
-  const checkpointsCount = UBRI_LOCATIONS.filter(l => l.category === 'gate').length;
-  const policeCount = UBRI_LOCATIONS.filter(l => l.category === 'police').length;
-  const fuelCount = UBRI_LOCATIONS.filter(l => l.category === 'fuel').length;
+  const checkpointsCount = locations.filter(l => l.category === 'gate').length;
+  const policeCount = locations.filter(l => l.category === 'police').length;
+  const fuelCount = locations.filter(l => l.category === 'fuel').length;
 
   // Filtered Locations
   const filteredLocations = useMemo(() => {
-    return UBRI_LOCATIONS.filter(loc => {
+    return locations.filter(loc => {
       const matchesCategory =
         selectedFilter === 'all' ||
         loc.category === selectedFilter;
@@ -612,20 +660,62 @@ export default function OperationsSection() {
     };
   }, []);
 
-  const handleAddLiveNote = (e) => {
+  const handleAddLiveNote = async (e) => {
     e.preventDefault();
-    if (!quickNote.trim()) return;
+    const cleanText = quickNote.trim();
+    if (!cleanText) return;
+
     const now = new Date();
     const timeStr = now.toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' });
-    setLiveLog(prev => [
-      { id: Date.now(), time: timeStr, text: quickNote, tag: 'إشارة لاسلكية' },
-      ...prev
-    ]);
+    let createdEntry = { id: Date.now(), time: timeStr, text: cleanText, tag: 'إشارة لاسلكية' };
+
+    try {
+      const res = await apiFetch('/api/operations/logs', {
+        method: 'POST',
+        body: JSON.stringify({ text: cleanText, tag: 'إشارة لاسلكية', time: timeStr })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          createdEntry = data.data;
+        }
+      }
+    } catch (err) {}
+
+    setLiveLog(prev => {
+      const nextLogs = [createdEntry, ...prev];
+      try { localStorage.setItem('ubari_ops_logs', JSON.stringify(nextLogs)); } catch (e) {}
+      return nextLogs;
+    });
     setQuickNote('');
   };
 
+  const handleUpdateLocationStatus = async (loc, nextStatus) => {
+    if (!loc || !nextStatus) return;
+    const statusColor = nextStatus.includes('مفعل') ? '#dc2626' : nextStatus.includes('استنفار') ? '#d97706' : '#64748b';
+    const updatedLoc = { ...loc, status: nextStatus, color: statusColor };
+
+    setLocations(prev => {
+      const next = prev.map(item => (item.id === loc.id ? updatedLoc : item));
+      try { localStorage.setItem('ubari_ops_locations', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+    setSelectedLocation(updatedLoc);
+
+    try {
+      const res = await apiFetch(`/api/operations/${loc.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: nextStatus, color: statusColor })
+      });
+      if (res.ok) {
+        setOpsStatusFeedback(`تم تحديث حالة (${loc.name}) في قاعدة البيانات`);
+        setTimeout(() => setOpsStatusFeedback(''), 3000);
+      }
+    } catch (err) {}
+  };
+
   const handlePrintOperationsBrief = () => {
-    const checkpoints = UBRI_LOCATIONS.filter(l => l.category === 'gate');
+    const checkpoints = locations.filter(l => l.category === 'gate');
     const content = `
       <div style="width: 100%; max-width: 740px; margin: 0 auto; font-family: 'Cairo', Arial, sans-serif; direction: rtl; color: #0f172a;">
         <!-- الشريط الرسمي بألوان العلم الليبي -->
@@ -824,7 +914,7 @@ export default function OperationsSection() {
                   color: selectedFilter === 'all' ? '#ffffff' : '#334155'
                 }}
               >
-                الكل ({UBRI_LOCATIONS.length})
+                الكل ({locations.length})
               </button>
             </div>
 
@@ -928,7 +1018,33 @@ export default function OperationsSection() {
               </div>
 
               {/* Action buttons for selected location */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <select
+                  value={selectedLocation.status}
+                  onChange={(e) => handleUpdateLocationStatus(selectedLocation, e.target.value)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer'
+                  }}
+                  title="تحديث الحالة الميدانية للنقطة"
+                >
+                  <option value="مفعل - انتشار كامل">مفعل - انتشار كامل</option>
+                  <option value="تحت الاستنفار الأمني">تحت الاستنفار الأمني</option>
+                  <option value="مناوبة اعتيادية">مناوبة اعتيادية</option>
+                  <option value="مغلق مؤقتاً / صيانة">مغلق مؤقتاً / صيانة</option>
+                </select>
+                {opsStatusFeedback && (
+                  <span style={{ fontSize: '11.5px', color: '#15803d', fontWeight: 800 }}>
+                    {opsStatusFeedback}
+                  </span>
+                )}
                 <button
                   onClick={() => handleCopyCoords(selectedLocation)}
                   style={{
@@ -995,12 +1111,12 @@ export default function OperationsSection() {
                 <span>نقاط التفتيش والبوابات الميدانية</span>
               </span>
               <span style={{ fontSize: '11px', background: '#eff6ff', color: '#1e3a8a', padding: '2px 8px', borderRadius: '10px' }}>
-                {UBRI_LOCATIONS.filter(l => l.category === 'gate').length} نقطة
+                {locations.filter(l => l.category === 'gate').length} نقطة
               </span>
             </h3>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {UBRI_LOCATIONS.filter(l => l.category === 'gate').map(gate => {
+              {locations.filter(l => l.category === 'gate').map(gate => {
                 const isSelected = selectedLocation && selectedLocation.id === gate.id;
                 return (
                   <div

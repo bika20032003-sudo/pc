@@ -336,6 +336,80 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_penalties_type ON penalties(penalty_type);
     `);
 
+    // 10b. إضافة عمود الصورة الشخصية لجدول القوة العمومية إن لم يكن موجوداً
+    const forceCols = await dbInstance.all('PRAGMA table_info(force_members)');
+    if (forceCols && !forceCols.some(c => c.name === 'photo')) {
+      await dbInstance.exec('ALTER TABLE force_members ADD COLUMN photo TEXT;');
+    }
+
+    // 11. جدول الأقسام والمراكز المعتمدة
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS departments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        department_name TEXT NOT NULL,
+        head_name TEXT DEFAULT 'غير محدد',
+        created_at TEXT DEFAULT (datetime('now', 'localtime')),
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_departments_name ON departments(department_name);
+    `);
+
+    // 12. جداول الوقود والمحروقات (الأرصدة، الشحنات الواردة، أذونات الصرف)
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS fuel_tanks (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        main_balance REAL DEFAULT 0,
+        sub_balance REAL DEFAULT 0,
+        total_consumed REAL DEFAULT 0,
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+      CREATE TABLE IF NOT EXISTS fuel_shipments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        station TEXT NOT NULL,
+        fuel_type TEXT DEFAULT 'بنزين 95 ممتاز',
+        quantity REAL NOT NULL,
+        supplier TEXT,
+        date TEXT,
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+      CREATE TABLE IF NOT EXISTS fuel_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        voucher_no TEXT,
+        station TEXT NOT NULL,
+        plate_number TEXT,
+        driver_name TEXT,
+        vehicle_type TEXT,
+        fuel_type TEXT DEFAULT 'بنزين',
+        liters REAL NOT NULL,
+        odometer REAL DEFAULT 0,
+        date TEXT,
+        is_external INTEGER DEFAULT 0,
+        notes TEXT,
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+    `);
+
+    // 13. جدول غرفة العمليات والنقاط والتمركزات الميدانية
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS operations_locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT,
+        category TEXT DEFAULT 'gate',
+        lat REAL NOT NULL,
+        lng REAL NOT NULL,
+        icon TEXT DEFAULT 'gate',
+        status TEXT DEFAULT 'تمركز أمني نشط',
+        color TEXT DEFAULT '#dc2626',
+        officers INTEGER DEFAULT 0,
+        vehicles INTEGER DEFAULT 0,
+        commander TEXT,
+        phone TEXT,
+        notes TEXT,
+        updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+    `);
+
     // 8. التحقق من وجود مستخدم المسؤول الافتراضي
     const adminUser = await dbInstance.get('SELECT id FROM users WHERE username = ?', ['admin']);
     if (!adminUser) {
@@ -734,6 +808,136 @@ export async function initDatabase() {
       }
     } else {
       console.log(`✅ قاعدة بيانات الأسلحة والذخائر جاهزة (${weaponCountRow.c} قطعة سلاح)`);
+    }
+
+    // 14. إضافة عمود الملاحظات والأوقات بسجل العمليات الميدانية
+    await dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS operations_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        log_time TEXT,
+        text TEXT NOT NULL,
+        tag TEXT DEFAULT 'إشعار ميداني',
+        created_by TEXT DEFAULT 'ضابط العمليات',
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+      );
+    `);
+
+    // 15. ترحيل الأقسام والمراكز (إن كان الجدول فارغاً)
+    const deptCountRow = await dbInstance.get('SELECT COUNT(*) as c FROM departments');
+    if (!deptCountRow || deptCountRow.c === 0) {
+      let deptJsonPath = path.resolve(__dirname, '../data/departments_data.json');
+      if (!fs.existsSync(deptJsonPath)) {
+        deptJsonPath = path.resolve(__dirname, '../../../client/src/data/departments_data.json');
+      }
+      if (fs.existsSync(deptJsonPath)) {
+        try {
+          const depts = JSON.parse(fs.readFileSync(deptJsonPath, 'utf8'));
+          if (Array.isArray(depts) && depts.length > 0) {
+            await dbInstance.run('BEGIN TRANSACTION;');
+            const dStmt = await dbInstance.prepare('INSERT INTO departments (id, department_name, head_name) VALUES (?, ?, ?)');
+            for (const d of depts) {
+              await dStmt.run([d.DepartmentID || null, d.DepartmentName || '', d.HeadName || 'غير محدد']);
+            }
+            await dStmt.finalize();
+            await dbInstance.run('COMMIT;');
+            console.log(`🏢 تم ترحيل ${depts.length} قسماً ومركزاً إلى SQLite.`);
+          }
+        } catch (err) {
+          await dbInstance.run('ROLLBACK;').catch(() => {});
+        }
+      }
+    }
+
+    // 16. ترحيل بيانات الوقود والمحروقات (إن كان الجدول فارغاً)
+    const fuelTankRow = await dbInstance.get('SELECT id FROM fuel_tanks WHERE id = 1');
+    if (!fuelTankRow) {
+      let fuelJsonPath = path.resolve(__dirname, '../data/fuel_data.json');
+      if (!fs.existsSync(fuelJsonPath)) {
+        fuelJsonPath = path.resolve(__dirname, '../../../client/src/data/fuel_data.json');
+      }
+      let fData = { main_balance: 0, sub_balance: 0, total_consumed: 0, shipments: [], transactions: [] };
+      if (fs.existsSync(fuelJsonPath)) {
+        try {
+          fData = JSON.parse(fs.readFileSync(fuelJsonPath, 'utf8'));
+        } catch (_) {}
+      }
+      await dbInstance.run('BEGIN TRANSACTION;');
+      try {
+        await dbInstance.run(
+          'INSERT INTO fuel_tanks (id, main_balance, sub_balance, total_consumed) VALUES (1, ?, ?, ?)',
+          [Number(fData.main_balance) || 0, Number(fData.sub_balance) || 0, Number(fData.total_consumed) || 0]
+        );
+        if (Array.isArray(fData.shipments)) {
+          for (const s of fData.shipments) {
+            await dbInstance.run(
+              'INSERT INTO fuel_shipments (station, fuel_type, quantity, supplier, date) VALUES (?, ?, ?, ?, ?)',
+              [s.station || 'المحطة الرئيسية', s.fuel_type || 'بنزين 95 ممتاز', Number(s.quantity) || 0, s.supplier || '', s.date || '']
+            );
+          }
+        }
+        if (Array.isArray(fData.transactions)) {
+          for (const t of fData.transactions) {
+            await dbInstance.run(
+              'INSERT INTO fuel_transactions (voucher_no, station, plate_number, driver_name, vehicle_type, fuel_type, liters, odometer, date, is_external, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [t.voucher_no || '', t.station || 'المحطة الرئيسية', t.plate_number || '', t.driver_name || '', t.vehicle_type || '', t.fuel_type || 'بنزين', Number(t.liters) || 0, Number(t.odometer) || 0, t.date || '', t.is_external ? 1 : 0, t.notes || '']
+            );
+          }
+        }
+        await dbInstance.run('COMMIT;');
+        console.log('⛽ تم ترحيل أرصدة وسجلات الوقود إلى SQLite بنجاح.');
+      } catch (err) {
+        await dbInstance.run('ROLLBACK;').catch(() => {});
+      }
+    }
+
+    // 17. ترحيل مواقع ونقاط التفتيش لغرفة العمليات (إن كان الجدول فارغاً)
+    const opsLocCountRow = await dbInstance.get('SELECT COUNT(*) as c FROM operations_locations');
+    if (!opsLocCountRow || opsLocCountRow.c === 0) {
+      const seedLocations = [
+        { name: 'بوابة أوباري الشرقية (نقطة تفتيش رئيسية)', type: 'نقطة تفتيش', category: 'gate', lat: 26.5850, lng: 12.8250, icon: 'gate', status: 'تشديد وتدقيق أمني', color: '#dc2626', officers: 12, vehicles: 3, commander: 'نقيب / مصطفى سالم', phone: 'لاسلكي - قناة 2 (عمليات)', notes: 'المدخل الرئيسي للمدينة من جهة سبها' },
+        { name: 'بوابة أوباري الغربية (مفرق جرمة وغات)', type: 'نقطة تفتيش', category: 'gate', lat: 26.5720, lng: 12.7280, icon: 'gate', status: 'تفتيش مستمر وتأمين', color: '#dc2626', officers: 10, vehicles: 2, commander: 'ملازم أول / عبدالسلام المهدي', phone: 'لاسلكي - قناة 2', notes: 'تأمين مدخل ومخرج أوباري نحو الغريفة وغات' },
+        { name: 'بوابة الحطية الأمنية', type: 'نقطة تفتيش', category: 'gate', lat: 26.5910, lng: 12.8950, icon: 'gate', status: 'تمركز أمني نشط', color: '#dc2626', officers: 8, vehicles: 2, commander: 'مساعد ضابط / عثمان مسعود', phone: 'لاسلكي - قناة 4', notes: 'نقطة ارتكاز وتفتيش متقدمة' },
+        { name: 'بوابة الفجيج (مدخل الوادي الشرقي)', type: 'نقطة تفتيش', category: 'gate', lat: 26.6850, lng: 13.8200, icon: 'gate', status: 'جاهزية واستيقاف', color: '#dc2626', officers: 14, vehicles: 4, commander: 'نقيب / أبوبكر الشريف', phone: 'لاسلكي - قناة 1', notes: 'البوابة الإستراتيجية لقطاع وادي الحياة' },
+        { name: 'بوابة الأبيض الحدودية للقطاع', type: 'نقطة تفتيش', category: 'gate', lat: 26.7650, lng: 14.0100, icon: 'gate', status: 'مراقبة مشددة', color: '#dc2626', officers: 12, vehicles: 3, commander: 'ملازم / علي أحمد التارقي', phone: 'لاسلكي - قناة 1', notes: 'تأمين الحدود الإدارية مع قطاع سبها' },
+        { name: 'بوابة الغريفة المركزية', type: 'نقطة تفتيش', category: 'gate', lat: 26.5350, lng: 13.0180, icon: 'gate', status: 'استقرار وتفتيش', color: '#dc2626', officers: 8, vehicles: 2, commander: 'رئيس عرفاء / محمد الهادي', phone: '071-523002', notes: 'مدخل بلدية الغريفة' },
+        { name: 'بوابة جرمة الأثرية (المثلث الغربي)', type: 'نقطة تفتيش', category: 'gate', lat: 26.5290, lng: 13.0720, icon: 'gate', status: 'تأمين سياحي وحيوي', color: '#dc2626', officers: 8, vehicles: 2, commander: 'ملازم / بشير محمد', phone: 'لاسلكي - قناة 3', notes: 'تأمين محيط مدينة جرمة' },
+        { name: 'بوابة سوق الخميس (تمركز أمني وسط أوباري)', type: 'نقطة تفتيش', category: 'gate', lat: 26.5880, lng: 12.7710, icon: 'gate', status: 'دورية متمركزة', color: '#2563eb', officers: 8, vehicles: 2, commander: 'مساعد ضابط / خليفة الصالحين', phone: 'لاسلكي - قناة 3', notes: 'تأمين المنطقة التجارية والمفترق الرئيسي' },
+        { name: 'بوابة بنت بية الشمالية', type: 'نقطة تفتيش', category: 'gate', lat: 26.6520, lng: 13.6620, icon: 'gate', status: 'تفتيش وتدقيق', color: '#dc2626', officers: 10, vehicles: 2, commander: 'نقيب / مفتاح سالم', phone: '071-524110', notes: 'تأمين مدخل بلدية بنت بية' },
+        { name: 'استيقاف مثلث قريقيرة الأمني', type: 'نقطة تفتيش', category: 'gate', lat: 26.5580, lng: 13.2200, icon: 'gate', status: 'استيقاف فجائي نشط', color: '#d97706', officers: 6, vehicles: 2, commander: 'دورية النجدة والإسناد', phone: 'لاسلكي - قناة 2', notes: 'استيقافات أمنية فجائية' },
+        { name: 'بوابة الديسة / تين كاشف (المدخل الجنوبي)', type: 'نقطة تفتيش', category: 'gate', lat: 26.5400, lng: 12.7450, icon: 'gate', status: 'مراقبة المسارب الصحراوية', color: '#dc2626', officers: 8, vehicles: 3, commander: 'ملازم أول / حسن بركة', phone: 'لاسلكي - دوريات صحراوية', notes: 'تأمين المسارات الصحراوية الجنوبية' },
+        { name: 'نقطة تفتيش مطار أوباري المدني', type: 'نقطة تفتيش', category: 'gate', lat: 26.5680, lng: 12.8120, icon: 'gate', status: 'حماية منشأة حيوية', color: '#1e3a8a', officers: 12, vehicles: 3, commander: 'رائد / طارق عبدالكريم', phone: '071-522105', notes: 'تأمين محيط مطار أوباري المدني' },
+        { name: 'مديرية أمن أوباري (القيادة المركزية والسيطرة)', type: 'مركز قيادة', category: 'police', lat: 26.5896, lng: 12.7745, icon: 'hq', status: 'جاهزية تامة واستنفار', color: '#16a34a', officers: 48, vehicles: 12, commander: 'سيادة اللواء / موسى سعد البدين (مدير الأمن)', phone: '071-522101', notes: 'المقر العام للمديرية وغرفة العمليات المركزية' },
+        { name: 'مركز شرطة أوباري المدينة', type: 'مركز شرطة', category: 'police', lat: 26.5950, lng: 12.7800, icon: 'police', status: 'دورية نشطة ومناوبة', color: '#2563eb', officers: 24, vehicles: 6, commander: 'عقيد / إدريس علي', phone: '071-522114', notes: 'استقبال البلاغات والدوريات داخل المدينة' },
+        { name: 'قسم البحث الجنائي أوباري', type: 'مركز شرطة', category: 'police', lat: 26.5870, lng: 12.7760, icon: 'police', status: 'تحريات وتحقيقات مستمرة', color: '#2563eb', officers: 20, vehicles: 5, commander: 'مقدم / يوسف الطاهر', phone: '071-522120', notes: 'التحري وجمع الاستدلالات' },
+        { name: 'وحدة النجدة والدوريات الصحراوية', type: 'مركز شرطة', category: 'police', lat: 26.5860, lng: 12.7810, icon: 'police', status: 'استجابة سريعة', color: '#2563eb', officers: 26, vehicles: 8, commander: 'رائد / خالد عمر', phone: '071-522133', notes: 'الدوريات المسلحة الجوالة' },
+        { name: 'مركز شرطة الغريفة', type: 'مركز شرطة', category: 'police', lat: 26.6341, lng: 12.8711, icon: 'police', status: 'مستقر وجاهز', color: '#16a34a', officers: 18, vehicles: 4, commander: 'رائد / مصطفى عمران', phone: '071-523002', notes: 'نطاق بلدية الغريفة' },
+        { name: 'مركز شرطة بنت بية', type: 'مركز شرطة', category: 'police', lat: 26.6500, lng: 13.0000, icon: 'police', status: 'استقرار أمني', color: '#16a34a', officers: 16, vehicles: 3, commander: 'مقدم / حسن سالم', phone: '071-524110', notes: 'نطاق بلدية بنت بية' },
+        { name: 'قسم المرور والتراخيص أوباري', type: 'مركز شرطة', category: 'police', lat: 26.5910, lng: 12.7780, icon: 'police', status: 'تنظيم سير ودوريات مرورية', color: '#2563eb', officers: 15, vehicles: 4, commander: 'رائد / عبدالحميد محمد', phone: '071-522108', notes: 'مراقبة السلامة المرورية' },
+        { name: 'محطة وقود المديرية المركزية (711)', type: 'محطة وقود', category: 'fuel', lat: 26.5877, lng: 12.7793, icon: 'fuel', status: 'مراقبة وتوزيع منتظم', color: '#d97706', officers: 4, vehicles: 1, commander: 'ملازم / بشير مصطفى', phone: '', notes: 'حصة 40,000 لتر' },
+        { name: 'محطة وقود مشروع أوباري (713)', type: 'محطة وقود', category: 'fuel', lat: 26.5945, lng: 12.7259, icon: 'fuel', status: 'مراقبة وتأمين', color: '#d97706', officers: 4, vehicles: 1, commander: 'مساعد ضابط / عثمان علي', phone: '', notes: 'حصة 30,000 لتر' },
+        { name: 'محطة وقود الغريفة الرئيسية', type: 'محطة وقود', category: 'fuel', lat: 26.5258, lng: 13.0121, icon: 'fuel', status: 'تزويد منتظم', color: '#16a34a', officers: 3, vehicles: 1, commander: 'قسم النجدة', phone: '', notes: 'حصة 25,000 لتر' },
+        { name: 'محطة وقود جرمة التاريخية', type: 'محطة وقود', category: 'fuel', lat: 26.5261, lng: 13.0643, icon: 'fuel', status: 'مراقبة وتأمين', color: '#d97706', officers: 3, vehicles: 1, commander: 'دورية جرمة', phone: '', notes: 'حصة 20,000 لتر' },
+        { name: 'محطة وقود قريقيرة', type: 'محطة وقود', category: 'fuel', lat: 26.5536, lng: 13.2148, icon: 'fuel', status: 'تزويد منتظم', color: '#16a34a', officers: 3, vehicles: 1, commander: 'مركز الغريفة', phone: '', notes: 'حصة 20,000 لتر' },
+        { name: 'محطة وقود الرميلة', type: 'محطة وقود', category: 'fuel', lat: 26.5543, lng: 13.4173, icon: 'fuel', status: 'مراقبة', color: '#d97706', officers: 2, vehicles: 1, commander: 'دورية الإسناد', phone: '', notes: 'حصة 15,000 لتر' },
+        { name: 'محطة وقود قبرعون', type: 'محطة وقود', category: 'fuel', lat: 26.5757, lng: 13.4314, icon: 'fuel', status: 'تزويد منتظم', color: '#16a34a', officers: 2, vehicles: 1, commander: 'مركز بنت بية', phone: '', notes: 'حصة 15,000 لتر' },
+        { name: 'محطة وقود التناحمة', type: 'محطة وقود', category: 'fuel', lat: 26.6314, lng: 13.6369, icon: 'fuel', status: 'مراقبة', color: '#d97706', officers: 2, vehicles: 1, commander: 'مركز بنت بية', phone: '', notes: 'حصة 15,000 لتر' },
+        { name: 'محطة وقود بنت بية', type: 'محطة وقود', category: 'fuel', lat: 26.6471, lng: 13.6581, icon: 'fuel', status: 'تزويد منتظم', color: '#16a34a', officers: 3, vehicles: 1, commander: 'مركز بنت بية', phone: '', notes: 'حصة 25,000 لتر' },
+        { name: 'محطة وقود الأبيض', type: 'محطة وقود', category: 'fuel', lat: 26.7622, lng: 14.0057, icon: 'fuel', status: 'مراقبة تامة', color: '#d97706', officers: 3, vehicles: 1, commander: 'دورية الأبيض', phone: '', notes: 'حصة 20,000 لتر' }
+      ];
+      await dbInstance.run('BEGIN TRANSACTION;');
+      try {
+        const lStmt = await dbInstance.prepare(
+          'INSERT INTO operations_locations (name, type, category, lat, lng, icon, status, color, officers, vehicles, commander, phone, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        for (const loc of seedLocations) {
+          await lStmt.run([loc.name, loc.type, loc.category, loc.lat, loc.lng, loc.icon, loc.status, loc.color, loc.officers, loc.vehicles, loc.commander, loc.phone, loc.notes]);
+        }
+        await lStmt.finalize();
+        await dbInstance.run('COMMIT;');
+        console.log(`🛰️ تم ترحيل ${seedLocations.length} موقعاً ونقطة تفتيش لغرفة العمليات في SQLite.`);
+      } catch (err) {
+        await dbInstance.run('ROLLBACK;').catch(() => {});
+      }
     }
 
     isConnected = true;

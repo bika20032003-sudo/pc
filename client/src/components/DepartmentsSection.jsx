@@ -18,6 +18,7 @@ import { normalizeArabicText } from '../utils/arabicUtils.js';
 import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { apiFetch } from '../utils/apiClient';
 
 const STORAGE_KEY = 'ubari_departments';
 
@@ -57,6 +58,22 @@ export default function DepartmentsSection({ forceMembers = [] }) {
   const [editingDept, setEditingDept] = useState(null);
   const [formName, setFormName] = useState('');
   const [formHead, setFormHead] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    apiFetch('/api/departments')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (isMounted && json?.success && Array.isArray(json.data) && json.data.length > 0) {
+          setDepartments(json.data);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
+          } catch (_) {}
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -101,31 +118,48 @@ export default function DepartmentsSection({ forceMembers = [] }) {
     setIsModalOpen(true);
   };
 
-  const handleSaveDepartment = (e) => {
+  const handleSaveDepartment = async (e) => {
     e.preventDefault();
     const cleanName = formName.trim();
     if (!cleanName) return;
     const cleanHead = formHead.trim() ? formHead.trim() : 'غير محدد';
 
     if (editingDept) {
+      const targetId = editingDept.DepartmentID;
       setDepartments((prev) =>
         prev.map((d) =>
-          d.DepartmentID === editingDept.DepartmentID
+          d.DepartmentID === targetId
             ? { ...d, DepartmentName: cleanName, HeadName: cleanHead }
             : d
         )
       );
+      try {
+        await apiFetch(`/api/departments/${targetId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ DepartmentName: cleanName, HeadName: cleanHead })
+        });
+      } catch (_) {}
     } else {
-      const nextId =
+      const tempId =
         departments.reduce((max, d) => Math.max(max, Number(d.DepartmentID) || 0), 0) + 1;
-      setDepartments((prev) => [
-        ...prev,
-        {
-          DepartmentID: nextId,
-          DepartmentName: cleanName,
-          HeadName: cleanHead
+      let createdRecord = {
+        DepartmentID: tempId,
+        DepartmentName: cleanName,
+        HeadName: cleanHead
+      };
+      try {
+        const res = await apiFetch('/api/departments', {
+          method: 'POST',
+          body: JSON.stringify({ DepartmentName: cleanName, HeadName: cleanHead })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && json.data) {
+            createdRecord = json.data;
+          }
         }
-      ]);
+      } catch (_) {}
+      setDepartments((prev) => [...prev, createdRecord]);
     }
     setIsModalOpen(false);
     setEditingDept(null);
@@ -133,11 +167,14 @@ export default function DepartmentsSection({ forceMembers = [] }) {
     setFormHead('');
   };
 
-  const handleDeleteDepartment = (dept) => {
+  const handleDeleteDepartment = async (dept) => {
     if (!window.confirm(`هل أنت متأكد من حذف القسم: "${dept.DepartmentName}"؟`)) {
       return;
     }
     setDepartments((prev) => prev.filter((d) => d.DepartmentID !== dept.DepartmentID));
+    try {
+      await apiFetch(`/api/departments/${dept.DepartmentID}`, { method: 'DELETE' });
+    } catch (_) {}
   };
 
   const handleExportExcel = () => {
@@ -183,9 +220,9 @@ export default function DepartmentsSection({ forceMembers = [] }) {
         <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #1e3a8a; margin-bottom: 10px;">
           <tr>
             <td style="width: 34%; text-align: right; vertical-align: middle;">
-              <div style="font-size: 14px; font-weight: 900; color: #1e3a8a;">دولة ليبيــــا</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0a192f;">وزارة الداخليـــــة</div>
-              <div style="font-size: 12px; font-weight: 800; color: #0369a1;">مديرية أمن أوبــــاري</div>
+              <div style="font-size: 14px; font-weight: 900; color: #1e3a8a;">دولة ليبيا</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0a192f;">وزارة الداخلية</div>
+              <div style="font-size: 12px; font-weight: 800; color: #0369a1;">مديرية أمن أوباري</div>
             </td>
             <td style="width: 32%; text-align: center; vertical-align: middle;">
               <img src="${MOI_LOGO_BASE64}" alt="شعار وزارة الداخلية" style="width: 52px; height: 52px; object-fit: contain; display: block; margin: 0 auto 4px;" />

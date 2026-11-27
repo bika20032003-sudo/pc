@@ -229,18 +229,12 @@ export default function MailSection({ user, forceMembers = [] }) {
           const inc = data.mail.filter(m => m.type === 'incoming');
           const ref = data.mail.filter(m => m.type === 'referred');
 
-          if (out.length > 0) {
-            setOutgoingList(out);
-            localStorage.setItem('ubari_outgoing_mail', JSON.stringify(out));
-          }
-          if (inc.length > 0) {
-            setIncomingList(inc);
-            localStorage.setItem('ubari_incoming_mail', JSON.stringify(inc));
-          }
-          if (ref.length > 0) {
-            setReferredList(ref);
-            localStorage.setItem('ubari_referred_mail', JSON.stringify(ref));
-          }
+          setOutgoingList(out);
+          localStorage.setItem('ubari_outgoing_mail', JSON.stringify(out));
+          setIncomingList(inc);
+          localStorage.setItem('ubari_incoming_mail', JSON.stringify(inc));
+          setReferredList(ref);
+          localStorage.setItem('ubari_referred_mail', JSON.stringify(ref));
         }
       } catch (err) {
         // Fallback gracefully to localStorage (offline or GitHub Pages)
@@ -284,9 +278,11 @@ export default function MailSection({ user, forceMembers = [] }) {
     attachment_name: ''
   });
 
-  // Active Letter for Preview & Print matching Image 3 (الرسالة القديمة المعتمدة مع المحرر)
+  // Active Letter for Preview & Print
   const [previewLetter, setPreviewLetter] = useState({
     ...INITIAL_OUTGOING_MAIL[0],
+    reply_to_reference: '',
+    reply_date: '',
     font_family: "'Cairo', sans-serif",
     font_size: '16px',
     line_height: '1.9',
@@ -3233,18 +3229,14 @@ function OfficialLetterSheet({ letter, qrUrl }) {
         </span>
       </div>
 
-      {/* Reference Sub-line matching Image 3 */}
-      <div className="a4-reference-subline">
-        {letter.reply_to_reference ? (
+      {/* Reference Sub-line (Rendered ONLY when user actually enters a reply_to_reference) */}
+      {letter.reply_to_reference && String(letter.reply_to_reference).trim() !== '' && (
+        <div className="a4-reference-subline">
           <span>
-            إشارة إلى مراسلتكم رقم : {letter.reply_to_reference} بتاريخ {letter.reply_date || '10/10/2026'}م
+            إشارة إلى مراسلتكم رقم : {letter.reply_to_reference}{letter.reply_date ? ` بتاريخ ${letter.reply_date}م` : ''}
           </span>
-        ) : (
-          <span>
-            إشارة إلى مراسلتكم رقم : 1.2/2026 بتاريخ 10/10/2026م
-          </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Recipient Headline matching Image 3 */}
       <div className="a4-recipient-headline">

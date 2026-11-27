@@ -15,6 +15,11 @@ import leaveRoutes from './routes/leaveRoutes.js';
 import mailRoutes from './routes/mailRoutes.js';
 import weaponsRoutes from './routes/weaponsRoutes.js';
 import penaltiesRoutes from './routes/penaltiesRoutes.js';
+import departmentRoutes from './routes/departmentRoutes.js';
+import fuelRoutes from './routes/fuelRoutes.js';
+import operationsRoutes from './routes/operationsRoutes.js';
+import { authenticateToken } from './middleware/authMiddleware.js';
+import { getDashboardLiveStats } from './controllers/operationsController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -78,6 +83,10 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/mail', mailRoutes);
 app.use('/api/weapons', weaponsRoutes);
 app.use('/api/penalties', penaltiesRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/fuel', fuelRoutes);
+app.use('/api/operations', operationsRoutes);
+app.get('/api/dashboard/stats', authenticateToken, getDashboardLiveStats);
 
 // Health check route
 app.get('/api/health', (req, res) => {

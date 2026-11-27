@@ -3,6 +3,7 @@ import { Share2, Search, Plus, Calendar, Building2, CheckCircle2, Clock, Printer
 import initialReferred from '../data/referred_mail_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { apiFetch } from '../utils/apiClient';
 
 export default function ReferredMailSection({ user = {} }) {
   const [referredList, setReferredList] = useState(() => {
@@ -19,10 +20,10 @@ export default function ReferredMailSection({ user = {} }) {
     let isMounted = true;
     const fetchReferred = async () => {
       try {
-        const res = await fetch('/api/mail?type=referred');
+        const res = await apiFetch('/api/mail?type=referred');
         if (!res.ok) return;
         const data = await res.json();
-        if (isMounted && data.success && Array.isArray(data.mail) && data.mail.length > 0) {
+        if (isMounted && data.success && Array.isArray(data.mail)) {
           const mapped = data.mail.map(m => ({
             ReferralID: m.id,
             id: m.id,
@@ -93,9 +94,8 @@ export default function ReferredMailSection({ user = {} }) {
     };
 
     try {
-      const res = await fetch('/api/mail', {
+      const res = await apiFetch('/api/mail', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'referred',
           code_no: form.MailNumber,
@@ -121,7 +121,7 @@ export default function ReferredMailSection({ user = {} }) {
     setReferredList([newEntry, ...referredList]);
     setIsAddModalOpen(false);
     setForm({
-      MailNumber: `${Math.floor(Math.random() * 800) + 100}`,
+      MailNumber: `${referredList.length + 1}`,
       Subject: '',
       TargetDept: 'الشؤون الأمنية',
       DirectorNotes: 'للإجراء اللازم والعرض',
@@ -134,7 +134,7 @@ export default function ReferredMailSection({ user = {} }) {
     if (window.confirm('هل أنت متأكد من حذف هذه المعاملة المحالة نهائياً؟')) {
       setReferredList(prev => prev.filter(r => r.ReferralID !== id && r.id !== id));
       try {
-        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/mail/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('Referred delete offline note:', err.message);
       }

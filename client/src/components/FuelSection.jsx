@@ -18,6 +18,7 @@ import initialFuelData from '../data/fuel_data.json';
 import vehiclesData from '../data/vehicles_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
+import { apiFetch } from '../utils/apiClient';
 import * as XLSX from 'xlsx';
 
 export default function FuelSection({ user, forceMembers = [] }) {
@@ -25,6 +26,42 @@ export default function FuelSection({ user, forceMembers = [] }) {
     const saved = localStorage.getItem('ubari_fuel_data');
     return saved ? JSON.parse(saved) : initialFuelData;
   });
+
+  const [registeredVehicles, setRegisteredVehicles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ubari_vehicles_data');
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (_) {}
+    return vehiclesData;
+  });
+
+  // Sync real fuel state and vehicles fleet from SQLite backend
+  useEffect(() => {
+    let isMounted = true;
+    apiFetch('/api/fuel')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (isMounted && json?.success && json.data) {
+          setFuelData(json.data);
+          try {
+            localStorage.setItem('ubari_fuel_data', JSON.stringify(json.data));
+          } catch (_) {}
+        }
+      })
+      .catch(() => {});
+
+    apiFetch('/api/vehicles')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (isMounted && json?.success && Array.isArray(json.data) && json.data.length > 0) {
+          setRegisteredVehicles(json.data);
+        }
+      })
+      .catch(() => {});
+
+    return () => { isMounted = false; };
+  }, []);
 
   // State for Inbound Shipment
   const [shipmentForm, setShipmentForm] = useState({
@@ -72,7 +109,7 @@ export default function FuelSection({ user, forceMembers = [] }) {
       return;
     }
 
-    const matched = vehiclesData.find((v) => String(v.id) === String(vId));
+    const matched = registeredVehicles.find((v) => String(v.id) === String(vId));
     if (matched) {
       setDispenseForm((prev) => ({
         ...prev,
@@ -86,8 +123,8 @@ export default function FuelSection({ user, forceMembers = [] }) {
     }
   };
 
-  // Handle Add Inbound Shipment
-  const handleAddShipment = (e) => {
+  // Handle Add Inbound Shipment (synced with SQLite)
+  const handleAddShipment = async (e) => {
     e.preventDefault();
     const qty = Number(shipmentForm.quantity);
     if (!qty || qty <= 0) {
@@ -95,8 +132,7 @@ export default function FuelSection({ user, forceMembers = [] }) {
       return;
     }
 
-    const newShipment = {
-      id: Date.now(),
+    const payload = {
       station: shipmentForm.station,
       fuel_type: shipmentForm.fuel_type,
       quantity: qty,
@@ -104,6 +140,28 @@ export default function FuelSection({ user, forceMembers = [] }) {
       date: new Date().toISOString().slice(0, 10)
     };
 
+    try {
+      const res = await apiFetch('/api/fuel/shipment', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.success && json.data) {
+          setFuelData(json.data);
+          setShipmentForm({
+            station: 'المحطة الرئيسية',
+            fuel_type: 'بنزين 95 ممتاز',
+            quantity: '',
+            supplier: 'مستودع سبها النفطي - شحنة رقم '
+          });
+          alert(`✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) وحفظها في قاعدة البيانات المركزية!`);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    const newShipment = { id: Date.now(), ...payload };
     setFuelData((prev) => ({
       ...prev,
       main_balance: shipmentForm.station === 'المحطة الرئيسية' ? prev.main_balance + qty : prev.main_balance,
@@ -120,8 +178,8 @@ export default function FuelSection({ user, forceMembers = [] }) {
     alert(`✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) في خزان ${shipmentForm.station} بنجاح!`);
   };
 
-  // Handle Dispense
-  const handleDispense = (e) => {
+  // Handle Dispense (synced atomically with SQLite)
+  const handleDispense = async (e) => {
     e.preventDefault();
     const liters = Number(dispenseForm.liters);
     if (!liters || liters <= 0) {
@@ -136,19 +194,54 @@ export default function FuelSection({ user, forceMembers = [] }) {
       return;
     }
 
-    const newTx = {
-      id: Date.now(),
-      voucher_no: `FUEL-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    const dispensePayload = {
       station: dispenseForm.station,
       plate_number: dispenseForm.plate_number.trim() || 'بدون لوحة',
       driver_name: dispenseForm.driver_name.trim() || 'سائق الدورية',
       vehicle_type: dispenseForm.vehicle_type.trim() || 'مركبة أمنية',
       fuel_type: dispenseForm.fuel_type || 'بنزين',
-      liters: liters,
+      liters,
       odometer: Number(dispenseForm.odometer) || 0,
-      date: new Date().toISOString(),
       is_external: dispenseForm.is_external,
       notes: dispenseForm.notes || ''
+    };
+
+    try {
+      const res = await apiFetch('/api/fuel/dispense', {
+        method: 'POST',
+        body: JSON.stringify(dispensePayload)
+      });
+      if (res.status !== 404) {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert(json?.message || 'تعذر تنفيذ عملية الصرف على الخادم');
+          return;
+        }
+        if (json?.success && json.data) {
+          setFuelData(json.data);
+          setDispenseForm({
+            station: 'المحطة الرئيسية',
+            selected_vehicle_id: '',
+            plate_number: '',
+            driver_name: '',
+            vehicle_type: '',
+            fuel_type: 'بنزين',
+            liters: '',
+            odometer: '',
+            is_external: false,
+            notes: ''
+          });
+          alert(`✅ تم صرف الوقود (${liters} لتر) وتوليد إذن الصرف المعتمد رقم: ${json.transaction?.voucher_no}`);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    const newTx = {
+      id: Date.now(),
+      voucher_no: `FUEL-${new Date().getFullYear()}-${String((fuelData.transactions?.length || 0) + 1).padStart(4, '0')}`,
+      ...dispensePayload,
+      date: new Date().toISOString()
     };
 
     setFuelData((prev) => ({
@@ -604,14 +697,14 @@ export default function FuelSection({ user, forceMembers = [] }) {
 
           <form onSubmit={handleDispense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px' }}>
             <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '4px' }}>اختيار آلية من أسطول المديرية المسجل (92 آلية):</label>
+              <label style={{ fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '4px' }}>اختيار آلية من أسطول المديرية المسجل ({registeredVehicles.length} آلية):</label>
               <select
                 value={dispenseForm.selected_vehicle_id}
                 onChange={handleSelectRegisteredVehicle}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontWeight: 800, color: '#0f172a', background: '#f8fafc' }}
               >
                 <option value="">-- اختيار آلية من أسطول المديرية لتعبئة البيانات تلقائياً --</option>
-                {vehiclesData.map((v) => (
+                {registeredVehicles.map((v) => (
                   <option key={v.id} value={v.id}>
                     لوحة {v.plate_number} • {v.vehicle_type} ({v.department || v.custodian_name || 'المديرية'})
                   </option>

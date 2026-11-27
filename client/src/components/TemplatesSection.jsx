@@ -46,6 +46,7 @@ import ForceNameAutocomplete from './ForceNameAutocomplete';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { OFFICIAL_EDITOR_FONTS, OFFICIAL_CONTACT_DEFAULTS, resolveOfficialPhone, resolveOfficialEmail } from '../utils/editorFonts';
+import { apiFetch } from '../utils/apiClient';
 
 // Sample pre-seeded employees matching reference image 4 + directorate officers
 const SAMPLE_EMPLOYEES = [
@@ -171,7 +172,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
         template_name: 'مراسلة حرة (مستند فارغ ومحرر نصوص)',
         employee_name: 'عبدالرحمن المهدي إبراهيم يونس',
         employee_role: 'موظف',
-        employee_job_no: '8163450',
+        employee_job_no: '---',
         date: new Date().toLocaleDateString('ar-LY'),
         subject: 'مراسلة حرة بخصوص متابعة الأعمال الإدارية المنوطة بالقسم',
         recipient: 'إلى السيد / مدير إدارة الشؤون الإدارية والمالية',
@@ -192,10 +193,10 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     let isMounted = true;
     const fetchSavedTemplates = async () => {
       try {
-        const res = await fetch('/api/mail?type=official_letter');
+        const res = await apiFetch('/api/mail?type=official_letter');
         if (!res.ok) return;
         const data = await res.json();
-        if (isMounted && data.success && Array.isArray(data.mail) && data.mail.length > 0) {
+        if (isMounted && data.success && Array.isArray(data.mail)) {
           const mapped = data.mail.map(m => ({
             id: m.id,
             code_no: m.code_no,
@@ -246,7 +247,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
   // Filtered employees for autocomplete suggestions (من قاعدة بيانات القوة العمومية 2,211 فرداً)
   const employeeSuggestions = useMemo(() => {
     const term = normalizeArabicText(employeeSearch);
-    if (!forceMembers || forceMembers.length === 0) return SAMPLE_EMPLOYEES;
+    if (!forceMembers || forceMembers.length === 0) return [];
 
     const fromForce = forceMembers
       .filter(m => {
@@ -277,8 +278,8 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
   const generateTemplateContent = (typeId, emp, ref) => {
     const rawName = emp?.name || (employeeSearch ? employeeSearch.trim() : '');
     const empName = rawName || (typeId === 'free_letter' ? '' : 'السيد الموظف');
-    const jobNo = emp?.job_number || emp?.financial_number || (rawName ? '8163450' : '---');
-    const nationalId = emp?.national_id || (rawName ? '119940251120' : '---');
+    const jobNo = emp?.job_number || emp?.financial_number || '---';
+    const nationalId = emp?.national_id || '---';
     const dept = emp?.department || 'مديرية أمن أوباري';
     const today = new Date().toLocaleDateString('ar-LY');
 
@@ -343,7 +344,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
         return {
           subject: `شهادة بيان مرتب شهري تخص / ${empName}`,
           recipient: 'إلى إدارة المصرف المحترمين ،،،',
-          body: `تشهد الشؤون المالية والمرتبات بمديرية أمن أوباري بأن السيد / ${empName}، الرقم المالي: (${jobNo})، يتقاضى مرتباً شهرياً إجمالياً قدره (${emp?.salary || '1,850'}) د.ل، وبعد خصم الاستقطاعات القانونية يبلغ صافي المرتب الشهري المحال إلى حسابه المصرفي مبلغاً وقدره (${parseInt(emp?.salary?.replace(/,/g, '') || 1850) - 150}) د.ل، وقد أُعطيت له هذه الشهادة بناءً على طلبه لتقديمها إلى مصرفكم.`
+          body: `تشهد الشؤون المالية والمرتبات بمديرية أمن أوباري بأن السيد / ${empName}، الرقم المالي: (${jobNo})، يتقاضى مرتباً شهرياً وفق البيانات المقيدة بالسجل المالي المعتمد (${emp?.basic_salary || emp?.salary || '---'}) د.ل، وقد أُعطيت له هذه الشهادة بناءً على طلبه لتقديمها إلى مصرفكم.`
         };
 
       case 'clinic_referral':
@@ -409,8 +410,8 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       template_name: tplInfo.name,
       employee_name: empName || '',
       employee_role: empObj?.role || (empName ? 'موظف' : ''),
-      employee_job_no: empObj?.job_number || empObj?.financial_number || (empName ? '8163450' : '-'),
-      employee_national_id: empObj?.national_id || (empName ? '119940251120' : '-'),
+      employee_job_no: empObj?.job_number || empObj?.financial_number || '-',
+      employee_national_id: empObj?.national_id || '-',
       employee_dept: empObj?.department || 'الشؤون الإدارية والمالية',
       date: dateFormatted,
 
@@ -481,7 +482,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
 
     // حفظ حقيقي في خادم وقاعدة بيانات SQLite المركزية
     try {
-      const res = await fetch('/api/mail', {
+      const res = await apiFetch('/api/mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -544,7 +545,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     let newDoc = buildTemplateDocumentObject(selectedTemplateType, employeeSearch, selectedEmployee, referenceNumber);
 
     try {
-      const res = await fetch('/api/mail', {
+      const res = await apiFetch('/api/mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -691,7 +692,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
   const handleRefreshArchive = async () => {
     setIsArchiveRefreshing(true);
     try {
-      const res = await fetch('/api/mail');
+      const res = await apiFetch('/api/mail');
       const data = await res.json();
       if (data.success && Array.isArray(data.mail)) {
         const letters = data.mail.filter(m => m.type === 'official_letter' || m.template_type);
@@ -705,7 +706,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
             template_name: m.notes || 'نموذج إداري رسمي',
             employee_name: m.recipient || 'عضو شرطة',
             employee_role: m.recipient_title || 'موظف',
-            employee_job_no: m.reply_to_reference || '8163450',
+            employee_job_no: m.reply_to_reference || '---',
             employee_dept: 'مديرية أمن أوباري',
             date: m.date || new Date().toLocaleDateString('ar-LY'),
             body_text: m.letter_body || '',
@@ -746,7 +747,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
     // تحديث حقيقي في قاعدة بيانات SQLite
     try {
       if (activeDocument.id) {
-        await fetch(`/api/mail/${activeDocument.id}`, {
+        await apiFetch(`/api/mail/${activeDocument.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -848,7 +849,7 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
       }
 
       try {
-        await fetch(`/api/mail/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/mail/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('تم حذف النموذج محلياً:', err.message);
       }
@@ -971,11 +972,11 @@ export default function TemplatesSection({ user, forceMembers = [] }) {
             </div>
             <div className="emp-preview-item">
               <span className="lbl">الرقم المالي:</span>
-              <span className="badge-emp">{selectedEmployee.financial_number || selectedEmployee.job_number || '8163450'}</span>
+              <span className="badge-emp">{selectedEmployee.financial_number || selectedEmployee.job_number || '---'}</span>
             </div>
             <div className="emp-preview-item">
               <span className="lbl">الرقم الوطني:</span>
-              <span>{selectedEmployee.national_id || '119940251120'}</span>
+              <span>{selectedEmployee.national_id || '---'}</span>
             </div>
             <div className="emp-preview-item">
               <span className="lbl">الإدارة / التبعية:</span>

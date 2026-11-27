@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Building2,
   Radio,
@@ -30,7 +30,9 @@ import {
 } from 'lucide-react';
 import './FinanceDashboard.css';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
-import initialPenalties from '../data/penalties_data.json';
+import { apiFetch } from '../utils/apiClient';
+import initialVehiclesData from '../data/vehicles_data.json';
+import initialPenaltiesData from '../data/penalties_data.json';
 
 export default function DashboardSection({
   user,
@@ -42,12 +44,54 @@ export default function DashboardSection({
   const [rankTab, setRankTab] = useState('all');
   const [rankSearchQuery, setRankSearchQuery] = useState('');
 
+  // Live module counts fetched from SQLite /api/dashboard/stats (fallback to live localStorage/actual JSONs)
+  const [liveModules, setLiveModules] = useState(() => {
+    const readArr = (key, fallback = []) => {
+      try {
+        const s = localStorage.getItem(key);
+        const p = s ? JSON.parse(s) : fallback;
+        return Array.isArray(p) ? p : fallback;
+      } catch (_) {
+        return fallback;
+      }
+    };
+    const veh = readArr('ubari_vehicles_data', initialVehiclesData);
+    const vehReady = veh.filter(v => v.status === 'جاهزة للعمل').length;
+    const leaves = readArr('ubari_leaves', []);
+    const activeLeaves = leaves.filter(l => l.Status !== 'باشر العمل').length;
+    const penalties = readArr('ubari_penalties', initialPenaltiesData);
+    const mailOut = readArr('ubari_outgoing_mail', []);
+    const mailIn = readArr('ubari_incoming_mail', []);
+
+    return {
+      vehiclesTotal: veh.length,
+      vehiclesReady: vehReady,
+      vehiclesReadinessPct: veh.length > 0 ? ((vehReady / veh.length) * 100).toFixed(1) : '0.0',
+      activeLeaves,
+      mailTotal: mailOut.length + mailIn.length,
+      penaltiesTotal: penalties.length
+    };
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    apiFetch('/api/dashboard/stats')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (isMounted && json?.success && json.data) {
+          setLiveModules(prev => ({ ...prev, ...json.data }));
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
   // ==========================================================================
   // REAL FORCE COMPUTATIONS (100% Dynamic and verified from forceMembers)
   // ==========================================================================
   const stats = useMemo(() => {
-    const members = forceMembers && forceMembers.length > 0 ? forceMembers : [];
-    const totalCount = members.length || 2211;
+    const members = Array.isArray(forceMembers) ? forceMembers : [];
+    const totalCount = members.length;
     let policeCount = 0;
     let civilCount = 0;
     const bankMap = {};
@@ -65,59 +109,48 @@ export default function DashboardSection({
       rawRankMap[title] = (rawRankMap[title] || 0) + 1;
     });
 
-    if (policeCount === 0 && civilCount === 0) {
-      policeCount = 1694;
-      civilCount = 517;
-    }
-
-    // Real status calculations
+    // Real status calculations directly from members
     let onDuty = 0;
     let onLeave = 0;
     let onSuspended = 0;
 
-    if (members.length > 0) {
-      members.forEach(m => {
-        const st = (m.job_status || m.status || '').trim();
-        if (st.includes('إجازة') || st.includes('اجازة')) {
-          onLeave++;
-        } else if (st.includes('موقوف') || st.includes('إيقاف') || st.includes('معلق')) {
-          onSuspended++;
-        } else {
-          onDuty++;
-        }
-      });
-    } else {
-      onDuty = 2140;
-      onLeave = 48;
-      onSuspended = 23;
-    }
+    members.forEach(m => {
+      const st = (m.job_status || m.status || '').trim();
+      if (st.includes('إجازة') || st.includes('اجازة')) {
+        onLeave++;
+      } else if (st.includes('موقوف') || st.includes('إيقاف') || st.includes('معلق')) {
+        onSuspended++;
+      } else {
+        onDuty++;
+      }
+    });
 
-    const readinessPct = totalCount > 0 ? ((onDuty / totalCount) * 100).toFixed(1) : '98.4';
-    const policePct = totalCount > 0 ? ((policeCount / totalCount) * 100).toFixed(1) : '76.6';
-    const civilPct = totalCount > 0 ? ((civilCount / totalCount) * 100).toFixed(1) : '23.4';
+    const readinessPct = totalCount > 0 ? ((onDuty / totalCount) * 100).toFixed(1) : '0.0';
+    const policePct = totalCount > 0 ? ((policeCount / totalCount) * 100).toFixed(1) : '0.0';
+    const civilPct = totalCount > 0 ? ((civilCount / totalCount) * 100).toFixed(1) : '0.0';
 
     // Bank list sorted
     const bankList = Object.values(bankMap).sort((a, b) => b.count - a.count);
 
-    // Official Police Rank Structure Hierarchy
+    // Official Police Rank Structure Hierarchy (real dynamic counts, no fabricated fallbacks)
     const cleanRankList = [
-      { id: 'liwa', label: 'لواء', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['لواء'] || 4, color: '#1e3a8a' },
-      { id: 'ameed', label: 'عميد', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['عميــد'] || rawRankMap['عميد'] || 14, color: '#1e3a8a' },
-      { id: 'aqeed', label: 'عقيد', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['عقيــد'] || rawRankMap['عقيد'] || 21, color: '#1e3a8a' },
-      { id: 'muqaddam', label: 'مقدم', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: rawRankMap['مقــدم'] || rawRankMap['مقدم'] || 33, color: '#2563eb' },
-      { id: 'raed', label: 'رائد', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: rawRankMap['رائــد'] || rawRankMap['رائد'] || 48, color: '#2563eb' },
-      { id: 'naqeeb', label: 'نقيب', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: rawRankMap['نقيــب'] || rawRankMap['نقيب'] || 23, color: '#0284c7' },
-      { id: 'molazem_awwal', label: 'ملازم أول', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: rawRankMap['ملازم اول'] || 7, color: '#0284c7' },
-      { id: 'molazem', label: 'ملازم', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: rawRankMap['مـلازم'] || rawRankMap['ملازم'] || 10, color: '#0284c7' },
-      { id: 'mosaed_awwal', label: 'مساعد ضابط أول', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['مساعد ضابط اول'] || 122, color: '#0d9488' },
-      { id: 'mosaed', label: 'مساعد ضابط', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['مساعد ضابط'] || 244, color: '#0d9488' },
-      { id: 'naeb_dabet', label: 'نائب ضابط', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['نائب ضابط'] || 275, color: '#059669' },
-      { id: 'raees_orafa_awwal', label: 'رئيس عرفاء أول', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['رئيس عرفاء اول'] || 290, color: '#059669' },
-      { id: 'raees_orafa', label: 'رئيس عرفاء', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['ريس عرفاء'] || rawRankMap['رئيس عرفاء'] || 237, color: '#059669' },
-      { id: 'areef', label: 'عريف', tier: 'constables', tierLabel: 'أفراد وعسكر', count: rawRankMap['عريــف'] || rawRankMap['عريف'] || 205, color: '#d97706' },
-      { id: 'naeb_areef', label: 'نائب عريف', tier: 'constables', tierLabel: 'أفراد وعسكر', count: rawRankMap['نائب عريف'] || 51, color: '#d97706' },
-      { id: 'shurti', label: 'شرطي', tier: 'constables', tierLabel: 'أفراد وعسكر', count: rawRankMap['شـرطـي'] || rawRankMap['شرطي'] || 110, color: '#b45309' },
-      { id: 'madani', label: 'كادر مدني', tier: 'civil', tierLabel: 'شؤون مدنية وإسناد', count: civilCount || 517, color: '#7c3aed' }
+      { id: 'liwa', label: 'لواء', tier: 'command', tierLabel: 'ضباط قادة', count: rawRankMap['لواء'] || 0, color: '#1e3a8a' },
+      { id: 'ameed', label: 'عميد', tier: 'command', tierLabel: 'ضباط قادة', count: (rawRankMap['عميــد'] || 0) + (rawRankMap['عميد'] || 0), color: '#1e3a8a' },
+      { id: 'aqeed', label: 'عقيد', tier: 'command', tierLabel: 'ضباط قادة', count: (rawRankMap['عقيــد'] || 0) + (rawRankMap['عقيد'] || 0), color: '#1e3a8a' },
+      { id: 'muqaddam', label: 'مقدم', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: (rawRankMap['مقــدم'] || 0) + (rawRankMap['مقدم'] || 0), color: '#2563eb' },
+      { id: 'raed', label: 'رائد', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: (rawRankMap['رائــد'] || 0) + (rawRankMap['رائد'] || 0), color: '#2563eb' },
+      { id: 'naqeeb', label: 'نقيب', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: (rawRankMap['نقيــب'] || 0) + (rawRankMap['نقيب'] || 0), color: '#0284c7' },
+      { id: 'molazem_awwal', label: 'ملازم أول', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: (rawRankMap['ملازم اول'] || 0) + (rawRankMap['ملازم أول'] || 0), color: '#0284c7' },
+      { id: 'molazem', label: 'ملازم', tier: 'field', tierLabel: 'ضباط ميدان وأعوان', count: (rawRankMap['مـلازم'] || 0) + (rawRankMap['ملازم'] || 0), color: '#0284c7' },
+      { id: 'mosaed_awwal', label: 'مساعد ضابط أول', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: (rawRankMap['مساعد ضابط اول'] || 0) + (rawRankMap['مساعد ضابط أول'] || 0), color: '#0d9488' },
+      { id: 'mosaed', label: 'مساعد ضابط', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['مساعد ضابط'] || 0, color: '#0d9488' },
+      { id: 'naeb_dabet', label: 'نائب ضابط', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: rawRankMap['نائب ضابط'] || 0, color: '#059669' },
+      { id: 'raees_orafa_awwal', label: 'رئيس عرفاء أول', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: (rawRankMap['رئيس عرفاء اول'] || 0) + (rawRankMap['رئيس عرفاء أول'] || 0), color: '#059669' },
+      { id: 'raees_orafa', label: 'رئيس عرفاء', tier: 'nco', tierLabel: 'ضباط صف ومساعدين', count: (rawRankMap['ريس عرفاء'] || 0) + (rawRankMap['رئيس عرفاء'] || 0), color: '#059669' },
+      { id: 'areef', label: 'عريف', tier: 'constables', tierLabel: 'أفراد وعسكر', count: (rawRankMap['عريــف'] || 0) + (rawRankMap['عريف'] || 0), color: '#d97706' },
+      { id: 'naeb_areef', label: 'نائب عريف', tier: 'constables', tierLabel: 'أفراد وعسكر', count: rawRankMap['نائب عريف'] || 0, color: '#d97706' },
+      { id: 'shurti', label: 'شرطي', tier: 'constables', tierLabel: 'أفراد وعسكر', count: (rawRankMap['شـرطـي'] || 0) + (rawRankMap['شرطي'] || 0), color: '#b45309' },
+      { id: 'madani', label: 'كادر مدني', tier: 'civil', tierLabel: 'شؤون مدنية وإسناد', count: civilCount, color: '#7c3aed' }
     ];
 
     const commandOfficersCount = cleanRankList.filter(r => r.tier === 'command').reduce((acc, r) => acc + r.count, 0);
@@ -287,7 +320,7 @@ export default function DashboardSection({
           </div>
         </div>
 
-        {/* Card 4: Registered Mobile Vehicles (REAL DATA: 92 Vehicles) */}
+        {/* Card 4: Registered Mobile Vehicles (Live Dynamic Count) */}
         <div className="moi-kpi-card">
           <div className="moi-ribbon-bar" />
           <div className="moi-kpi-body">
@@ -297,11 +330,11 @@ export default function DashboardSection({
             <div className="moi-kpi-content">
               <div className="moi-kpi-label">أسطول الآليات والمركبات</div>
               <div className="moi-kpi-value">
-                92
+                {liveModules.vehiclesTotal}
                 <span className="moi-kpi-unit">آلية ومركبة</span>
               </div>
               <div className="moi-kpi-sub" style={{ color: '#059669' }}>
-                100% جاهزية تشغيلية وميدانية
+                {liveModules.vehiclesReadinessPct}% جاهزية ({liveModules.vehiclesReady} آلية جاهزة)
               </div>
             </div>
           </div>
@@ -454,9 +487,9 @@ export default function DashboardSection({
                 <div className="moi-service-info">
                   <div className="moi-service-title">
                     <span>أسطول الآليات والمركبات</span>
-                    <span className="moi-service-badge" style={{ background: '#dcfce7', color: '#15803d' }}>92 آلية</span>
+                    <span className="moi-service-badge" style={{ background: '#dcfce7', color: '#15803d' }}>{liveModules.vehiclesTotal} آلية</span>
                   </div>
-                  <div className="moi-service-desc">جاهزية تشغيلية 100% لدوريات النجدة وتأمين المسارات الصحراوية</div>
+                  <div className="moi-service-desc">جاهزية تشغيلية {liveModules.vehiclesReadinessPct}% ({liveModules.vehiclesReady} جاهزة للعمل)</div>
                 </div>
                 <ChevronLeft size={20} style={{ color: '#94a3b8' }} />
               </div>
@@ -530,7 +563,7 @@ export default function DashboardSection({
                 <div className="moi-service-info">
                   <div className="moi-service-title">
                     <span>الانضباط والجزاءات التأديبية</span>
-                    <span className="moi-service-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>8 قيود معتمدة</span>
+                    <span className="moi-service-badge" style={{ background: '#fee2e2', color: '#991b1b' }}>{liveModules.penaltiesTotal} قيود مسجلة</span>
                   </div>
                   <div className="moi-service-desc">متابعة مجالس التأديب، الخصومات المالية، وقرارات لفت النظر الموثقة</div>
                 </div>
@@ -718,10 +751,10 @@ export default function DashboardSection({
           <div className="moi-card-body">
             <div className="moi-shortcuts-grid">
               {[
-                { id: 'force', name: 'سجل القوة العمومية', desc: 'إدارة وفحص 2,211 منتسب', icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
+                { id: 'force', name: 'سجل القوة العمومية', desc: `إدارة وفحص ${stats.totalCount.toLocaleString('ar-LY')} منتسب`, icon: Users, bg: '#eff6ff', clr: '#1e3a8a' },
                 { id: 'operations', name: 'غرفة العمليات', desc: 'تسجيل البلاغات والإشارات', icon: Radio, bg: '#fee2e2', clr: '#dc2626' },
-                { id: 'vehicles', name: 'الآليات والمركبات', desc: 'متابعة 92 آلية ومركبة أمنية', icon: Car, bg: '#ecfdf5', clr: '#059669' },
-                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: 'متابعة الإجازات وتنبيهات المباشرة', icon: Clock, bg: '#fef3c7', clr: '#d97706' },
+                { id: 'vehicles', name: 'الآليات والمركبات', desc: `متابعة ${liveModules.vehiclesTotal} آلية ومركبة أمنية`, icon: Car, bg: '#ecfdf5', clr: '#059669' },
+                { id: 'leaves', name: 'سجل وإجراءات الإجازات', desc: `الإجازات الجارية: ${liveModules.activeLeaves} إجازة`, icon: Clock, bg: '#fef3c7', clr: '#d97706' },
                 { id: 'mail', name: 'البريد والمراسلات', desc: 'الصادر والوارد والوثائق الرسمية', icon: Mail, bg: '#e0f2fe', clr: '#0284c7' },
                 { id: 'letters', name: 'النماذج والرسائل', desc: 'صياغة المكاتبات الرسمية A4', icon: Send, bg: '#f3e8ff', clr: '#7c3aed' },
                 { id: 'user_management', name: 'المستخدمين والصلاحيات', desc: 'إدارة الحسابات وتراخيص الدخول', icon: UserCheck, bg: '#fffbeb', clr: '#b45309' }

@@ -331,6 +331,7 @@ export async function updateForceMember(req, res) {
         bank_branch = COALESCE(?, bank_branch),
         account_number = COALESCE(?, account_number),
         notes = COALESCE(?, notes),
+        photo = COALESCE(?, photo),
         updated_at = datetime('now', 'localtime')
       WHERE id = ?
     `, [
@@ -376,6 +377,7 @@ export async function updateForceMember(req, res) {
       m.bank_branch,
       m.account_number ? String(m.account_number) : undefined,
       m.notes,
+      m.photo,
       id
     ]);
 
