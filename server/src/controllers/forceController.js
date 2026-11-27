@@ -1,6 +1,6 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
+import { safeWriteJsonAsync } from '../utils/fileUtils.js';
 import { sendServerError, syncJsonPaths, parsePagination, sanitizeDigits } from '../utils/controllerUtils.js';
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +14,18 @@ const FORCE_JSON_PATHS = [
   path.resolve(__dirname, '../../../client/public/api/data/force_data.json'),
   path.resolve(__dirname, '../../../client/src/data/force_data.json')
 ];
+
+const FORCE_LITE_COLUMNS = `
+  id, type, name, name_normalized, job_number, national_id, birth_date, birth_place,
+  mother_name, marital_status, wife_name, children_count, tribe_city, residence,
+  phone, languages, education_level, family_book, family_paper, family_record,
+  passport_number, suit_number, shoe_size, headwear_size, shirt_size, blood_type,
+  diseases, height, weight, department, job_title, job_status, start_date,
+  appointment_decision, appointment_date, last_promotion_decision, last_promotion_date,
+  financial_number, basic_salary, bank_name, bank_branch, account_number, notes,
+  CASE WHEN photo IS NOT NULL AND photo != '' THEN 1 ELSE 0 END AS has_photo,
+  created_at, updated_at
+`;
 
 // طابور ذكي غير متزامن ومجمّع لتحديث ملف force_data.json في الخلفية دون تعطيل استجابة الخادم أو فقدان التحديثات المتزامنة
 const pendingJsonUpdates = new Map();
@@ -48,7 +60,7 @@ async function flushJsonSync() {
                 list.unshift(cleanRecord);
               }
             }
-            safeWriteJson(forceJsonPath, list);
+            await safeWriteJsonAsync(forceJsonPath, list, { pretty: false });
           }
         } catch (e) {
           console.warn(`تنبيه: تعذر تحديث ملف JSON (${forceJsonPath}):`, e.message);
@@ -64,7 +76,7 @@ async function flushJsonSync() {
       jsonBatchTimer = setTimeout(() => {
         jsonBatchTimer = null;
         flushJsonSync();
-      }, 400);
+      }, 1000);
     }
   }
 }
@@ -82,7 +94,7 @@ function scheduleJsonSync(id, updates) {
   jsonBatchTimer = setTimeout(() => {
     jsonBatchTimer = null;
     flushJsonSync();
-  }, 800);
+  }, 3000);
 }
 
 /**
@@ -155,16 +167,19 @@ export async function getForceList(req, res) {
     const civilCount = civilCountRow ? civilCountRow.c : 0;
 
     let data = [];
+    const { lite, excludePhoto } = req.query;
+    const isLite = lite === '1' || lite === 'true' || excludePhoto === '1';
+    const selectCols = isLite ? FORCE_LITE_COLUMNS : '*';
     const pag = parsePagination(req.query);
     const totalPages = pag.enabled ? (Math.ceil(total / pag.limit) || 1) : 1;
 
     if (pag.enabled) {
       data = await db.all(
-        `SELECT * FROM force_members ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
+        `SELECT ${selectCols} FROM force_members ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
         [...params, pag.limit, pag.offset]
       );
     } else {
-      data = await db.all(`SELECT * FROM force_members ${whereSql} ORDER BY id ASC`, params);
+      data = await db.all(`SELECT ${selectCols} FROM force_members ${whereSql} ORDER BY id ASC`, params);
     }
 
     return res.status(200).json({
@@ -178,8 +193,21 @@ export async function getForceList(req, res) {
       data
     });
   } catch (error) {
-    console.error('Error fetching force list from SQLite:', error);
     return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
+  }
+}
+
+export async function getForceMemberById(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { db } = getDb();
+    const member = await db.get('SELECT * FROM force_members WHERE id = ?', [id]);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+    }
+    return res.status(200).json({ success: true, data: member });
+  } catch (error) {
+    return sendServerError(res, error, 'Force member fetch error', 'تعذر جلب سجل المنتسب');
   }
 }
 

@@ -32,6 +32,27 @@ export function safeWriteJson(filePath, data) {
 }
 
 /**
+ * كتابة غير متزامنة وذرية للملفات الضخمة دون تجميد خيط الخادم الرئيسي
+ */
+export async function safeWriteJsonAsync(filePath, data, { pretty = false } = {}) {
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    const dir = path.dirname(filePath);
+    await fs.promises.mkdir(dir, { recursive: true });
+    const jsonString = pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data);
+    await fs.promises.writeFile(tempPath, jsonString, 'utf8');
+    await fs.promises.rename(tempPath, filePath);
+    return true;
+  } catch (error) {
+    console.error(`❌ فشل الحفظ غير المتزامن للملف (${filePath}):`, error);
+    try {
+      await fs.promises.unlink(tempPath);
+    } catch (_) {}
+    return false;
+  }
+}
+
+/**
  * قراءة آمنة لملف JSON مع إرجاع قيمة افتراضية عند الفشل
  */
 export function safeReadJson(filePath, defaultValue = []) {

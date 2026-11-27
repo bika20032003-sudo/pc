@@ -303,8 +303,20 @@ export default function EmployeeInquiryModal({ isOpen, onClose, forceMembers = [
       } catch (_) {}
     }
 
-    // 2. التحقق المحلي الاحتياطي في وضع العرض الثابت (بدون خادم)
-    const candidates = forceMembers.filter((m) => {
+    // 2. التحقق المحلي الاحتياطي في وضع العرض الثابت (تحميل البيانات كسولاً فقط عند عدم توفر الخادم)
+    let searchPool = forceMembers;
+    if (!searchPool || searchPool.length === 0) {
+      try {
+        const mod = await import('../data/force_data.json');
+        if (Array.isArray(mod?.default)) {
+          searchPool = mod.default;
+        }
+      } catch (_) {
+        searchPool = [];
+      }
+    }
+
+    const candidates = searchPool.filter((m) => {
       const nat = sanitizeDigits(m.national_id);
       const fin = sanitizeDigits(m.financial_number);
       const job = sanitizeDigits(m.job_number);

@@ -58,10 +58,40 @@ import {
   Crosshair
 } from 'lucide-react';
 
-import importedForceData from './data/force_data.json';
 import SidebarNav from './components/SidebarNav';
 import GlobalToast from './components/GlobalToast';
 import { MOI_LOGO_BASE64 } from './utils/logoBase64';
+
+let fallbackForcePromise = null;
+async function loadFallbackForceData() {
+  if (!fallbackForcePromise) {
+    fallbackForcePromise = import('./data/force_data.json')
+      .then((mod) => (Array.isArray(mod?.default) ? mod.default : []))
+      .catch(() => []);
+  }
+  return fallbackForcePromise;
+}
+
+function applySelfUpdatesRegistry(list) {
+  if (!Array.isArray(list) || list.length === 0) return [];
+  try {
+    const registryRaw = localStorage.getItem('ubari_self_updates_registry');
+    if (!registryRaw) return list;
+    const registry = JSON.parse(registryRaw);
+    if (!registry || typeof registry !== 'object') return list;
+    return list.map(m => {
+      const mNat = m.national_id ? String(m.national_id).replace(/\D/g, '') : '';
+      const mFin = m.financial_number ? String(m.financial_number).replace(/\D/g, '') : '';
+      const updateEntry = registry[String(m.id)] || (mNat && registry[mNat]) || (mFin && registry[mFin]);
+      if (updateEntry && updateEntry.updates) {
+        return { ...m, ...updateEntry.updates, self_updated: true, self_updated_at: updateEntry.updated_at };
+      }
+      return m;
+    });
+  } catch (_) {
+    return list;
+  }
+}
 
 const VehiclesSection = lazy(() => import('./components/VehiclesSection'));
 const FuelSection = lazy(() => import('./components/FuelSection'));
@@ -275,41 +305,21 @@ export default function App() {
   // Global Notification Banner State
   const [notificationMsg, setNotificationMsg] = useState('');
 
-  // General Force: All 2,211 personnel from قوه 2222.xlsx
+  // General Force: Start lightweight from cache or sync from live SQLite API; static bundle loads lazily offline
   const [forceMembers, setForceMembers] = useState(() => {
-    let initialList = importedForceData || [];
+    let initialList = [];
     const saved = localStorage.getItem('ubari_force_members');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Strictly filter out any corrupted entries without a real name
           const valid = parsed.filter(m => m && m.name && String(m.name).trim().length > 1);
           if (valid.length > 0) initialList = valid;
         }
       } catch (e) {}
     }
 
-    // Always re-apply saved self-updates from the resilient registry
-    try {
-      const registryRaw = localStorage.getItem('ubari_self_updates_registry');
-      if (registryRaw) {
-        const registry = JSON.parse(registryRaw);
-        if (registry && typeof registry === 'object') {
-          initialList = initialList.map(m => {
-            const mNat = m.national_id ? String(m.national_id).replace(/\D/g, '') : '';
-            const mFin = m.financial_number ? String(m.financial_number).replace(/\D/g, '') : '';
-            const updateEntry = registry[String(m.id)] || (mNat && registry[mNat]) || (mFin && registry[mFin]);
-            if (updateEntry && updateEntry.updates) {
-              return { ...m, ...updateEntry.updates, self_updated: true, self_updated_at: updateEntry.updated_at };
-            }
-            return m;
-          });
-        }
-      }
-    } catch (e) {}
-
-    return initialList;
+    return applySelfUpdatesRegistry(initialList);
   });
 
   // External Edit State for ForceSection
@@ -328,8 +338,8 @@ export default function App() {
     if (!activeToken) return false;
 
     try {
-      // Support Node Express API and fallback PHP endpoints with Bearer authentication
-      const endpoints = ['api/force', '/api/force', 'api/get-force.php', '/api/get-force.php'];
+      // Support lightweight SQLite endpoint (?lite=1 omits bulky base64 photos) and fallback PHP endpoints
+      const endpoints = ['api/force?lite=1', '/api/force?lite=1', 'api/get-force.php', '/api/get-force.php'];
       let res = null;
       for (const ep of endpoints) {
         try {
@@ -346,6 +356,11 @@ export default function App() {
       const list = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
       if (list && list.length > 0) {
         setForceMembers((prevMembers) => {
+          const prevPhotos = new Map();
+          for (const pm of prevMembers) {
+            if (pm?.photo) prevPhotos.set(String(pm.id), pm.photo);
+          }
+
           // Read only pending unsynced self-updates registry
           let registry = {};
           try {
@@ -358,7 +373,10 @@ export default function App() {
             const sFin = serverMember.financial_number ? String(serverMember.financial_number).replace(/\D/g, '') : '';
             const regUpdate = registry[String(serverMember.id)] || (sNat && registry[sNat]) || (sFin && registry[sFin]);
 
-            let mergedItem = { ...serverMember };
+            let mergedItem = {
+              ...serverMember,
+              photo: serverMember.photo || prevPhotos.get(String(serverMember.id)) || ''
+            };
 
             // Only re-apply registry updates that have not yet been acknowledged by the server
             if (regUpdate && regUpdate.updates && regUpdate.pendingSync) {
@@ -374,7 +392,14 @@ export default function App() {
           });
 
           try {
-            localStorage.setItem('ubari_force_members', JSON.stringify(merged));
+            const lightForStorage = merged.map((m) => {
+              if (m.photo && m.photo.startsWith('data:')) {
+                const { photo, ...rest } = m;
+                return rest;
+              }
+              return m;
+            });
+            localStorage.setItem('ubari_force_members', JSON.stringify(lightForStorage));
           } catch (e) {}
           return merged;
         });
@@ -634,14 +659,26 @@ export default function App() {
       .catch(() => {});
   }, [user, token]);
 
-  // Fetch sync force from API only when authenticated & sync every 30s across devices
+  // Fetch sync force from API only when authenticated, loading static bundle lazily ONLY if offline & uncached
   useEffect(() => {
     if (!user || !token) return;
-    fetchForceFromServer(true);
+    let cancelled = false;
+    fetchForceFromServer(true).then(async (synced) => {
+      if (cancelled || synced) return;
+      const fallbackList = await loadFallbackForceData();
+      if (!cancelled && Array.isArray(fallbackList) && fallbackList.length > 0) {
+        setForceMembers((prev) => (prev.length > 0 ? prev : applySelfUpdatesRegistry(fallbackList)));
+      }
+    });
     const syncInterval = setInterval(() => {
-      fetchForceFromServer(true);
-    }, 30000);
-    return () => clearInterval(syncInterval);
+      if (typeof document === 'undefined' || !document.hidden) {
+        fetchForceFromServer(true);
+      }
+    }, 90000);
+    return () => {
+      cancelled = true;
+      clearInterval(syncInterval);
+    };
   }, [fetchForceFromServer, user, token]);
 
   // Auto Advance Carousel
@@ -904,11 +941,25 @@ export default function App() {
     setShowPreviewModal(false);
   };
 
-  // Open Preview Modal for Member (معاينة بطاقة الهوية والملف الشامل)
-  const handleOpenPreview = (member) => {
+  // Open Preview Modal for Member (معاينة بطاقة الهوية والملف الشامل مع جلب الصورة عند الطلب)
+  const handleOpenPreview = async (member) => {
     const savedPhoto = member.photo || localStorage.getItem(`ubari_officer_photo_${member.id}`) || '';
     setPreviewMember({ ...member, photo: savedPhoto });
     setShowPreviewModal(true);
+
+    if (!savedPhoto && member.has_photo) {
+      try {
+        const res = await apiFetch(`/api/force/${member.id}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const remotePhoto = json?.data?.photo || '';
+        if (remotePhoto) {
+          try { localStorage.setItem(`ubari_officer_photo_${member.id}`, remotePhoto); } catch (_) {}
+          setPreviewMember((prev) => (prev && String(prev.id) === String(member.id) ? { ...prev, photo: remotePhoto } : prev));
+          setForceMembers((prev) => prev.map((m) => (String(m.id) === String(member.id) ? { ...m, photo: remotePhoto } : m)));
+        }
+      } catch (_) {}
+    }
   };
 
   // Update Officer Photo in Force State and Storage

@@ -2,7 +2,12 @@
  * Lightweight dependency-free in-memory rate limiter middleware.
  * Protects authentication and public self-service endpoints from brute-force and DoS attacks.
  */
-export function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 30, message = 'تم تجاوز الحد المسموح من المحاولات، يرجى المحاولة لاحقاً' } = {}) {
+export function createRateLimiter({
+  windowMs = 15 * 60 * 1000,
+  max = 30,
+  message = 'تم تجاوز الحد المسموح من المحاولات، يرجى المحاولة لاحقاً',
+  keyGenerator = null
+} = {}) {
   const hits = new Map();
 
   // Periodic cleanup of expired windows so memory stays bounded
@@ -21,7 +26,10 @@ export function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 30, message
 
   return function rateLimitMiddleware(req, res, next) {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
-    const key = `${ip}:${req.baseUrl || ''}${req.path || ''}`;
+    const customPart = typeof keyGenerator === 'function' ? String(keyGenerator(req) || '') : '';
+    const key = customPart
+      ? `${ip}:${req.baseUrl || ''}${req.path || ''}:${customPart}`
+      : `${ip}:${req.baseUrl || ''}${req.path || ''}`;
     const now = Date.now();
 
     let entry = hits.get(key);
@@ -46,20 +54,49 @@ export function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 30, message
   };
 }
 
-export const loginLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: 'تم تجاوز الحد المسموح لمحاولات تسجيل الدخول. يرجى الانتظار 15 دقيقة والمحاولة مجدداً'
-});
+function composeLimiters(...limiters) {
+  return function combinedRateLimiter(req, res, next) {
+    let idx = 0;
+    const step = (err) => {
+      if (err) return next(err);
+      if (idx >= limiters.length) return next();
+      const mw = limiters[idx++];
+      mw(req, res, step);
+    };
+    step();
+  };
+}
 
-export const selfInquiryLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 25,
-  message: 'تم تجاوز الحد المسموح للاستعلام الذاتي. يرجى الانتظار قليلاً ثم إعادة المحاولة'
-});
+export const loginLimiter = composeLimiters(
+  createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    keyGenerator: (req) => String(req.body?.identifier || '').trim().toLowerCase(),
+    message: 'تم تجاوز الحد المسموح لمحاولات تسجيل الدخول لهذا الحساب. يرجى الانتظار 15 دقيقة والمحاولة مجدداً'
+  }),
+  createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 150,
+    message: 'تم رصد محاولات دخول كثيرة جداً من هذه الشبكة. يرجى الانتظار قليلاً'
+  })
+);
+
+export const selfInquiryLimiter = composeLimiters(
+  createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 25,
+    keyGenerator: (req) => String(req.body?.identifier || req.body?.national_id || req.body?.financial_number || '').trim(),
+    message: 'تم تجاوز الحد المسموح للاستعلام لهذا الرقم. يرجى الانتظار قليلاً ثم إعادة المحاولة'
+  }),
+  createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 250,
+    message: 'تم رصد ضغط استعلامات مرتفع من هذه الشبكة. يرجى الانتظار لحظات والمحاولة مجدداً'
+  })
+);
 
 export const apiLimiter = createRateLimiter({
   windowMs: 5 * 60 * 1000,
-  max: 600,
+  max: 1800,
   message: 'تم رصد معدل طلبات مرتفع جداً، يرجى الانتظار لحظات'
 });
