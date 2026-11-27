@@ -1,6 +1,7 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -192,7 +193,7 @@ export async function getForceList(req, res) {
     });
   } catch (error) {
     console.error('Error fetching force list from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }
 
@@ -272,7 +273,7 @@ export async function createForceMember(req, res) {
     });
   } catch (error) {
     console.error('Error creating force member in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }
 
@@ -393,7 +394,7 @@ export async function updateForceMember(req, res) {
     });
   } catch (error) {
     console.error('Error updating force member in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }
 
@@ -415,7 +416,7 @@ export async function deleteForceMember(req, res) {
     });
   } catch (error) {
     console.error('Error deleting force member from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }
 
@@ -520,7 +521,7 @@ export async function replaceForceList(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;');
     console.error('Error replacing force list in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }
 
@@ -766,6 +767,6 @@ export async function selfUpdateForceMember(req, res) {
     });
   } catch (error) {
     console.error('Error in selfUpdateForceMember:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Force controller error', 'تعذر معالجة سجل القوة العمومية');
   }
 }

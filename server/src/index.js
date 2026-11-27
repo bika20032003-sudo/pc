@@ -23,6 +23,7 @@ import { getDashboardLiveStats } from './controllers/operationsController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5050;
+app.set('trust proxy', 1);
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -133,10 +134,9 @@ app.use('/api/*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
   const status = err.status || 500;
-  const isProd = process.env.NODE_ENV === 'production';
   res.status(status).json({
     success: false,
-    message: isProd && status >= 500 ? 'حدث خطأ داخلي في مخدم المنظومة' : (err.message || 'حدث خطأ داخلي في مخدم المنظومة')
+    message: status >= 500 ? 'حدث خطأ داخلي في مخدم المنظومة' : (err.message || 'طلب غير صالح')
   });
 });
 

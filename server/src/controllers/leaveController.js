@@ -1,6 +1,7 @@
 import { getDb } from '../config/db.js';
 import { updateForceMemberStatusDirect } from './forceController.js';
 import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -74,7 +75,7 @@ export async function getLeaves(req, res) {
     });
   } catch (error) {
     console.error('Error fetching leaves from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Leaves controller error', 'تعذر معالجة سجل الإجازات الرسمية');
   }
 }
 
@@ -160,7 +161,7 @@ export async function createLeave(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;').catch(() => {});
     console.error('Error creating leave in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Leaves controller error', 'تعذر معالجة سجل الإجازات الرسمية');
   }
 }
 
@@ -214,7 +215,7 @@ export async function resumeDuty(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;').catch(() => {});
     console.error('Error resuming duty in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Leaves controller error', 'تعذر معالجة سجل الإجازات الرسمية');
   }
 }
 
@@ -271,7 +272,7 @@ export async function updateLeave(req, res) {
     });
   } catch (error) {
     console.error('Error updating leave in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Leaves controller error', 'تعذر معالجة سجل الإجازات الرسمية');
   }
 }
 
@@ -293,6 +294,6 @@ export async function deleteLeave(req, res) {
     });
   } catch (error) {
     console.error('Error deleting leave from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Leaves controller error', 'تعذر معالجة سجل الإجازات الرسمية');
   }
 }

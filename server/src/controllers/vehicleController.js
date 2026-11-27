@@ -1,6 +1,7 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -115,7 +116,7 @@ export async function getVehicleList(req, res) {
     });
   } catch (error) {
     console.error('Error fetching vehicles from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }
 
@@ -163,7 +164,7 @@ export async function createVehicle(req, res) {
     });
   } catch (error) {
     console.error('Error creating vehicle in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }
 
@@ -228,7 +229,7 @@ export async function updateVehicle(req, res) {
     });
   } catch (error) {
     console.error('Error updating vehicle in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }
 
@@ -250,7 +251,7 @@ export async function deleteVehicle(req, res) {
     });
   } catch (error) {
     console.error('Error deleting vehicle from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }
 
@@ -312,6 +313,6 @@ export async function replaceVehicleList(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;');
     console.error('Error replacing vehicles in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }

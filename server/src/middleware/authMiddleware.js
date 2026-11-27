@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/jwt.js';
+import { getDb } from '../config/db.js';
 
 /**
  * وسيط التحقق الإلزامي من الجلسة وتوكن JWT
@@ -62,4 +63,56 @@ export function requireAdmin(req, res, next) {
     success: false,
     message: 'عذراً، هذا الإجراء مخصص للقيادة والمسؤولين فقط ولا تملك الصلاحية الكافية'
   });
+}
+
+/**
+ * وسيط التحقق من صلاحية الوصول للأقسام التشغيلية من قاعدة البيانات لحظياً
+ */
+export function requireSectionAccess(...allowedSectionIds) {
+  return async function sectionAccessMiddleware(req, res, next) {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ success: false, message: 'يتطلب هذا الإجراء تسجيل الدخول' });
+      }
+
+      const { db } = getDb();
+      const dbUser = await db.get(
+        'SELECT id, role, allowed_sections, status FROM users WHERE id = ?',
+        [req.user.id]
+      );
+
+      if (!dbUser || dbUser.status !== 'active') {
+        return res.status(401).json({ success: false, message: 'الحساب موقوف أو غير موجود' });
+      }
+
+      if (dbUser.role === 'super_admin' || dbUser.role === 'admin') {
+        return next();
+      }
+
+      let userSections = [];
+      if (dbUser.allowed_sections) {
+        try {
+          userSections = typeof dbUser.allowed_sections === 'string'
+            ? JSON.parse(dbUser.allowed_sections)
+            : dbUser.allowed_sections;
+        } catch (_) {
+          userSections = [];
+        }
+      }
+
+      if (
+        Array.isArray(userSections) &&
+        (userSections.includes('all') || allowedSectionIds.some((sec) => userSections.includes(sec)))
+      ) {
+        return next();
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'عذراً، لا تملك صلاحية الوصول إلى هذا القسم في المنظومة'
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
 }

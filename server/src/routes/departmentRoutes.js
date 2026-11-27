@@ -5,13 +5,13 @@ import {
   updateDepartment,
   deleteDepartment
 } from '../controllers/departmentController.js';
-import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireAdmin, requireSectionAccess } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', authenticateToken, getDepartments);
-router.post('/', authenticateToken, createDepartment);
-router.put('/:id', authenticateToken, updateDepartment);
+router.post('/', authenticateToken, requireSectionAccess('departments'), createDepartment);
+router.put('/:id', authenticateToken, requireSectionAccess('departments'), updateDepartment);
 router.delete('/:id', authenticateToken, requireAdmin, deleteDepartment);
 
 export default router;

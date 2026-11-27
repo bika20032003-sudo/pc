@@ -6,14 +6,14 @@ import {
   resumeDuty,
   deleteLeave
 } from '../controllers/leaveController.js';
-import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireAdmin, requireSectionAccess } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, getLeaves);
-router.post('/', authenticateToken, createLeave);
-router.put('/:id', authenticateToken, updateLeave);
-router.post('/:id/resume', authenticateToken, resumeDuty);
+router.get('/', authenticateToken, requireSectionAccess('leaves'), getLeaves);
+router.post('/', authenticateToken, requireSectionAccess('leaves'), createLeave);
+router.put('/:id', authenticateToken, requireSectionAccess('leaves'), updateLeave);
+router.post('/:id/resume', authenticateToken, requireSectionAccess('leaves'), resumeDuty);
 router.delete('/:id', authenticateToken, requireAdmin, deleteLeave);
 
 export default router;

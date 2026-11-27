@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from '../config/db.js';
 import { BCRYPT_ROUNDS } from '../config/jwt.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 
 export async function getAllUsers(req, res) {
   try {
@@ -34,8 +35,7 @@ export async function getAllUsers(req, res) {
       users
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return res.status(500).json({ success: false, message: 'خطأ في جلب قائمة المستخدمين', error: error.message });
+    return sendServerError(res, error, 'Error fetching users', 'خطأ في جلب قائمة المستخدمين');
   }
 }
 
@@ -88,8 +88,7 @@ export async function createUser(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error creating user:', error);
-    return res.status(500).json({ success: false, message: 'خطأ في إضافة المستخدم', error: error.message });
+    return sendServerError(res, error, 'Error creating user', 'خطأ في إضافة المستخدم');
   }
 }
 
@@ -163,8 +162,7 @@ export async function updateUser(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error updating user:', error);
-    return res.status(500).json({ success: false, message: 'خطأ في تحديث المستخدم', error: error.message });
+    return sendServerError(res, error, 'Error updating user', 'خطأ في تحديث المستخدم');
   }
 }
 
@@ -184,8 +182,7 @@ export async function deleteUser(req, res) {
 
     return res.status(200).json({ success: true, message: 'تم حذف المستخدم بنجاح' });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    return res.status(500).json({ success: false, message: 'خطأ في حذف المستخدم', error: error.message });
+    return sendServerError(res, error, 'Error deleting user', 'خطأ في حذف المستخدم');
   }
 }
 
@@ -249,7 +246,6 @@ export async function updateProfile(req, res) {
       user: updatedUser
     });
   } catch (error) {
-    console.error('Error updating profile:', error);
-    return res.status(500).json({ success: false, message: 'حدث خطأ في تحديث البيانات', error: error.message });
+    return sendServerError(res, error, 'Error updating profile', 'حدث خطأ في تحديث البيانات');
   }
 }

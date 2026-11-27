@@ -10,7 +10,7 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 
 const router = Router();
 
-router.get('/', authenticateToken, getAllUsers);
+router.get('/', authenticateToken, requireAdmin, getAllUsers);
 router.post('/', authenticateToken, requireAdmin, createUser);
 router.put('/profile', authenticateToken, updateProfile);
 router.put('/:id', authenticateToken, requireAdmin, updateUser);

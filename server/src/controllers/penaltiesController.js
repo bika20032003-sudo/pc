@@ -1,6 +1,6 @@
 import { getDb } from '../config/db.js';
 import { safeWriteJson, safeReadJson } from '../utils/fileUtils.js';
-import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -119,7 +119,7 @@ export async function createPenalty(req, res) {
     });
   } catch (error) {
     console.error('Error creating penalty:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Penalties controller error', 'تعذر معالجة سجل الجزاءات التأديبية');
   }
 }
 
@@ -134,7 +134,7 @@ export async function deletePenalty(req, res) {
     return res.status(200).json({ success: true, message: 'تم حذف القيد التأديبي بنجاح' });
   } catch (error) {
     console.error('Error deleting penalty:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Penalties controller error', 'تعذر معالجة سجل الجزاءات التأديبية');
   }
 }
 
@@ -155,6 +155,6 @@ export async function toggleApplied(req, res) {
     return res.status(200).json({ success: true, message: 'تم تحديث حالة تنفيذ العقوبة', isApplied: Boolean(nextApplied) });
   } catch (error) {
     console.error('Error toggling penalty applied status:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Penalties controller error', 'تعذر معالجة سجل الجزاءات التأديبية');
   }
 }

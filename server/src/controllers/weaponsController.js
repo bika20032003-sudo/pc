@@ -1,6 +1,7 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -116,7 +117,7 @@ export async function getWeapons(req, res) {
         });
       }
     } catch (e) {}
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }
 
@@ -133,7 +134,7 @@ export async function getWeaponById(req, res) {
 
     return res.status(200).json({ success: true, data: weapon });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }
 
@@ -212,7 +213,7 @@ export async function createWeapon(req, res) {
     });
   } catch (error) {
     console.error('Error creating weapon:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }
 
@@ -282,7 +283,7 @@ export async function updateWeapon(req, res) {
     });
   } catch (error) {
     console.error('Error updating weapon:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }
 
@@ -307,7 +308,7 @@ export async function deleteWeapon(req, res) {
       message: 'تم حذف قطعة السلاح من العهدة بنجاح'
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }
 
@@ -373,6 +374,6 @@ export async function importWeapons(req, res) {
       skipped
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
   }
 }

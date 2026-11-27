@@ -7,14 +7,14 @@ import {
   addOperationsLog,
   getDashboardLiveStats
 } from '../controllers/operationsController.js';
-import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireAdmin, requireSectionAccess } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, getOperationsLocations);
-router.post('/', authenticateToken, createOperationsLocation);
-router.post('/logs', authenticateToken, addOperationsLog);
-router.put('/:id', authenticateToken, updateOperationsLocation);
+router.get('/', authenticateToken, requireSectionAccess('operations'), getOperationsLocations);
+router.post('/', authenticateToken, requireSectionAccess('operations'), createOperationsLocation);
+router.post('/logs', authenticateToken, requireSectionAccess('operations'), addOperationsLog);
+router.put('/:id', authenticateToken, requireSectionAccess('operations'), updateOperationsLocation);
 router.delete('/:id', authenticateToken, requireAdmin, deleteOperationsLocation);
 router.get('/dashboard-stats', authenticateToken, getDashboardLiveStats);
 

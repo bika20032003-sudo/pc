@@ -1,5 +1,6 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { sendServerError, writeAuditLog } from '../utils/controllerUtils.js';
 
 /**
  * جلب سجلات البريد والمراسلات مع دعم التصفية والبحث الذكي
@@ -79,11 +80,7 @@ export async function getMail(req, res) {
       mail: parsedRows
     });
   } catch (error) {
-    console.error('Error in getMail:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'تعذر جلب سجلات البريد: ' + error.message
-    });
+    return sendServerError(res, error, 'Error in getMail', 'تعذر جلب سجلات البريد');
   }
 }
 
@@ -120,11 +117,7 @@ export async function getMailById(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error in getMailById:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    return sendServerError(res, error, 'Error in getMailById', 'تعذر جلب المعاملة البريدية');
   }
 }
 
@@ -235,12 +228,13 @@ export async function createMail(req, res) {
     const inserted = await db.get('SELECT * FROM mail_records WHERE id = ?', [newId]);
 
     // تسجيل العملية في سجل التدقيق الأمني
-    try {
-      await db.run(
-        'INSERT INTO audit_logs (username, action, details) VALUES (?, ?, ?)',
-        [editor_employee || 'admin', `إضافة بريد (${type})`, `تم إنشاء قيد بريد جديد برقم ${computedRef} - موضوع: ${subject.slice(0, 50)}`]
-      );
-    } catch (e) {}
+    await writeAuditLog(db, {
+      userId: req.user?.id || null,
+      username: req.user?.username || editor_employee || 'system',
+      action: `إضافة بريد (${type})`,
+      ipAddress: req.ip,
+      details: `تم إنشاء قيد بريد جديد برقم ${computedRef} - موضوع: ${subject.slice(0, 50)}`
+    });
 
     let cc = [];
     if (inserted?.cc_list) {
@@ -256,11 +250,7 @@ export async function createMail(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error in createMail:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'تعذر حفظ المعاملة: ' + error.message
-    });
+    return sendServerError(res, error, 'Error in createMail', 'تعذر حفظ المعاملة البريدية');
   }
 }
 
@@ -385,12 +375,13 @@ export async function updateMail(req, res) {
     const updated = await db.get('SELECT * FROM mail_records WHERE id = ?', [id]);
 
     // تسجيل في سجل الرقابة
-    try {
-      await db.run(
-        'INSERT INTO audit_logs (username, action, details) VALUES (?, ?, ?)',
-        [editor_employee || 'admin', `تحديث بريد (${existing.type})`, `تم تحديث قيد المعاملة رقم ${id} - ${updated.subject}`]
-      );
-    } catch (e) {}
+    await writeAuditLog(db, {
+      userId: req.user?.id || null,
+      username: req.user?.username || editor_employee || 'system',
+      action: `تحديث بريد (${existing.type})`,
+      ipAddress: req.ip,
+      details: `تم تحديث قيد المعاملة رقم ${id} - ${updated.subject}`
+    });
 
     let cc = [];
     if (updated?.cc_list) {
@@ -406,11 +397,7 @@ export async function updateMail(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error in updateMail:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'تعذر تحديث المعاملة: ' + error.message
-    });
+    return sendServerError(res, error, 'Error in updateMail', 'تعذر تحديث المعاملة البريدية');
   }
 }
 
@@ -433,23 +420,20 @@ export async function deleteMail(req, res) {
     await db.run('DELETE FROM mail_records WHERE id = ?', [id]);
 
     // تسجيل عملية الحذف في سجل التدقيق الأمني
-    try {
-      await db.run(
-        'INSERT INTO audit_logs (username, action, details) VALUES (?, ?, ?)',
-        ['admin', `حذف بريد (${existing.type})`, `تم حذف القيد رقم ${id} - الموضوع: ${existing.subject}`]
-      );
-    } catch (e) {}
+    await writeAuditLog(db, {
+      userId: req.user?.id || null,
+      username: req.user?.username || 'admin',
+      action: `حذف بريد (${existing.type})`,
+      ipAddress: req.ip,
+      details: `تم حذف القيد رقم ${id} - الموضوع: ${existing.subject}`
+    });
 
     return res.status(200).json({
       success: true,
       message: 'تم حذف القيد البريدي بنجاح من قاعدة البيانات المركزية'
     });
   } catch (error) {
-    console.error('Error in deleteMail:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'تعذر حذف المعاملة: ' + error.message
-    });
+    return sendServerError(res, error, 'Error in deleteMail', 'تعذر حذف المعاملة البريدية');
   }
 }
 
@@ -483,10 +467,6 @@ export async function getMailStats(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error in getMailStats:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    return sendServerError(res, error, 'Error in getMailStats', 'تعذر جلب إحصائيات البريد');
   }
 }

@@ -1,4 +1,5 @@
 import { getDb } from '../config/db.js';
+import { sendServerError } from '../utils/controllerUtils.js';
 
 export async function getAttendance(req, res) {
   try {
@@ -48,7 +49,7 @@ export async function getAttendance(req, res) {
     });
   } catch (error) {
     console.error('Error fetching attendance from SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Attendance controller error', 'تعذر معالجة سجل الحضور والانصراف');
   }
 }
 
@@ -96,7 +97,7 @@ export async function recordAttendance(req, res) {
     });
   } catch (error) {
     console.error('Error recording attendance in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Attendance controller error', 'تعذر معالجة سجل الحضور والانصراف');
   }
 }
 
@@ -147,6 +148,6 @@ export async function bulkRecordAttendance(req, res) {
     const { db } = getDb();
     await db.run('ROLLBACK;').catch(() => {});
     console.error('Error bulk recording attendance in SQLite:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendServerError(res, error, 'Attendance controller error', 'تعذر معالجة سجل الحضور والانصراف');
   }
 }

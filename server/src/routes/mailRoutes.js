@@ -7,15 +7,15 @@ import {
   deleteMail,
   getMailStats
 } from '../controllers/mailController.js';
-import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireAdmin, requireSectionAccess } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/stats', authenticateToken, getMailStats);
-router.get('/', authenticateToken, getMail);
-router.get('/:id', authenticateToken, getMailById);
-router.post('/', authenticateToken, createMail);
-router.put('/:id', authenticateToken, updateMail);
+router.get('/stats', authenticateToken, requireSectionAccess('mail', 'referred', 'letters'), getMailStats);
+router.get('/', authenticateToken, requireSectionAccess('mail', 'referred', 'letters'), getMail);
+router.get('/:id', authenticateToken, requireSectionAccess('mail', 'referred', 'letters'), getMailById);
+router.post('/', authenticateToken, requireSectionAccess('mail', 'referred', 'letters'), createMail);
+router.put('/:id', authenticateToken, requireSectionAccess('mail', 'referred', 'letters'), updateMail);
 router.delete('/:id', authenticateToken, requireAdmin, deleteMail);
 
 export default router;

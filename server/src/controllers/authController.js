@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { JWT_SECRET } from '../config/jwt.js';
+import { sendServerError, writeAuditLog } from '../utils/controllerUtils.js';
 
 export async function login(req, res) {
   try {
@@ -76,10 +77,14 @@ export async function login(req, res) {
     // Update last login and insert audit log in SQLite
     const nowIso = new Date().toISOString();
     await db.run('UPDATE users SET last_login = ? WHERE id = ?', [nowIso, user.id]);
-    await db.run(
-      'INSERT INTO audit_logs (user_id, username, action, ip_address, status, details) VALUES (?, ?, ?, ?, ?, ?)',
-      [user.id, user.username, 'تسجيل دخول', req.ip || '127.0.0.1', 'success', 'تم تسجيل الدخول بنجاح إلى منظومة أوباري']
-    );
+    await writeAuditLog(db, {
+      userId: user.id,
+      username: user.username,
+      action: 'تسجيل دخول',
+      ipAddress: req.ip || '127.0.0.1',
+      status: 'success',
+      details: 'تم تسجيل الدخول بنجاح إلى منظومة أوباري'
+    });
 
     return res.status(200).json({
       success: true,
@@ -107,12 +112,7 @@ export async function login(req, res) {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'حدث خطأ غير متوقع أثناء تسجيل الدخول',
-      error: error.message
-    });
+    return sendServerError(res, error, 'Login error', 'حدث خطأ غير متوقع أثناء تسجيل الدخول');
   }
 }
 
