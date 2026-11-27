@@ -19,7 +19,7 @@ import departmentRoutes from './routes/departmentRoutes.js';
 import fuelRoutes from './routes/fuelRoutes.js';
 import operationsRoutes from './routes/operationsRoutes.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
-import { getDashboardLiveStats } from './controllers/dashboardController.js';
+import { getDashboardLiveStats } from './controllers/operationsController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -134,9 +134,10 @@ app.use('/api/*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
   const status = err.status || 500;
+  const showDetails = process.env.NODE_ENV === 'development';
   res.status(status).json({
     success: false,
-    message: status >= 500 ? 'حدث خطأ داخلي في مخدم المنظومة' : (err.message || 'طلب غير صالح')
+    message: (!showDetails && status >= 500) ? 'حدث خطأ داخلي في مخدم المنظومة' : (err.message || 'حدث خطأ داخلي في مخدم المنظومة')
   });
 });
 

@@ -23,16 +23,13 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Departments Table (for future modules)
+-- Departments Table (متوافق مع قاعدة بيانات SQLite المعتمدة)
 CREATE TABLE IF NOT EXISTS departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    name VARCHAR(150) NOT NULL,
-    description TEXT NULL,
-    icon VARCHAR(50) DEFAULT 'Shield',
-    order_num INT DEFAULT 0,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    department_name VARCHAR(150) NOT NULL,
+    head_name VARCHAR(150) DEFAULT 'غير محدد',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Audit Logs Table
@@ -47,17 +44,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Seed Departments
-INSERT INTO departments (code, name, description, icon, order_num) 
-VALUES 
-('OPS', 'غرفة العمليات المركزية', 'إدارة ومتابعة البلاغات والنداءات الميدانية', 'Radio', 1),
-('CID', 'البحث الجنائي والتحريات', 'سجلات القضايا والتحقيقات والبلاغات الجنائية', 'Search', 2),
-('TRAFFIC', 'الإدارة العامة للمرور والترخيص', 'إدارة تراخيص المركبات والمخالفات والسلامة المرورية', 'Car', 3),
-('PASSPORT', 'مصلحة الجوازات والجنسية', 'إدارة وثائق السفر والهجرة والمنافذ الحدودية', 'FileText', 4),
-('SECURITY', 'الأمن الوقائي والدوريات', 'إشراف على الدوريات ونقاط التمركز الأمني', 'ShieldAlert', 5),
-('HR', 'الشؤون الإدارية وشؤون الضباط', 'سجلات المنتسبين والضباط والترقيات والرواتب', 'Users', 6)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- Vehicles Table (سجل الآليات والمركبات والقوة الآلية)
 CREATE TABLE IF NOT EXISTS vehicles (

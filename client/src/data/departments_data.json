@@ -12,12 +12,12 @@
   {
     "DepartmentID": 3,
     "DepartmentName": "ديوان المديرية",
-    "HeadName": null
+    "HeadName": "غير محدد"
   },
   {
     "DepartmentID": 4,
     "DepartmentName": "الشؤون الإدارية",
-    "HeadName": null
+    "HeadName": "غير محدد"
   },
   {
     "DepartmentID": 5,
@@ -27,12 +27,12 @@
   {
     "DepartmentID": 6,
     "DepartmentName": "الموارد البشرية",
-    "HeadName": null
+    "HeadName": "غير محدد"
   },
   {
     "DepartmentID": 7,
     "DepartmentName": "مركز شرطة أوباري",
-    "HeadName": null
+    "HeadName": "غير محدد"
   },
   {
     "DepartmentID": 8,
