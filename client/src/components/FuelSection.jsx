@@ -12,20 +12,57 @@ import {
   FileSpreadsheet,
   Car,
   Filter,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import initialFuelData from '../data/fuel_data.json';
 import vehiclesData from '../data/vehicles_data.json';
 import { printDocumentInIframe } from '../utils/printHelper';
 import { MOI_LOGO_BASE64 } from '../utils/logoBase64';
 import { apiFetch } from '../utils/apiClient';
+import { normalizeArabicText } from '../utils/arabicUtils';
 import * as XLSX from 'xlsx';
+
+const EMPTY_FUEL_STATE = {
+  main_balance: 0,
+  sub_balance: 0,
+  total_consumed: 0,
+  shipments: [],
+  transactions: []
+};
+
+function sanitizeLegacyFuelCache(parsed) {
+  if (!parsed || typeof parsed !== 'object') return EMPTY_FUEL_STATE;
+  const isLegacySample =
+    Number(parsed.main_balance) === 38450 &&
+    Number(parsed.sub_balance) === 14200 &&
+    Number(parsed.total_consumed) === 12550 &&
+    Array.isArray(parsed.shipments) &&
+    parsed.shipments.some((s) => String(s?.supplier || '').includes('8840'));
+  if (isLegacySample) return EMPTY_FUEL_STATE;
+  return {
+    main_balance: Number(parsed.main_balance) || 0,
+    sub_balance: Number(parsed.sub_balance) || 0,
+    total_consumed: Number(parsed.total_consumed) || 0,
+    shipments: Array.isArray(parsed.shipments) ? parsed.shipments : [],
+    transactions: Array.isArray(parsed.transactions) ? parsed.transactions : []
+  };
+}
 
 export default function FuelSection({ user, forceMembers = [] }) {
   const [fuelData, setFuelData] = useState(() => {
-    const saved = localStorage.getItem('ubari_fuel_data');
-    return saved ? JSON.parse(saved) : initialFuelData;
+    try {
+      const saved = localStorage.getItem('ubari_fuel_data');
+      if (saved) return sanitizeLegacyFuelCache(JSON.parse(saved));
+    } catch (_) {}
+    return sanitizeLegacyFuelCache(initialFuelData);
   });
+  const [fuelNotice, setFuelNotice] = useState(null);
+
+  const showNotice = (type, text) => {
+    setFuelNotice({ type, text });
+    setTimeout(() => setFuelNotice((prev) => (prev?.text === text ? null : prev)), 4500);
+  };
 
   const [registeredVehicles, setRegisteredVehicles] = useState(() => {
     try {
@@ -68,7 +105,8 @@ export default function FuelSection({ user, forceMembers = [] }) {
     station: 'المحطة الرئيسية',
     fuel_type: 'بنزين 95 ممتاز',
     quantity: '',
-    supplier: 'مستودع سبها النفطي - شحنة رقم '
+    supplier: '',
+    date: new Date().toISOString().slice(0, 10)
   });
 
   // State for Dispense
@@ -128,7 +166,7 @@ export default function FuelSection({ user, forceMembers = [] }) {
     e.preventDefault();
     const qty = Number(shipmentForm.quantity);
     if (!qty || qty <= 0) {
-      alert('يرجى إدخال كمية صحيحة باللتر');
+      showNotice('error', 'يرجى إدخال كمية صحيحة باللتر');
       return;
     }
 
@@ -136,8 +174,8 @@ export default function FuelSection({ user, forceMembers = [] }) {
       station: shipmentForm.station,
       fuel_type: shipmentForm.fuel_type,
       quantity: qty,
-      supplier: shipmentForm.supplier.trim() || 'مستودع سبها النفطي',
-      date: new Date().toISOString().slice(0, 10)
+      supplier: shipmentForm.supplier.trim() || 'شحنة وقود واردة',
+      date: shipmentForm.date || new Date().toISOString().slice(0, 10)
     };
 
     try {
@@ -145,17 +183,22 @@ export default function FuelSection({ user, forceMembers = [] }) {
         method: 'POST',
         body: JSON.stringify(payload)
       });
-      if (res.ok) {
-        const json = await res.json();
+      if (res.status !== 404) {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          showNotice('error', json?.message || 'تعذر تسجيل الشحنة في قاعدة البيانات');
+          return;
+        }
         if (json?.success && json.data) {
           setFuelData(json.data);
           setShipmentForm({
             station: 'المحطة الرئيسية',
             fuel_type: 'بنزين 95 ممتاز',
             quantity: '',
-            supplier: 'مستودع سبها النفطي - شحنة رقم '
+            supplier: '',
+            date: new Date().toISOString().slice(0, 10)
           });
-          alert(`✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) وحفظها في قاعدة البيانات المركزية!`);
+          showNotice('success', `✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) وحفظها في قاعدة البيانات المركزية`);
           return;
         }
       }
@@ -166,16 +209,59 @@ export default function FuelSection({ user, forceMembers = [] }) {
       ...prev,
       main_balance: shipmentForm.station === 'المحطة الرئيسية' ? prev.main_balance + qty : prev.main_balance,
       sub_balance: shipmentForm.station === 'المحطة الفرعية' ? prev.sub_balance + qty : prev.sub_balance,
-      shipments: [newShipment, ...prev.shipments]
+      shipments: [newShipment, ...(prev.shipments || [])]
     }));
 
     setShipmentForm({
       station: 'المحطة الرئيسية',
       fuel_type: 'بنزين 95 ممتاز',
       quantity: '',
-      supplier: 'مستودع سبها النفطي - شحنة رقم '
+      supplier: '',
+      date: new Date().toISOString().slice(0, 10)
     });
-    alert(`✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) في خزان ${shipmentForm.station} بنجاح!`);
+    showNotice('success', `✅ تم إيداع الشحنة (${qty.toLocaleString('ar-LY')} لتر) في خزان ${shipmentForm.station}`);
+  };
+
+  // Handle Delete Inbound Shipment (atomic rollback in SQLite)
+  const handleDeleteShipment = async (shipment) => {
+    if (!shipment) return;
+    const qty = Number(shipment.quantity) || 0;
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف هذه الشحنة وخصم (${qty.toLocaleString('ar-LY')} لتر) من رصيد ${shipment.station}؟`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await apiFetch(`/api/fuel/shipment/${shipment.id}`, {
+        method: 'DELETE'
+      });
+      if (res.status !== 404) {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          showNotice('error', json?.message || 'تعذر حذف الشحنة من قاعدة البيانات');
+          return;
+        }
+        if (json?.success && json.data) {
+          setFuelData(json.data);
+          showNotice('success', '🗑️ تم حذف الشحنة وتحديث رصيد المحطة في قاعدة البيانات');
+          return;
+        }
+      }
+    } catch (_) {}
+
+    const currentBalance = shipment.station === 'المحطة الفرعية' ? fuelData.sub_balance : fuelData.main_balance;
+    if (currentBalance < qty) {
+      showNotice('error', `لا يمكن حذف الشحنة لأن الرصيد المتاح في ${shipment.station} أقل من كميتها بعد عمليات صرف سابقة`);
+      return;
+    }
+
+    setFuelData((prev) => ({
+      ...prev,
+      main_balance: shipment.station === 'المحطة الرئيسية' ? Math.max(0, prev.main_balance - qty) : prev.main_balance,
+      sub_balance: shipment.station === 'المحطة الفرعية' ? Math.max(0, prev.sub_balance - qty) : prev.sub_balance,
+      shipments: (prev.shipments || []).filter((s) => String(s.id) !== String(shipment.id))
+    }));
+    showNotice('success', '🗑️ تم حذف الشحنة وتحديث رصيد المحطة بنجاح');
   };
 
   // Handle Dispense (synced atomically with SQLite)
@@ -270,12 +356,15 @@ export default function FuelSection({ user, forceMembers = [] }) {
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
-    return fuelData.transactions.filter((tx) => {
-      const matchSearch =
-        tx.plate_number?.includes(searchTerm) ||
-        tx.driver_name?.includes(searchTerm) ||
-        tx.vehicle_type?.includes(searchTerm) ||
-        tx.voucher_no?.includes(searchTerm);
+    const normSearch = normalizeArabicText(searchTerm);
+    return (fuelData.transactions || []).filter((tx) => {
+      const matchSearch = !normSearch || (
+        normalizeArabicText(tx.plate_number).includes(normSearch) ||
+        normalizeArabicText(tx.driver_name).includes(normSearch) ||
+        normalizeArabicText(tx.vehicle_type).includes(normSearch) ||
+        normalizeArabicText(tx.voucher_no).includes(normSearch) ||
+        normalizeArabicText(tx.fuel_type).includes(normSearch)
+      );
 
       const matchStation = filterStation === 'all' || tx.station === filterStation;
 
@@ -524,7 +613,7 @@ export default function FuelSection({ user, forceMembers = [] }) {
               محطة وقود المديرية (إدارة المحروقات)
             </h1>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
-              المتابعة الدقيقة لرصيد الخزانات، توريد شحنات سبها، وصرف حصص الوقود لمركبات ودوريات المديرية
+              المتابعة الدقيقة لرصيد الخزانات، تسجيل وحذف شحنات الوقود، وصرف حصص الوقود لمركبات ودوريات المديرية
             </span>
           </div>
         </div>
@@ -572,6 +661,24 @@ export default function FuelSection({ user, forceMembers = [] }) {
           </button>
         </div>
       </div>
+
+      {/* Notice Banner */}
+      {fuelNotice && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            fontWeight: 800,
+            fontSize: '13px',
+            background: fuelNotice.type === 'error' ? '#fef2f2' : '#f0fdf4',
+            color: fuelNotice.type === 'error' ? '#991b1b' : '#166534',
+            border: `1px solid ${fuelNotice.type === 'error' ? '#fca5a5' : '#86efac'}`
+          }}
+        >
+          {fuelNotice.text}
+        </div>
+      )}
 
       {/* KPI Balances */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -643,17 +750,30 @@ export default function FuelSection({ user, forceMembers = [] }) {
               </div>
             </div>
 
-            <div>
-              <label style={{ fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '4px' }}>الكمية الواردة باللتر:</label>
-              <input
-                type="number"
-                required
-                min="500"
-                value={shipmentForm.quantity}
-                onChange={(e) => setShipmentForm({ ...shipmentForm, quantity: e.target.value })}
-                placeholder="مثال: 40000"
-                style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', fontWeight: 900, color: '#1e3a8a', boxSizing: 'border-box' }}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '4px' }}>الكمية الواردة باللتر:</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={shipmentForm.quantity}
+                  onChange={(e) => setShipmentForm({ ...shipmentForm, quantity: e.target.value })}
+                  placeholder="أدخل الكمية باللتر"
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', fontWeight: 900, color: '#1e3a8a', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '4px' }}>تاريخ الشحنة:</label>
+                <input
+                  type="date"
+                  required
+                  value={shipmentForm.date}
+                  onChange={(e) => setShipmentForm({ ...shipmentForm, date: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 700, boxSizing: 'border-box' }}
+                />
+              </div>
             </div>
 
             <div>
@@ -662,7 +782,7 @@ export default function FuelSection({ user, forceMembers = [] }) {
                 type="text"
                 value={shipmentForm.supplier}
                 onChange={(e) => setShipmentForm({ ...shipmentForm, supplier: e.target.value })}
-                placeholder="مستودع سبها النفطي - إيصال رقم..."
+                placeholder="مثال: مستودع سبها النفطي / إيصال رقم..."
                 style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
               />
             </div>
@@ -805,6 +925,75 @@ export default function FuelSection({ user, forceMembers = [] }) {
           </form>
         </div>
 
+      </div>
+
+      {/* Shipments History Table (سجل الشحنات الواردة وإمكانية الحذف) */}
+      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1.5px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', marginBottom: '24px' }}>
+        <div style={{ padding: '14px 18px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#1e3a8a' }}>سجل الشحنات الواردة للمحطات</h3>
+            <span style={{ fontSize: '11.5px', color: '#64748b' }}>إجمالي الشحنات المسجلة: {(fuelData.shipments || []).length} شحنة</span>
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
+            <thead>
+              <tr style={{ background: '#0f172a', color: '#ffffff' }}>
+                <th style={{ padding: '10px 14px' }}>#</th>
+                <th style={{ padding: '10px 14px' }}>المحطة</th>
+                <th style={{ padding: '10px 14px' }}>نوع المحروقات</th>
+                <th style={{ padding: '10px 14px' }}>الكمية الواردة (لتر)</th>
+                <th style={{ padding: '10px 14px' }}>المصدر / رقم الإيصال</th>
+                <th style={{ padding: '10px 14px' }}>تاريخ الشحنة</th>
+                <th style={{ padding: '10px 14px', textAlign: 'center' }}>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(!fuelData.shipments || fuelData.shipments.length === 0) ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: '26px', textAlign: 'center', color: '#64748b' }}>
+                    لا توجد شحنات وقود مسجلة بعد — أضف شحنة جديدة من النموذج أعلاه
+                  </td>
+                </tr>
+              ) : (
+                fuelData.shipments.map((s, idx) => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 800, color: '#64748b' }}>#{idx + 1}</td>
+                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#1e3a8a' }}>{s.station}</td>
+                    <td style={{ padding: '10px 14px', fontWeight: 700 }}>{s.fuel_type}</td>
+                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#16a34a' }}>{Number(s.quantity || 0).toLocaleString('ar-LY')} لتر</td>
+                    <td style={{ padding: '10px 14px', color: '#334155', fontWeight: 700 }}>{s.supplier || '---'}</td>
+                    <td style={{ padding: '10px 14px', fontFamily: 'monospace', color: '#475569' }}>{s.date || '---'}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteShipment(s)}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: '6px',
+                          background: '#fef2f2',
+                          color: '#dc2626',
+                          border: '1px solid #fecaca',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title="حذف هذه الشحنة وخصم كميتها من الرصيد"
+                      >
+                        <Trash2 size={13} />
+                        <span>حذف الشحنة</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Transactions History Table */}

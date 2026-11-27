@@ -1,5 +1,5 @@
 import { getDb } from '../config/db.js';
-import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
+import { sendServerError, syncJsonPaths, writeAuditLog } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,8 +39,7 @@ export async function getFuelState(req, res) {
     const snapshot = await buildFuelSnapshot(db);
     return res.status(200).json({ success: true, data: snapshot });
   } catch (error) {
-    console.error('Error fetching fuel state:', error);
-    return res.status(500).json({ success: false, message: 'تعذر جلب بيانات الوقود والمحروقات' });
+    return sendServerError(res, error, 'Error fetching fuel state', 'تعذر جلب بيانات الوقود والمحروقات');
   }
 }
 
@@ -53,14 +52,15 @@ export async function addFuelShipment(req, res) {
       return res.status(400).json({ success: false, message: 'يرجى إدخال كمية شحنة صحيحة باللتر' });
     }
 
-    const col = station === 'المحطة الفرعية' ? 'sub_balance' : 'main_balance';
-    const shipDate = date || new Date().toISOString().slice(0, 10);
-    const cleanSupplier = supplier ? String(supplier).trim() : 'مستودع سبها النفطي';
+    const validStation = station === 'المحطة الفرعية' ? 'المحطة الفرعية' : 'المحطة الرئيسية';
+    const col = validStation === 'المحطة الفرعية' ? 'sub_balance' : 'main_balance';
+    const shipDate = date && String(date).trim() ? String(date).trim() : new Date().toISOString().slice(0, 10);
+    const cleanSupplier = supplier && String(supplier).trim() ? String(supplier).trim() : 'شحنة وقود واردة';
 
     await db.run('BEGIN TRANSACTION;');
     const result = await db.run(
       'INSERT INTO fuel_shipments (station, fuel_type, quantity, supplier, date) VALUES (?, ?, ?, ?, ?)',
-      [station, fuel_type, qty, cleanSupplier, shipDate]
+      [validStation, fuel_type, qty, cleanSupplier, shipDate]
     );
     await db.run(
       `UPDATE fuel_tanks SET ${col} = ${col} + ?, updated_at = datetime('now', 'localtime') WHERE id = 1`,
@@ -68,14 +68,78 @@ export async function addFuelShipment(req, res) {
     );
     await db.run('COMMIT;');
 
+    await writeAuditLog(db, {
+      userId: req.user?.id || null,
+      username: req.user?.username || 'system',
+      action: 'إضافة شحنة وقود',
+      ipAddress: req.ip,
+      details: `${validStation}: ${qty} لتر (${fuel_type}) - ${cleanSupplier}`
+    });
+
     await syncFuelJson(db);
     const snapshot = await buildFuelSnapshot(db);
     const created = await db.get('SELECT * FROM fuel_shipments WHERE id = ?', [result.lastID]);
     return res.status(201).json({ success: true, shipment: created, data: snapshot });
   } catch (error) {
     await db.run('ROLLBACK;').catch(() => {});
-    console.error('Error adding fuel shipment:', error);
-    return res.status(500).json({ success: false, message: 'تعذر تسجيل الشحنة في قاعدة البيانات' });
+    return sendServerError(res, error, 'Error adding fuel shipment', 'تعذر تسجيل الشحنة في قاعدة البيانات');
+  }
+}
+
+export async function deleteFuelShipment(req, res) {
+  const { db } = getDb();
+  try {
+    const shipmentId = Number(req.params.id);
+    if (!shipmentId) {
+      return res.status(400).json({ success: false, message: 'معرف الشحنة غير صالح' });
+    }
+
+    await db.run('BEGIN TRANSACTION;');
+    const shipment = await db.get('SELECT * FROM fuel_shipments WHERE id = ?', [shipmentId]);
+    if (!shipment) {
+      await db.run('ROLLBACK;');
+      return res.status(404).json({ success: false, message: 'الشحنة المطلوبة غير موجودة' });
+    }
+
+    const isSub = shipment.station === 'المحطة الفرعية';
+    const col = isSub ? 'sub_balance' : 'main_balance';
+    const qty = Number(shipment.quantity) || 0;
+    const tank = await db.get('SELECT * FROM fuel_tanks WHERE id = 1');
+    const available = isSub ? Number(tank?.sub_balance || 0) : Number(tank?.main_balance || 0);
+
+    if (available < qty) {
+      await db.run('ROLLBACK;');
+      return res.status(400).json({
+        success: false,
+        message: `لا يمكن حذف الشحنة لأن الرصيد الحالي في ${shipment.station} (${available.toLocaleString('ar-LY')} لتر) أقل من كمية الشحنة (${qty.toLocaleString('ar-LY')} لتر) بسبب عمليات صرف سابقة`
+      });
+    }
+
+    await db.run('DELETE FROM fuel_shipments WHERE id = ?', [shipmentId]);
+    await db.run(
+      `UPDATE fuel_tanks SET ${col} = MAX(0, ${col} - ?), updated_at = datetime('now', 'localtime') WHERE id = 1`,
+      [qty]
+    );
+    await db.run('COMMIT;');
+
+    await writeAuditLog(db, {
+      userId: req.user?.id || null,
+      username: req.user?.username || 'system',
+      action: 'حذف شحنة وقود',
+      ipAddress: req.ip,
+      details: `حذف الشحنة #${shipmentId} (${shipment.station}: ${qty} لتر - ${shipment.supplier || ''})`
+    });
+
+    await syncFuelJson(db);
+    const snapshot = await buildFuelSnapshot(db);
+    return res.status(200).json({
+      success: true,
+      message: 'تم حذف الشحنة وتحديث رصيد المحطة بنجاح',
+      data: snapshot
+    });
+  } catch (error) {
+    await db.run('ROLLBACK;').catch(() => {});
+    return sendServerError(res, error, 'Error deleting fuel shipment', 'تعذر حذف شحنة الوقود');
   }
 }
 
@@ -154,7 +218,6 @@ export async function dispenseFuel(req, res) {
     });
   } catch (error) {
     await db.run('ROLLBACK;').catch(() => {});
-    console.error('Error dispensing fuel:', error);
-    return res.status(500).json({ success: false, message: 'تعذر تسجيل عملية صرف الوقود' });
+    return sendServerError(res, error, 'Error dispensing fuel', 'تعذر تسجيل عملية صرف الوقود');
   }
 }
