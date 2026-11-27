@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from '../config/db.js';
 import { BCRYPT_ROUNDS } from '../config/jwt.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { sendServerError, parseAllowedSections } from '../utils/controllerUtils.js';
 
 export async function getAllUsers(req, res) {
   try {
@@ -12,22 +12,10 @@ export async function getAllUsers(req, res) {
       ORDER BY id ASC
     `);
 
-    const users = rawUsers.map(u => {
-      let sections = ['dashboard', 'force'];
-      if (u.allowed_sections) {
-        try {
-          sections = typeof u.allowed_sections === 'string' ? JSON.parse(u.allowed_sections) : u.allowed_sections;
-        } catch (_) {
-          sections = ['dashboard', 'force'];
-        }
-      } else if (u.role === 'super_admin' || u.username === 'admin') {
-        sections = ['all'];
-      }
-      return {
-        ...u,
-        allowed_sections: sections
-      };
-    });
+    const users = rawUsers.map(u => ({
+      ...u,
+      allowed_sections: parseAllowedSections(u.allowed_sections, u.role, u.username)
+    }));
 
     return res.status(200).json({
       success: true,
@@ -144,14 +132,7 @@ export async function updateUser(req, res) {
       FROM users WHERE id = ?
     `, [userId]);
 
-    let parsedSections = ['dashboard', 'force'];
-    if (updated.allowed_sections) {
-      try {
-        parsedSections = typeof updated.allowed_sections === 'string' ? JSON.parse(updated.allowed_sections) : updated.allowed_sections;
-      } catch (_) {}
-    } else if (updated.role === 'super_admin' || updated.username === 'admin') {
-      parsedSections = ['all'];
-    }
+    const parsedSections = parseAllowedSections(updated.allowed_sections, updated.role, updated.username);
 
     return res.status(200).json({
       success: true,

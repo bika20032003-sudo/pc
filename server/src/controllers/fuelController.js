@@ -1,5 +1,5 @@
 import { getDb } from '../config/db.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -27,9 +27,7 @@ async function buildFuelSnapshot(db) {
 async function syncFuelJson(db) {
   try {
     const snapshot = await buildFuelSnapshot(db);
-    for (const p of FUEL_JSON_PATHS) {
-      safeWriteJson(p, snapshot);
-    }
+    syncJsonPaths(FUEL_JSON_PATHS, snapshot);
   } catch (err) {
     console.warn('Sync fuel JSON error:', err.message);
   }

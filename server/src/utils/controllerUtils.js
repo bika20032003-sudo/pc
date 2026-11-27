@@ -74,3 +74,19 @@ export function sanitizeDigits(val) {
     .replace(/\D/g, '')
     .trim();
 }
+
+/**
+ * تحليل مصفوفة الأقسام المسموح بها للمستخدم بشكل موحد
+ */
+export function parseAllowedSections(rawSections, role, username = '') {
+  if (rawSections) {
+    try {
+      const parsed = typeof rawSections === 'string' ? JSON.parse(rawSections) : rawSections;
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+  if (role === 'super_admin' || role === 'admin' || username === 'admin') {
+    return ['all'];
+  }
+  return ['dashboard', 'force'];
+}

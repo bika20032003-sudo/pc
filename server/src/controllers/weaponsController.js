@@ -1,7 +1,7 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { safeReadJson } from '../utils/fileUtils.js';
+import { sendServerError, syncJsonPaths, parsePagination } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,7 +12,7 @@ const jsonPath = path.resolve(__dirname, '../data/weapons_data.json');
 // Helper to save to JSON file as persistent atomic backup
 function saveToJsonFile(weapons) {
   try {
-    safeWriteJson(jsonPath, weapons);
+    syncJsonPaths([jsonPath], weapons);
   } catch (err) {
     console.error('Error saving weapons to JSON backup:', err);
   }
@@ -21,103 +21,71 @@ function saveToJsonFile(weapons) {
 // Get all weapons with filtering and stats
 export async function getWeapons(req, res) {
   try {
-    const { search, type, entity, status, limit, page } = req.query;
+    const { search, type, entity, status } = req.query;
     const { db } = getDb();
 
-    let whereClauses = [];
-    let params = [];
+    const allRows = await db.all('SELECT * FROM weapons ORDER BY id ASC');
+    const normType = type && type !== 'الكل' ? normalizeArabicText(type) : '';
+    const normEntity = entity && entity !== 'الكل' ? normalizeArabicText(entity) : '';
+    const normSearch = search && search.trim() ? normalizeArabicText(search) : '';
 
-    if (type && type !== 'الكل') {
-      whereClauses.push('weapon_type LIKE ?');
-      params.push(`%${type}%`);
-    }
+    const filteredRows = allRows.filter((w) => {
+      if (status && status !== 'الكل' && w.status !== status) return false;
+      if (normType && !normalizeArabicText(w.weapon_type).includes(normType)) return false;
+      if (normEntity && !(normalizeArabicText(w.receiving_entity).includes(normEntity) || normalizeArabicText(w.receiver_name).includes(normEntity))) return false;
+      if (normSearch) {
+        return (
+          normalizeArabicText(w.weapon_number).includes(normSearch) ||
+          normalizeArabicText(w.weapon_type).includes(normSearch) ||
+          normalizeArabicText(w.receiving_entity).includes(normSearch) ||
+          normalizeArabicText(w.receiver_name).includes(normSearch) ||
+          normalizeArabicText(w.notes).includes(normSearch)
+        );
+      }
+      return true;
+    });
 
-    if (entity && entity !== 'الكل') {
-      whereClauses.push('(receiving_entity LIKE ? OR receiver_name LIKE ?)');
-      params.push(`%${entity}%`, `%${entity}%`);
-    }
+    const filteredTotal = filteredRows.length;
+    const total = allRows.length;
+    const pistols = allRows.filter(w => String(w.weapon_type || '').includes('مسدس')).length;
+    const rifles = allRows.filter(w => String(w.weapon_type || '').includes('كلاشن') || String(w.weapon_type || '').includes('بندقية')).length;
+    const totalAmmo = allRows.reduce((s, w) => s + (Number(w.ammo_count) || 0), 0);
+    const totalMags = allRows.reduce((s, w) => s + (Number(w.magazines_count) || 0), 0);
 
-    if (status && status !== 'الكل') {
-      whereClauses.push('status = ?');
-      params.push(status);
-    }
-
-    if (search && search.trim()) {
-      const q = `%${search.trim()}%`;
-      whereClauses.push(`(
-        weapon_number LIKE ? OR
-        weapon_type LIKE ? OR
-        receiving_entity LIKE ? OR
-        receiver_name LIKE ? OR
-        notes LIKE ?
-      )`);
-      params.push(q, q, q, q, q);
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    const countRow = await db.get(`SELECT COUNT(*) as total FROM weapons ${whereSql}`, params);
-    const filteredTotal = countRow ? countRow.total : 0;
-
-    // Overall aggregate statistics
-    const totalRow = await db.get('SELECT COUNT(*) as c FROM weapons');
-    const total = totalRow ? totalRow.c : 0;
-
-    const pistolsRow = await db.get("SELECT COUNT(*) as c FROM weapons WHERE weapon_type LIKE '%مسدس%'");
-    const riflesRow = await db.get("SELECT COUNT(*) as c FROM weapons WHERE weapon_type LIKE '%كلاشن%' OR weapon_type LIKE '%بندقية%'");
-    const ammoRow = await db.get("SELECT SUM(ammo_count) as s FROM weapons");
-    const magsRow = await db.get("SELECT SUM(magazines_count) as s FROM weapons");
-
-    let data = [];
-    let currentPage = 1;
-    let totalPages = 1;
-
-    if (limit) {
-      const parsedLimit = Math.max(1, parseInt(limit, 10));
-      currentPage = Math.max(1, parseInt(page || '1', 10));
-      totalPages = Math.ceil(filteredTotal / parsedLimit) || 1;
-      const offset = (currentPage - 1) * parsedLimit;
-
-      data = await db.all(
-        `SELECT * FROM weapons ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
-        [...params, parsedLimit, offset]
-      );
-    } else {
-      data = await db.all(`SELECT * FROM weapons ${whereSql} ORDER BY id ASC`, params);
-    }
+    const pag = parsePagination(req.query);
+    const totalPages = pag.enabled ? (Math.ceil(filteredTotal / pag.limit) || 1) : 1;
+    const data = pag.enabled ? filteredRows.slice(pag.offset, pag.offset + pag.limit) : filteredRows;
 
     return res.status(200).json({
       success: true,
       data,
       stats: {
         total,
-        pistols: pistolsRow ? pistolsRow.c : 0,
-        rifles: riflesRow ? riflesRow.c : 0,
-        totalAmmo: (ammoRow && ammoRow.s) ? ammoRow.s : 0,
-        totalMags: (magsRow && magsRow.s) ? magsRow.s : 0,
+        pistols,
+        rifles,
+        totalAmmo,
+        totalMags,
         filteredTotal
       },
       pagination: {
         total: filteredTotal,
-        page: currentPage,
-        limit: limit ? parseInt(limit, 10) : filteredTotal,
+        page: pag.page,
+        limit: pag.enabled ? pag.limit : filteredTotal,
         totalPages
       }
     });
   } catch (error) {
     console.error('Error fetching weapons:', error);
     // Fallback to JSON file if SQLite query fails
-    try {
-      if (fs.existsSync(jsonPath)) {
-        const fileData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-        return res.status(200).json({
-          success: true,
-          data: fileData,
-          stats: { total: fileData.length, filteredTotal: fileData.length }
-        });
-      }
-    } catch (e) {}
-    return sendServerError(res, error, 'Weapons controller error', 'تعذر معالجة سجل الأسلحة والذخائر');
+    const fileData = safeReadJson(jsonPath, null);
+    if (Array.isArray(fileData)) {
+      return res.status(200).json({
+        success: true,
+        data: fileData,
+        stats: { total: fileData.length, filteredTotal: fileData.length }
+      });
+    }
+    return sendServerError(res, error, 'Weapons fetch error', 'تعذر جلب سجل الأسلحة والذخائر');
   }
 }
 

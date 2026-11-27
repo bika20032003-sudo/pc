@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/jwt.js';
 import { getDb } from '../config/db.js';
+import { parseAllowedSections } from '../utils/controllerUtils.js';
 
 /**
  * وسيط التحقق الإلزامي من الجلسة وتوكن JWT
@@ -89,16 +90,7 @@ export function requireSectionAccess(...allowedSectionIds) {
         return next();
       }
 
-      let userSections = [];
-      if (dbUser.allowed_sections) {
-        try {
-          userSections = typeof dbUser.allowed_sections === 'string'
-            ? JSON.parse(dbUser.allowed_sections)
-            : dbUser.allowed_sections;
-        } catch (_) {
-          userSections = [];
-        }
-      }
+      const userSections = parseAllowedSections(dbUser.allowed_sections, dbUser.role);
 
       if (
         Array.isArray(userSections) &&

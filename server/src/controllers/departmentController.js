@@ -1,5 +1,5 @@
 import { getDb } from '../config/db.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
+import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,9 +16,7 @@ async function syncDepartmentsJson(db) {
     const rows = await db.all(
       'SELECT id AS DepartmentID, department_name AS DepartmentName, head_name AS HeadName FROM departments ORDER BY id ASC'
     );
-    for (const p of DEPT_JSON_PATHS) {
-      safeWriteJson(p, rows);
-    }
+    syncJsonPaths(DEPT_JSON_PATHS, rows);
   } catch (err) {
     console.warn('Sync departments JSON error:', err.message);
   }

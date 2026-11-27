@@ -1,6 +1,7 @@
 import { getDb } from '../config/db.js';
-import { safeWriteJson, safeReadJson } from '../utils/fileUtils.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { safeReadJson } from '../utils/fileUtils.js';
+import { normalizeArabicText } from '../utils/arabicUtils.js';
+import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,8 +11,7 @@ const __dirname = path.dirname(__filename);
 const jsonPaths = [
   path.resolve(__dirname, '../data/penalties_data.json'),
   path.resolve(__dirname, '../../../client/src/data/penalties_data.json'),
-  path.resolve(__dirname, '../../../client/public/api/data/penalties_data.json'),
-  path.resolve(__dirname, '../../../client/dist/api/data/penalties_data.json')
+  path.resolve(__dirname, '../../../client/public/api/data/penalties_data.json')
 ];
 
 async function syncPenaltiesJson(db) {
@@ -33,9 +33,7 @@ async function syncPenaltiesJson(db) {
       IsApplied: Boolean(r.is_applied)
     }));
 
-    for (const p of jsonPaths) {
-      safeWriteJson(p, formatted);
-    }
+    syncJsonPaths(jsonPaths, formatted);
   } catch (err) {
     console.warn('Sync penalties JSON error:', err.message);
   }
@@ -44,9 +42,10 @@ async function syncPenaltiesJson(db) {
 export async function getPenalties(req, res) {
   try {
     const { db } = getDb();
+    const { search } = req.query;
     const rows = await db.all('SELECT * FROM penalties ORDER BY id DESC');
 
-    const formatted = rows.map(r => ({
+    let formatted = rows.map(r => ({
       PenaltyID: r.penalty_id || r.id,
       FullName: r.full_name,
       AdminNumber: null,
@@ -61,6 +60,17 @@ export async function getPenalties(req, res) {
       DecisionNumber: r.decision_number,
       IsApplied: Boolean(r.is_applied)
     }));
+
+    if (search && search.trim()) {
+      const q = normalizeArabicText(search);
+      formatted = formatted.filter(item =>
+        normalizeArabicText(item.FullName).includes(q) ||
+        normalizeArabicText(item.Reason).includes(q) ||
+        normalizeArabicText(item.DecisionNumber).includes(q) ||
+        String(item.NationalNumber || '').includes(search.trim()) ||
+        String(item.JobNumber || '').includes(search.trim())
+      );
+    }
 
     return res.status(200).json({
       success: true,

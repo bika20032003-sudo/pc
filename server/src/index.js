@@ -19,7 +19,7 @@ import departmentRoutes from './routes/departmentRoutes.js';
 import fuelRoutes from './routes/fuelRoutes.js';
 import operationsRoutes from './routes/operationsRoutes.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
-import { getDashboardLiveStats } from './controllers/operationsController.js';
+import { getDashboardLiveStats } from './controllers/dashboardController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5050;

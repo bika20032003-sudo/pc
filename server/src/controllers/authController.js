@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { JWT_SECRET } from '../config/jwt.js';
-import { sendServerError, writeAuditLog } from '../utils/controllerUtils.js';
+import { sendServerError, writeAuditLog, parseAllowedSections } from '../utils/controllerUtils.js';
 
 export async function login(req, res) {
   try {
@@ -99,14 +99,7 @@ export async function login(req, res) {
         rank_title: user.rank_title,
         department: user.department,
         role: user.role,
-        allowed_sections: (() => {
-          if (user.allowed_sections) {
-            try {
-              return typeof user.allowed_sections === 'string' ? JSON.parse(user.allowed_sections) : user.allowed_sections;
-            } catch (_) {}
-          }
-          return user.role === 'super_admin' || user.username === 'admin' ? ['all'] : ['dashboard', 'force'];
-        })(),
+        allowed_sections: parseAllowedSections(user.allowed_sections, user.role, user.username),
         avatar: user.avatar || '',
         databaseEngine: 'SQLite WAL Mode'
       }
@@ -118,33 +111,31 @@ export async function login(req, res) {
 
 export async function getProfile(req, res) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = req.user && req.user.id;
+    if (!userId) {
       return res.status(401).json({ success: false, message: 'جلسة غير مصرح بها' });
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-
     const { db } = getDb();
     const user = await db.get(
-      'SELECT id, username, email, full_name, badge_number, rank_title, department, role, status, avatar, last_login FROM users WHERE id = ? LIMIT 1',
-      [decoded.id]
+      'SELECT id, username, email, full_name, badge_number, rank_title, department, role, allowed_sections, status, avatar, last_login FROM users WHERE id = ? LIMIT 1',
+      [userId]
     );
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    if (!user || user.status !== 'active') {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود أو غير نشط' });
     }
 
     return res.status(200).json({
       success: true,
       user: {
         ...user,
+        allowed_sections: parseAllowedSections(user.allowed_sections, user.role, user.username),
         databaseEngine: 'SQLite WAL Mode'
       }
     });
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'انتهت صلاحية الجلسة أو أن التوكن غير صالح' });
+    return sendServerError(res, error, 'Error fetching user profile', 'تعذر جلب الملف الشخصي للمستخدم');
   }
 }
 

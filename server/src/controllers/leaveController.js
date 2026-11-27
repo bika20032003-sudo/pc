@@ -1,7 +1,6 @@
 import { getDb } from '../config/db.js';
 import { updateForceMemberStatusDirect } from './forceController.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { sendServerError, syncJsonPaths } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -17,9 +16,7 @@ const LEAVES_JSON_PATHS = [
 async function syncLeavesJson(db) {
   try {
     const rows = await db.all('SELECT * FROM leaves ORDER BY id DESC');
-    for (const p of LEAVES_JSON_PATHS) {
-      safeWriteJson(p, rows);
-    }
+    syncJsonPaths(LEAVES_JSON_PATHS, rows);
   } catch (err) {
     console.warn('Sync leaves JSON error:', err.message);
   }
@@ -130,22 +127,12 @@ export async function createLeave(req, res) {
       Notes || ''
     ]);
 
-    // Atomic sync of force member status
-    if (NationalNumber) {
-      await db.run(`
-        UPDATE force_members
-        SET job_status = 'في إجازة رسمية',
-            updated_at = datetime('now', 'localtime')
-        WHERE national_id = ? OR job_number = ?
-      `, [String(NationalNumber).trim(), String(NationalNumber).trim()]);
-    } else {
-      await db.run(`
-        UPDATE force_members
-        SET job_status = 'في إجازة رسمية',
-            updated_at = datetime('now', 'localtime')
-        WHERE name = ?
-      `, [FullName.trim()]);
-    }
+    // Atomic sync of force member status via shared service helper
+    await updateForceMemberStatusDirect(
+      NationalNumber ? String(NationalNumber).trim() : FullName.trim(),
+      'في إجازة رسمية',
+      db
+    );
 
     await db.run('COMMIT;');
     await syncLeavesJson(db);
@@ -184,22 +171,12 @@ export async function resumeDuty(req, res) {
       WHERE id = ?
     `, [leaveId]);
 
-    // Atomic sync to return member to duty in force_members
-    if (leave.NationalNumber) {
-      await db.run(`
-        UPDATE force_members
-        SET job_status = 'على رأس العمل',
-            updated_at = datetime('now', 'localtime')
-        WHERE national_id = ? OR job_number = ?
-      `, [String(leave.NationalNumber).trim(), String(leave.NationalNumber).trim()]);
-    } else if (leave.FullName) {
-      await db.run(`
-        UPDATE force_members
-        SET job_status = 'على رأس العمل',
-            updated_at = datetime('now', 'localtime')
-        WHERE name = ?
-      `, [leave.FullName.trim()]);
-    }
+    // Atomic sync to return member to duty in force_members via shared service helper
+    await updateForceMemberStatusDirect(
+      leave.NationalNumber ? String(leave.NationalNumber).trim() : (leave.FullName ? leave.FullName.trim() : ''),
+      'على رأس العمل',
+      db
+    );
 
     await db.run('COMMIT;');
     await syncLeavesJson(db);

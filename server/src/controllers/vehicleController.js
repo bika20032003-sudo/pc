@@ -1,7 +1,6 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
-import { safeWriteJson } from '../utils/fileUtils.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { sendServerError, syncJsonPaths, parsePagination } from '../utils/controllerUtils.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -18,9 +17,7 @@ async function syncVehiclesJson(db) {
   try {
     const all = await db.all('SELECT * FROM vehicles ORDER BY id ASC');
     if (Array.isArray(all) && all.length > 0) {
-      for (const p of vehiclesJsonPaths) {
-        safeWriteJson(p, all);
-      }
+      syncJsonPaths(vehiclesJsonPaths, all);
     }
   } catch (e) {
     console.warn('Vehicle JSON backup sync error:', e.message);
@@ -29,93 +26,60 @@ async function syncVehiclesJson(db) {
 
 export async function getVehicleList(req, res) {
   try {
-    const { search, category, status, department, limit, page } = req.query;
+    const { search, category, status, department } = req.query;
     const { db } = getDb();
 
-    let whereClauses = [];
-    let params = [];
+    const allRows = await db.all('SELECT * FROM vehicles ORDER BY id ASC');
+    const normSearch = search && search.trim() ? normalizeArabicText(search) : '';
 
-    if (category && category !== 'الكل') {
-      whereClauses.push('category = ?');
-      params.push(category);
-    }
+    const filteredRows = allRows.filter((v) => {
+      if (category && category !== 'الكل' && v.category !== category) return false;
+      if (status && status !== 'الكل' && v.status !== status) return false;
+      if (department && department !== 'الكل' && v.department !== department) return false;
+      if (normSearch) {
+        return (
+          normalizeArabicText(v.plate_number).includes(normSearch) ||
+          normalizeArabicText(v.chassis_number).includes(normSearch) ||
+          normalizeArabicText(v.make_model).includes(normSearch) ||
+          normalizeArabicText(v.vehicle_type).includes(normSearch) ||
+          normalizeArabicText(v.custodian_name).includes(normSearch) ||
+          normalizeArabicText(v.department).includes(normSearch) ||
+          normalizeArabicText(v.notes).includes(normSearch)
+        );
+      }
+      return true;
+    });
 
-    if (status && status !== 'الكل') {
-      whereClauses.push('status = ?');
-      params.push(status);
-    }
+    const filteredTotal = filteredRows.length;
+    const total = allRows.length;
+    const activeCount = allRows.filter(v => v.status === 'جاهزة للعمل').length;
+    const custodyCount = allRows.filter(v => v.category === 'سيارة عهدة شخصية').length;
+    const departmentCount = allRows.filter(v => v.category === 'سيارة مراكز وأقسام').length;
+    const motorcycleCount = allRows.filter(v => v.category === 'دراجة نارية شرطية').length;
+    const outOfServiceCount = allRows.filter(v => v.status !== 'جاهزة للعمل').length;
 
-    if (department && department !== 'الكل') {
-      whereClauses.push('department = ?');
-      params.push(department);
-    }
-
-    if (search && search.trim()) {
-      const q = `%${search.trim()}%`;
-      whereClauses.push(`(
-        plate_number LIKE ? OR
-        chassis_number LIKE ? OR
-        make_model LIKE ? OR
-        vehicle_type LIKE ? OR
-        custodian_name LIKE ? OR
-        department LIKE ? OR
-        notes LIKE ?
-      )`);
-      params.push(q, q, q, q, q, q, q);
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    const countRow = await db.get(`SELECT COUNT(*) as total FROM vehicles ${whereSql}`, params);
-    const filteredTotal = countRow ? countRow.total : 0;
-
-    // Aggregate overall vehicle fleet statistics
-    const totalRow = await db.get('SELECT COUNT(*) as c FROM vehicles');
-    const total = totalRow ? totalRow.c : 0;
-
-    const activeRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE status = 'جاهزة للعمل'");
-    const custodyRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'سيارة عهدة شخصية'");
-    const deptRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'سيارة مراكز وأقسام'");
-    const motoRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE category = 'دراجة نارية شرطية'");
-    const outRow = await db.get("SELECT COUNT(*) as c FROM vehicles WHERE status != 'جاهزة للعمل'");
-
-    let data = [];
-    let currentPage = 1;
-    let totalPages = 1;
-
-    if (limit) {
-      const parsedLimit = Math.max(1, parseInt(limit, 10));
-      currentPage = Math.max(1, parseInt(page || '1', 10));
-      totalPages = Math.ceil(filteredTotal / parsedLimit) || 1;
-      const offset = (currentPage - 1) * parsedLimit;
-
-      data = await db.all(
-        `SELECT * FROM vehicles ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
-        [...params, parsedLimit, offset]
-      );
-    } else {
-      data = await db.all(`SELECT * FROM vehicles ${whereSql} ORDER BY id ASC`, params);
-    }
+    const pag = parsePagination(req.query);
+    const totalPages = pag.enabled ? (Math.ceil(filteredTotal / pag.limit) || 1) : 1;
+    const data = pag.enabled ? filteredRows.slice(pag.offset, pag.offset + pag.limit) : filteredRows;
 
     return res.status(200).json({
       success: true,
       total,
       filteredTotal,
-      page: limit ? currentPage : 1,
-      totalPages: limit ? totalPages : 1,
-      limit: limit ? parseInt(limit, 10) : total,
+      page: pag.page,
+      totalPages,
+      limit: pag.enabled ? pag.limit : total,
       stats: {
         total,
-        activeCount: activeRow ? activeRow.c : 0,
-        custodyCount: custodyRow ? custodyRow.c : 0,
-        departmentCount: deptRow ? deptRow.c : 0,
-        motorcycleCount: motoRow ? motoRow.c : 0,
-        outOfServiceCount: outRow ? outRow.c : 0
+        activeCount,
+        custodyCount,
+        departmentCount,
+        motorcycleCount,
+        outOfServiceCount
       },
       data
     });
   } catch (error) {
-    console.error('Error fetching vehicles from SQLite:', error);
     return sendServerError(res, error, 'Vehicles controller error', 'تعذر معالجة سجل الآليات والمركبات');
   }
 }
@@ -155,7 +119,7 @@ export async function createVehicle(req, res) {
     ]);
 
     const created = await db.get('SELECT * FROM vehicles WHERE id = ?', [newId]);
-    syncVehiclesJson(db);
+    await syncVehiclesJson(db);
 
     return res.status(201).json({
       success: true,
@@ -220,7 +184,7 @@ export async function updateVehicle(req, res) {
     ]);
 
     const updated = await db.get('SELECT * FROM vehicles WHERE id = ?', [id]);
-    syncVehiclesJson(db);
+    await syncVehiclesJson(db);
 
     return res.status(200).json({
       success: true,
@@ -243,7 +207,7 @@ export async function deleteVehicle(req, res) {
       return res.status(404).json({ success: false, message: 'الآلية غير موجودة' });
     }
 
-    syncVehiclesJson(db);
+    await syncVehiclesJson(db);
 
     return res.status(200).json({
       success: true,
@@ -300,7 +264,7 @@ export async function replaceVehicleList(req, res) {
 
     await stmt.finalize();
     await db.run('COMMIT;');
-    syncVehiclesJson(db);
+    await syncVehiclesJson(db);
 
     console.log(`✅ تم استبدال أسطول الآليات في SQLite بنجاح (${vehicles.length} مركبة)`);
 

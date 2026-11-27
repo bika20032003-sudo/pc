@@ -4,8 +4,7 @@ import {
   createOperationsLocation,
   updateOperationsLocation,
   deleteOperationsLocation,
-  addOperationsLog,
-  getDashboardLiveStats
+  addOperationsLog
 } from '../controllers/operationsController.js';
 import { authenticateToken, requireAdmin, requireSectionAccess } from '../middleware/authMiddleware.js';
 
@@ -16,6 +15,5 @@ router.post('/', authenticateToken, requireSectionAccess('operations'), createOp
 router.post('/logs', authenticateToken, requireSectionAccess('operations'), addOperationsLog);
 router.put('/:id', authenticateToken, requireSectionAccess('operations'), updateOperationsLocation);
 router.delete('/:id', authenticateToken, requireAdmin, deleteOperationsLocation);
-router.get('/dashboard-stats', authenticateToken, getDashboardLiveStats);
 
 export default router;

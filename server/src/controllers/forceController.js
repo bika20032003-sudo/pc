@@ -1,7 +1,7 @@
 import { getDb } from '../config/db.js';
 import { normalizeArabicText } from '../utils/arabicUtils.js';
 import { safeWriteJson } from '../utils/fileUtils.js';
-import { sendServerError } from '../utils/controllerUtils.js';
+import { sendServerError, syncJsonPaths, parsePagination, sanitizeDigits } from '../utils/controllerUtils.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,15 +14,6 @@ const FORCE_JSON_PATHS = [
   path.resolve(__dirname, '../../../client/public/api/data/force_data.json'),
   path.resolve(__dirname, '../../../client/src/data/force_data.json')
 ];
-
-function sanitizeDigits(val) {
-  if (val === undefined || val === null) return '';
-  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
-  return String(val)
-    .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
-    .replace(/\D/g, '')
-    .trim();
-}
 
 // طابور ذكي غير متزامن ومجمّع لتحديث ملف force_data.json في الخلفية دون تعطيل استجابة الخادم أو فقدان التحديثات المتزامنة
 const pendingJsonUpdates = new Map();
@@ -95,20 +86,20 @@ function scheduleJsonSync(id, updates) {
 }
 
 /**
- * تحديث حالة منتسب في قاعدة بيانات SQLite مباشرة
+ * تحديث حالة منتسب في قاعدة بيانات SQLite مباشرة (مع دعم تمرير المعاملة النشطة)
  */
-export async function updateForceMemberStatusDirect(identifier, newStatus) {
+export async function updateForceMemberStatusDirect(identifier, newStatus, txDb = null) {
   if (!identifier || identifier === '---') return false;
   const cleanId = String(identifier).trim();
 
   try {
-    const { db } = getDb();
+    const db = txDb || getDb().db;
     const result = await db.run(`
       UPDATE force_members
       SET job_status = ?,
           updated_at = datetime('now', 'localtime')
-      WHERE national_id = ? OR job_number = ? OR financial_number = ? OR id = ?
-    `, [newStatus, cleanId, cleanId, cleanId, cleanId]);
+      WHERE national_id = ? OR job_number = ? OR financial_number = ? OR id = ? OR name = ?
+    `, [newStatus, cleanId, cleanId, cleanId, cleanId, cleanId]);
 
     if (result.changes > 0) {
       console.log(`🔄 تم مزامنة حالة المنتسب [${cleanId}] في SQLite إلى: ${newStatus}`);
@@ -164,18 +155,13 @@ export async function getForceList(req, res) {
     const civilCount = civilCountRow ? civilCountRow.c : 0;
 
     let data = [];
-    let currentPage = 1;
-    let totalPages = 1;
+    const pag = parsePagination(req.query);
+    const totalPages = pag.enabled ? (Math.ceil(total / pag.limit) || 1) : 1;
 
-    if (limit) {
-      const parsedLimit = Math.max(1, parseInt(limit, 10));
-      currentPage = Math.max(1, parseInt(page || '1', 10));
-      totalPages = Math.ceil(total / parsedLimit) || 1;
-      const offset = (currentPage - 1) * parsedLimit;
-
+    if (pag.enabled) {
       data = await db.all(
         `SELECT * FROM force_members ${whereSql} ORDER BY id ASC LIMIT ? OFFSET ?`,
-        [...params, parsedLimit, offset]
+        [...params, pag.limit, pag.offset]
       );
     } else {
       data = await db.all(`SELECT * FROM force_members ${whereSql} ORDER BY id ASC`, params);
@@ -186,9 +172,9 @@ export async function getForceList(req, res) {
       total,
       policeCount,
       civilCount,
-      page: limit ? currentPage : 1,
-      totalPages: limit ? totalPages : 1,
-      limit: limit ? parseInt(limit, 10) : total,
+      page: pag.page,
+      totalPages,
+      limit: pag.enabled ? pag.limit : total,
       data
     });
   } catch (error) {
@@ -213,8 +199,8 @@ export async function createForceMember(req, res) {
         passport_number, suit_number, shoe_size, headwear_size, shirt_size, blood_type,
         diseases, height, weight, department, job_title, job_status, start_date,
         appointment_decision, appointment_date, last_promotion_decision, last_promotion_date,
-        financial_number, basic_salary, bank_name, bank_branch, account_number, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        financial_number, basic_salary, bank_name, bank_branch, account_number, notes, photo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       newId,
       m.type || 'شرطي',
@@ -258,7 +244,8 @@ export async function createForceMember(req, res) {
       m.bank_name || '',
       m.bank_branch || '',
       m.account_number ? String(m.account_number) : '',
-      m.notes || ''
+      m.notes || '',
+      m.photo || ''
     ]);
 
     const created = await db.get('SELECT * FROM force_members WHERE id = ?', [newId]);
@@ -448,8 +435,8 @@ export async function replaceForceList(req, res) {
         passport_number, suit_number, shoe_size, headwear_size, shirt_size, blood_type,
         diseases, height, weight, department, job_title, job_status, start_date,
         appointment_decision, appointment_date, last_promotion_decision, last_promotion_date,
-        financial_number, basic_salary, bank_name, bank_branch, account_number, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        financial_number, basic_salary, bank_name, bank_branch, account_number, notes, photo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (let idx = 0; idx < members.length; idx++) {
@@ -497,18 +484,15 @@ export async function replaceForceList(req, res) {
         m.bank_name || '',
         m.bank_branch || '',
         m.account_number ? String(m.account_number) : '',
-        m.notes || ''
+        m.notes || '',
+        m.photo || ''
       ]);
     }
     await insertStmt.finalize();
     await db.run('COMMIT;');
 
     const snapshot = await db.all('SELECT * FROM force_members ORDER BY id ASC');
-    for (const jsonPath of FORCE_JSON_PATHS) {
-      if (fs.existsSync(jsonPath)) {
-        safeWriteJson(jsonPath, snapshot);
-      }
-    }
+    syncJsonPaths(FORCE_JSON_PATHS, snapshot, { requireExisting: true });
 
     console.log(`✅ تم استبدال وتأمين القوة العمومية في SQLite بنجاح: ${members.length} عضو`);
 
