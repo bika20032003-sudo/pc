@@ -733,7 +733,7 @@ export async function initDatabase() {
       // 12.3 البريد المحال المعتمد (من ملف referred_mail_data.json)
       let referredJsonPath = path.resolve(__dirname, '../data/referred_mail_data.json');
       if (!fs.existsSync(referredJsonPath)) {
-        referredJsonPath = path.resolve(__dirname, '../../client/src/data/referred_mail_data.json');
+        referredJsonPath = path.resolve(__dirname, '../../../client/src/data/referred_mail_data.json');
       }
       if (fs.existsSync(referredJsonPath)) {
         try {
@@ -742,8 +742,8 @@ export async function initDatabase() {
           if (Array.isArray(refList)) {
             for (const r of refList) {
               await mStmt.run([
-                'referred', '', String(r.MailID || ''), String(r.MailNumber || ''), '', '',
-                r.TargetDept || '', '', 'ديوان المديرية', (r.ReferralDate || '').slice(0, 10), '', r.Subject || '',
+                'referred', String(r.MailNumber || ''), String(r.MailID || ''), String(r.MailNumber || ''), '', '',
+                r.TargetDept || '', '', 'ديوان المديرية', r.ReferralDate || new Date().toISOString(), '', r.Subject || '',
                 'إحالة رسمية', 'عبدالصمد', 'عبدالصمد', '',
                 '', r.Status || 'تحت الإجراء', r.FilePath || '', '', '[]',
                 'لواء / موسى سعد محمد البدين', 'مدير مديرية أمن أوباري', '', '',

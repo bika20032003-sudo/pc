@@ -227,7 +227,18 @@ export default function MailSection({ user, forceMembers = [] }) {
         if (isMounted && data.success && Array.isArray(data.mail)) {
           const out = data.mail.filter(m => m.type === 'outgoing');
           const inc = data.mail.filter(m => m.type === 'incoming');
-          const ref = data.mail.filter(m => m.type === 'referred');
+          const ref = data.mail
+            .filter(m => m.type === 'referred')
+            .map(m => ({
+              ...m,
+              ReferralID: m.id,
+              MailNumber: m.reference || m.code_no || m.record_number || `${m.id}`,
+              Subject: m.subject || 'بدون موضوع',
+              TargetDept: m.target_dept || m.recipient || 'الشؤون العامة',
+              DirectorNotes: m.director_notes || m.notes || 'للإجراء اللازم',
+              ReferralDate: m.date || m.created_at,
+              Status: m.status || 'تحت الإجراء'
+            }));
 
           setOutgoingList(out);
           localStorage.setItem('ubari_outgoing_mail', JSON.stringify(out));
@@ -2567,20 +2578,47 @@ export default function MailSection({ user, forceMembers = [] }) {
                       <td style={{ color: '#64748b', fontSize: '12px' }}>
                         {item.ReferralDate ? item.ReferralDate.slice(0, 10) : '---'}
                       </td>
-                      <td style={{ color: '#b45309', fontWeight: 800, background: '#fffbeb', borderRadius: '6px' }}>
-                        ✍️ {item.DirectorNotes || 'للإجراء'}
+                      <td style={{ fontWeight: 800, color: '#b91c1c' }}>
+                        {item.DirectorNotes || item.director_notes || 'للإجراء'}
                       </td>
                       <td>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          background: '#fef3c7',
-                          color: '#b45309'
-                        }}>
-                          {item.Status || 'تحت الإجراء'}
-                        </span>
+                        <select
+                          value={item.Status || item.status || 'تحت الإجراء'}
+                          onChange={async (e) => {
+                            const nextStatus = e.target.value;
+                            const targetId = item.id || item.ReferralID;
+                            const updated = referredList.map(r =>
+                              String(r.id || r.ReferralID) === String(targetId)
+                                ? { ...r, Status: nextStatus, status: nextStatus }
+                                : r
+                            );
+                            setReferredList(updated);
+                            localStorage.setItem('ubari_referred_mail', JSON.stringify(updated));
+                            try {
+                              await apiFetch(`/api/mail/${targetId}`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ status: nextStatus })
+                              });
+                              setNotificationMsg(`تم تحديث حالة الإحالة إلى "${nextStatus}"`);
+                              setTimeout(() => setNotificationMsg(''), 3500);
+                            } catch (_) {}
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            border: '1.5px solid #fde047',
+                            background: (item.Status || item.status) === 'تم التنفيذ' ? '#dcfce7' : (item.Status || item.status) === 'قيد المتابعة' ? '#dbeafe' : '#fef9c3',
+                            color: (item.Status || item.status) === 'تم التنفيذ' ? '#166534' : (item.Status || item.status) === 'قيد المتابعة' ? '#1e40af' : '#854d0e',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="تحت الإجراء">⏳ تحت الإجراء</option>
+                          <option value="قيد المتابعة">🔄 قيد المتابعة</option>
+                          <option value="تم التنفيذ">✅ تم التنفيذ</option>
+                          <option value="محفوظة">📁 محفوظة</option>
+                        </select>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <button
